@@ -1,0 +1,247 @@
+// ============================================
+// GLOBAL DROPDOWN STYLES
+// ============================================
+
+// PrimeReact Dropdown Component
+.p-dropdown {
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  transition: all 0.3s ease;
+
+  &:not(.p-disabled):hover {
+    border-color: #cbd5e1;
+  }
+
+  &.p-focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+  }
+
+  .p-dropdown-label {
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    color: #1f2937;
+
+    &.p-placeholder {
+      color: #9ca3af;
+    }
+  }
+
+  .p-dropdown-trigger {
+    width: 3rem;
+    color: #6b7280;
+  }
+
+  .p-dropdown-clear-icon {
+    color: #ef4444;
+    right: 3rem;
+  }
+}
+
+// Dropdown Panel
+.p-dropdown-panel {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  margin-top: 0.5rem;
+  overflow: hidden;
+
+  .p-dropdown-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+
+    .p-dropdown-filter {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.9rem;
+
+      &:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+        outline: none;
+      }
+    }
+  }
+
+  .p-dropdown-items-wrapper {
+    max-height: 300px;
+  }
+
+  .p-dropdown-items {
+    padding: 0.5rem 0;
+
+    .p-dropdown-item {
+      padding: 0.75rem 1rem;
+      margin: 0;
+      font-size: 0.95rem;
+      color: #374151;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-left: 3px solid transparent;
+
+      &:hover {
+        background: #f3f4f6;
+        border-left-color: #6366f1;
+      }
+
+      &.p-highlight {
+        background: #eef2ff;
+        color: #4f46e5;
+        font-weight: 600;
+        border-left-color: #6366f1;
+      }
+
+      &.p-focus {
+        background: #f3f4f6;
+        box-shadow: none;
+      }
+
+      &.p-disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        
+        &:hover {
+          background: transparent;
+          border-left-color: transparent;
+        }
+      }
+    }
+
+    .p-dropdown-empty-message {
+      padding: 1rem;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+// Dropdown in different contexts
+.journal-list__subject-dropdown {
+  .p-dropdown-label {
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+  }
+}
+
+// Sort Dropdown styling
+.sort-dropdown {
+  .p-dropdown {
+    min-width: 200px;
+  }
+
+  .p-dropdown-label {
+    font-weight: 500;
+  }
+}
+
+// Compact dropdown variant
+.p-dropdown-sm {
+  .p-dropdown-label {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .p-dropdown-trigger {
+    width: 2.5rem;
+  }
+}
+
+// Large dropdown variant
+.p-dropdown-lg {
+  .p-dropdown-label {
+    padding: 1rem 1.25rem;
+    font-size: 1.1rem;
+  }
+
+  .p-dropdown-trigger {
+    width: 3.5rem;
+  }
+}
+
+// Multiselect styling (similar pattern)
+.p-multiselect {
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  transition: all 0.3s ease;
+
+  &:not(.p-disabled):hover {
+    border-color: #cbd5e1;
+  }
+
+  &.p-focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+  }
+
+  .p-multiselect-label {
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  .p-multiselect-trigger {
+    width: 3rem;
+  }
+}
+
+.p-multiselect-panel {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  margin-top: 0.5rem;
+
+  .p-multiselect-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+  }
+
+  .p-multiselect-items {
+    padding: 0.5rem 0;
+
+    .p-multiselect-item {
+      padding: 0.75rem 1rem;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #f3f4f6;
+      }
+
+      &.p-highlight {
+        background: #eef2ff;
+        color: #4f46e5;
+      }
+
+      .p-checkbox {
+        margin-right: 0.75rem;
+
+        .p-checkbox-box {
+          border: 2px solid #d1d5db;
+          border-radius: 6px;
+
+          &.p-highlight {
+            border-color: #6366f1;
+            background: #6366f1;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .p-dropdown-panel,
+  .p-multiselect-panel {
+    max-width: 90vw;
+  }
+
+  .p-dropdown-items-wrapper {
+    max-height: 250px !important;
+  }
+}

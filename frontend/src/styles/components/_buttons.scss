@@ -1,0 +1,127 @@
+@use "sass:map";
+@use "../abstracts/variables" as *;
+@use "../abstracts/mixins" as *;
+
+// ============================================
+// BUTTON COMPONENTS
+// ============================================
+
+// Base button class
+.btn {
+  @include button-base;
+  padding: get-spacing(3) get-spacing(6);
+  font-size: get-font-size(base);
+  
+  // Size variants
+  &--small {
+    padding: get-spacing(2) get-spacing(4);
+    font-size: get-font-size(sm);
+  }
+  
+  &--large {
+    padding: get-spacing(4) get-spacing(8);
+    font-size: get-font-size(lg);
+  }
+  
+  // Style variants
+  &--primary {
+    @include button-primary;
+  }
+  
+  &--secondary {
+    @include button-secondary;
+  }
+  
+  &--ghost {
+    @include button-ghost;
+  }
+  
+  &--danger {
+    @include button-base;
+    background: linear-gradient(135deg, $error 0%, $error-dark 100%);
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, $error-dark 0%, #991b1b 100%);
+      transform: translateY(-1px);
+      box-shadow: get-shadow(md);
+    }
+  }
+  
+  &--success {
+    @include button-base;
+    background: linear-gradient(135deg, $success 0%, $success-dark 100%);
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, $success-dark 0%, #064e3b 100%);
+      transform: translateY(-1px);
+      box-shadow: get-shadow(md);
+    }
+  }
+  
+  // Icon buttons
+  &--icon {
+    padding: get-spacing(3);
+    width: auto;
+    aspect-ratio: 1;
+    
+    &.btn--small {
+      padding: get-spacing(2);
+    }
+    
+    &.btn--large {
+      padding: get-spacing(4);
+    }
+  }
+  
+  // Loading state
+  &--loading {
+    position: relative;
+    color: transparent;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      top: 50%;
+      left: 50%;
+      margin-left: -8px;
+      margin-top: -8px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Button group
+.btn-group {
+  display: inline-flex;
+  
+  .btn {
+    border-radius: 0;
+    
+    &:first-child {
+      border-top-left-radius: map.get($border-radius, md);
+      border-bottom-left-radius: map.get($border-radius, md);
+    }
+    
+    &:last-child {
+      border-top-right-radius: map.get($border-radius, md);
+      border-bottom-right-radius: map.get($border-radius, md);
+    }
+    
+    &:not(:first-child) {
+      margin-left: -1px;
+    }
+  }
+}

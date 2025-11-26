@@ -1,0 +1,309 @@
+@use "sass:map";
+@use "variables" as *;
+
+// ============================================
+// MIXINS & UTILITIES
+// ============================================
+
+// Responsive Breakpoints
+@mixin respond-to($breakpoint) {
+  @if map.has-key($breakpoints, $breakpoint) {
+    @media (min-width: map.get($breakpoints, $breakpoint)) {
+      @content;
+    }
+  } @else {
+    @warn "Unfortunately, no value could be retrieved from `#{$breakpoint}`. "
+        + "Available breakpoints are: #{map.keys($breakpoints)}.";
+  }
+}
+
+// Container Mixin
+@mixin container($max-width: xl) {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: get-spacing(4);
+  padding-right: get-spacing(4);
+  
+  @if map.has-key($container, $max-width) {
+    max-width: map.get($container, $max-width);
+  }
+  
+  @include respond-to(sm) {
+    padding-left: get-spacing(6);
+    padding-right: get-spacing(6);
+  }
+  
+  @include respond-to(lg) {
+    padding-left: get-spacing(8);
+    padding-right: get-spacing(8);
+  }
+}
+
+// Flexbox Utilities
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-start {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+@mixin flex-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// Typography Mixins
+@mixin heading($size: '2xl', $weight: semibold) {
+  font-family: $font-family-heading;
+  font-size: get-font-size($size);
+  font-weight: map.get($font-weight, $weight);
+  line-height: map.get($line-height, tight);
+  color: neutral(gray-900);
+}
+
+@mixin body-text($size: base, $weight: regular) {
+  font-family: $font-family-primary;
+  font-size: get-font-size($size);
+  font-weight: map.get($font-weight, $weight);
+  line-height: map.get($line-height, normal);
+  color: neutral(gray-700);
+}
+
+// Button Mixins
+@mixin button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: map.get($border-radius, md);
+  font-family: $font-family-primary;
+  font-weight: map.get($font-weight, medium);
+  text-decoration: none;
+  cursor: pointer;
+  transition: map.get($transitions, fast);
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($primary-blue, 0.5);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+@mixin button-primary {
+  @include button-base;
+  background: linear-gradient(135deg, $primary-blue 0%, $primary-blue-dark 100%);
+  color: white;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, $primary-blue-dark 0%, #1e3a8a 100%);
+    transform: translateY(-1px);
+    box-shadow: get-shadow(md);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+@mixin button-secondary {
+  @include button-base;
+  background: neutral(white);
+  color: neutral(gray-700);
+  border: 1px solid neutral(gray-300);
+  
+  &:hover:not(:disabled) {
+    background: neutral(gray-50);
+    border-color: neutral(gray-400);
+  }
+}
+
+@mixin button-ghost {
+  @include button-base;
+  background: transparent;
+  color: neutral(gray-700);
+  
+  &:hover:not(:disabled) {
+    background: neutral(gray-100);
+  }
+}
+
+// Card Mixins
+@mixin card($padding: 6) {
+  background: neutral(white);
+  border-radius: map.get($border-radius, lg);
+  box-shadow: get-shadow(base);
+  border: 1px solid neutral(gray-200);
+  padding: get-spacing($padding);
+  transition: map.get($transitions, normal);
+  
+  &:hover {
+    box-shadow: get-shadow(md);
+    transform: translateY(-2px);
+  }
+}
+
+@mixin card-interactive {
+  @include card;
+  cursor: pointer;
+  
+  &:hover {
+    box-shadow: get-shadow(lg);
+    transform: translateY(-4px);
+  }
+  
+  &:active {
+    transform: translateY(-1px);
+    box-shadow: get-shadow(md);
+  }
+}
+
+// Form Elements
+@mixin input-base {
+  display: block;
+  width: 100%;
+  padding: get-spacing(3) get-spacing(4);
+  border: 1px solid neutral(gray-300);
+  border-radius: map.get($border-radius, md);
+  background: neutral(white);
+  color: neutral(gray-900);
+  font-size: get-font-size(base);
+  transition: map.get($transitions, fast);
+  
+  &:focus {
+    outline: none;
+    border-color: $primary-blue;
+    box-shadow: 0 0 0 3px rgba($primary-blue, 0.1);
+  }
+  
+  &::placeholder {
+    color: neutral(gray-500);
+  }
+  
+  &:disabled {
+    background: neutral(gray-100);
+    color: neutral(gray-500);
+    cursor: not-allowed;
+  }
+}
+
+// Gradient Backgrounds
+@mixin gradient-primary {
+  background: linear-gradient(135deg, $primary-blue 0%, $primary-blue-dark 100%);
+}
+
+@mixin gradient-hero {
+  background: linear-gradient(135deg, 
+  map.get($blue-gradient, 800) 0%, 
+  map.get($blue-gradient, 600) 50%, 
+  map.get($blue-gradient, 500) 100%
+  );
+}
+
+@mixin gradient-subject($subject) {
+  @if map.has-key($subject-colors, $subject) {
+    background: map.get($subject-colors, $subject);
+  } @else {
+    background: map.get($subject-colors, information);
+  }
+}
+
+// Animation Mixins
+@mixin fade-in($duration: 0.3s) {
+  opacity: 0;
+  animation: fadeIn $duration ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@mixin slide-up($duration: 0.3s) {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: slideUp $duration ease-out forwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Utility Classes Generator
+@mixin generate-spacing-utilities {
+  @each $key, $value in $spacing {
+    .m-#{$key} { margin: $value; }
+    .mt-#{$key} { margin-top: $value; }
+    .mr-#{$key} { margin-right: $value; }
+    .mb-#{$key} { margin-bottom: $value; }
+    .ml-#{$key} { margin-left: $value; }
+    .mx-#{$key} { margin-left: $value; margin-right: $value; }
+    .my-#{$key} { margin-top: $value; margin-bottom: $value; }
+    
+    .p-#{$key} { padding: $value; }
+    .pt-#{$key} { padding-top: $value; }
+    .pr-#{$key} { padding-right: $value; }
+    .pb-#{$key} { padding-bottom: $value; }
+    .pl-#{$key} { padding-left: $value; }
+    .px-#{$key} { padding-left: $value; padding-right: $value; }
+    .py-#{$key} { padding-top: $value; padding-bottom: $value; }
+  }
+}
+
+// Text Utilities
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin text-clamp($lines: 3) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// Position Utilities
+@mixin absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@mixin absolute-full {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}

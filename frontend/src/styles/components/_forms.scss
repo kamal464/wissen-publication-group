@@ -1,0 +1,285 @@
+@use "sass:map";
+@use "../abstracts/variables" as *;
+@use "../abstracts/mixins" as *;
+
+// ============================================
+// FORM COMPONENTS
+// ============================================
+
+// Base form styles
+.form {
+  &__group {
+    margin-bottom: get-spacing(6);
+  }
+  
+  &__label {
+    display: block;
+    font-size: get-font-size(sm);
+  font-weight: map.get($font-weight, medium);
+    color: neutral(gray-700);
+    margin-bottom: get-spacing(2);
+  }
+  
+  &__input {
+    @include input-base;
+    
+    &--large {
+      padding: get-spacing(4) get-spacing(5);
+      font-size: get-font-size(lg);
+    }
+    
+    &--small {
+      padding: get-spacing(2) get-spacing(3);
+      font-size: get-font-size(sm);
+    }
+    
+    &--error {
+      border-color: $error;
+      box-shadow: 0 0 0 3px rgba($error, 0.1);
+    }
+    
+    &--success {
+      border-color: $success;
+      box-shadow: 0 0 0 3px rgba($success, 0.1);
+    }
+  }
+  
+  &__textarea {
+    @extend .form__input;
+    min-height: 120px;
+    resize: vertical;
+  }
+  
+  &__select {
+    @extend .form__input;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+    background-size: 16px 12px;
+    padding-right: get-spacing(10);
+    appearance: none;
+  }
+  
+  &__help {
+    margin-top: get-spacing(1);
+    font-size: get-font-size(sm);
+    color: neutral(gray-600);
+  }
+  
+  &__error {
+    margin-top: get-spacing(1);
+    font-size: get-font-size(sm);
+    color: $error;
+    display: flex;
+    align-items: center;
+    gap: get-spacing(1);
+  }
+}
+
+// Search input component
+.search-input {
+  position: relative;
+  
+  &__field {
+    @include input-base;
+    padding-left: get-spacing(12);
+    padding-right: get-spacing(12);
+    
+    &:focus {
+      + .search-input__icon {
+        color: $primary-blue;
+      }
+    }
+  }
+  
+  &__icon {
+    position: absolute;
+    left: get-spacing(4);
+    top: 50%;
+    transform: translateY(-50%);
+    color: neutral(gray-400);
+    pointer-events: none;
+  transition: color map.get($transitions, fast);
+  }
+  
+  &__button {
+    position: absolute;
+    right: get-spacing(2);
+    top: 50%;
+    transform: translateY(-50%);
+    @include button-primary;
+    padding: get-spacing(2);
+  border-radius: map.get($border-radius, base);
+    
+    &:focus {
+      box-shadow: 0 0 0 2px rgba($primary-blue, 0.5);
+    }
+  }
+}
+
+// Checkbox component
+.checkbox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: get-spacing(3);
+  cursor: pointer;
+  
+  &__input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    
+    &:checked + .checkbox__box {
+      background-color: $primary-blue;
+      border-color: $primary-blue;
+      
+      &::after {
+        opacity: 1;
+      }
+    }
+    
+    &:focus + .checkbox__box {
+      box-shadow: 0 0 0 3px rgba($primary-blue, 0.1);
+    }
+  }
+  
+  &__box {
+    width: 20px;
+    height: 20px;
+    border: 2px solid neutral(gray-300);
+  border-radius: map.get($border-radius, base);
+    background: white;
+  transition: all map.get($transitions, fast);
+    position: relative;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 2px;
+      width: 6px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      opacity: 0;
+  transition: opacity map.get($transitions, fast);
+    }
+  }
+  
+  &__label {
+    font-size: get-font-size(sm);
+    color: neutral(gray-700);
+    user-select: none;
+  }
+}
+
+// Radio button component
+.radio {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: get-spacing(3);
+  cursor: pointer;
+  
+  &__input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    
+    &:checked + .radio__circle {
+      border-color: $primary-blue;
+      
+      &::after {
+        opacity: 1;
+      }
+    }
+    
+    &:focus + .radio__circle {
+      box-shadow: 0 0 0 3px rgba($primary-blue, 0.1);
+    }
+  }
+  
+  &__circle {
+    width: 20px;
+    height: 20px;
+    border: 2px solid neutral(gray-300);
+    border-radius: 50%;
+    background: white;
+  transition: all map.get($transitions, fast);
+    position: relative;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: $primary-blue;
+      opacity: 0;
+  transition: opacity map.get($transitions, fast);
+    }
+  }
+  
+  &__label {
+    font-size: get-font-size(sm);
+    color: neutral(gray-700);
+    user-select: none;
+  }
+}
+
+// Switch component
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+  
+  &__input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    
+    &:checked + .switch__slider {
+      background-color: $primary-blue;
+      
+      &::before {
+        transform: translateX(24px);
+      }
+    }
+    
+    &:focus + .switch__slider {
+      box-shadow: 0 0 0 3px rgba($primary-blue, 0.1);
+    }
+  }
+  
+  &__slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: neutral(gray-300);
+  transition: map.get($transitions, normal);
+    border-radius: 24px;
+    
+    &::before {
+      position: absolute;
+      content: '';
+      height: 20px;
+      width: 20px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+  transition: map.get($transitions, normal);
+      border-radius: 50%;
+    }
+  }
+}

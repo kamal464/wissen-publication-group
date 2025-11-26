@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+/* Root variables */
+:root {
+  --primary-50: #eff6ff;
+  --primary-100: #dbeafe;
+  --primary-200: #bfdbfe;
+  --primary-300: #93c5fd;
+  --primary-400: #60a5fa;
+  --primary-500: #3b82f6;
+  --primary-600: #2563eb;
+  --primary-700: #1d4ed8;
+  --primary-800: #1e40af;
+  --primary-900: #1e3a8a;
+}
+
+/* Base styles */
+body {
+  font-family: var(--font-inter), sans-serif;
+}
+
+/* Utility classes */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+}
+
+.container-responsive {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* PrimeReact customizations */
+.p-menubar {
+  border: none;
+  padding: 1rem 2rem;
+}
+
+.p-menubar-root-list > .p-menuitem > .p-menuitem-link {
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+}

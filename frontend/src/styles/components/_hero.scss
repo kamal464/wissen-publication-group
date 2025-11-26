@@ -1,0 +1,398 @@
+@use "sass:map";
+@use "../abstracts/variables" as *;
+@use "../abstracts/mixins" as *;
+
+// ============================================
+// HERO SECTION COMPONENT
+// ============================================
+
+.hero {
+  position: relative;
+  @include gradient-hero;
+  padding: get-spacing(32) 0;
+  overflow: hidden;
+  min-height: 50vh;
+  @include flex-center;
+  
+  // Background overlay
+  &::before {
+    content: '';
+    @include absolute-full;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  
+  // Decorative background elements
+  &__decorations {
+    @include absolute-full;
+    pointer-events: none;
+    z-index: 2;
+  }
+  
+  &__decoration {
+    position: absolute;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    
+    &--square-1 {
+      top: 20%;
+      left: 10%;
+      width: 120px;
+      height: 120px;
+      transform: rotate(45deg);
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    &--square-2 {
+      top: 35%;
+      right: 15%;
+      width: 80px;
+      height: 80px;
+      transform: rotate(12deg);
+      animation: float 8s ease-in-out infinite reverse;
+    }
+    
+    &--square-3 {
+      bottom: 20%;
+      left: 30%;
+      width: 160px;
+      height: 160px;
+      transform: rotate(45deg);
+      opacity: 0.5;
+      animation: float 10s ease-in-out infinite;
+    }
+  }
+  
+  // Light effects
+  &__light {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    pointer-events: none;
+    
+    &--top-right {
+      top: -100px;
+      right: -100px;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    }
+    
+    &--bottom-left {
+      bottom: -100px;
+      left: -100px;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(255, 235, 59, 0.15) 0%, transparent 70%);
+    }
+  }
+  
+  // Content
+  &__container {
+    @include container;
+    text-align: center;
+    position: relative;
+    z-index: 3;
+  }
+
+  &__grid {
+    display: grid;
+    gap: get-spacing(10);
+
+    @include respond-to(lg) {
+      grid-template-columns: 1.2fr 1fr;
+      align-items: center;
+      text-align: left;
+    }
+  }
+
+  &__content {
+    @include flex-column;
+    gap: get-spacing(6);
+    align-items: center;
+
+    @include respond-to(lg) {
+      align-items: flex-start;
+    }
+  }
+
+  &__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: get-spacing(2);
+    padding: get-spacing(1) get-spacing(3);
+  border-radius: map.get($border-radius, xl);
+    background: rgba(255, 255, 255, 0.12);
+    color: neutral(white);
+    font-size: get-font-size(xs);
+    letter-spacing: 0.3em;
+  }
+  
+  &__title {
+    color: white;
+    font-size: get-font-size('6xl');
+  font-weight: map.get($font-weight, light);
+    letter-spacing: 0.05em;
+    margin: 0;
+    @include slide-up(0.8s);
+    
+    @include respond-to(md) {
+      font-size: get-font-size('7xl');
+    }
+    
+    @include respond-to(lg) {
+      font-size: 5rem;
+    }
+  }
+  
+  &__subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: get-font-size(xl);
+  font-weight: map.get($font-weight, regular);
+    margin-top: get-spacing(6);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    @include slide-up(1s);
+    
+    @include respond-to(md) {
+      font-size: get-font-size('2xl');
+    }
+
+    @include respond-to(lg) {
+      margin-left: 0;
+    }
+  }
+  
+  // Floating particles
+  &__particles {
+    @include absolute-full;
+    pointer-events: none;
+    z-index: 2;
+  }
+  
+  &__particle {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    opacity: 0.4;
+    
+    &--1 {
+      top: 25%;
+      left: 25%;
+      width: 8px;
+      height: 8px;
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+    
+    &--2 {
+      top: 33%;
+      right: 33%;
+      width: 4px;
+      height: 4px;
+      background: #fbbf24;
+      opacity: 0.6;
+      animation: pulse-glow 2s ease-in-out infinite;
+      animation-delay: 1s;
+    }
+    
+    &--3 {
+      bottom: 25%;
+      left: 33%;
+      width: 8px;
+      height: 8px;
+      animation: pulse-glow 2s ease-in-out infinite;
+      animation-delay: 0.5s;
+    }
+    
+    &--4 {
+      top: 66%;
+      right: 25%;
+      width: 4px;
+      height: 4px;
+      animation: pulse-glow 2s ease-in-out infinite;
+      animation-delay: 0.7s;
+    }
+    
+    &--5 {
+      bottom: 33%;
+      right: 66%;
+      width: 8px;
+      height: 8px;
+      background: #fde68a;
+      opacity: 0.4;
+      animation: pulse-glow 2s ease-in-out infinite;
+      animation-delay: 0.3s;
+    }
+  }
+  
+  // Actions (if needed)
+  &__actions {
+    margin-top: get-spacing(10);
+    @include flex-center;
+    gap: get-spacing(4);
+    @include fade-in(1.2s);
+
+    @include respond-to(lg) {
+      justify-content: flex-start;
+    }
+
+    .btn {
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: neutral(white);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: translateY(-2px);
+      }
+
+      &--primary {
+        background: rgba(255, 255, 255, 0.92);
+        color: $primary-blue;
+
+        &:hover {
+          background: neutral(white);
+        }
+      }
+    }
+  }
+
+  &__panel {
+    background: rgba(255, 255, 255, 0.12);
+  border-radius: map.get($border-radius, '3xl');
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: get-spacing(6);
+    backdrop-filter: blur(16px);
+    display: flex;
+    flex-direction: column;
+    gap: get-spacing(6);
+    @include fade-in(1.2s);
+  }
+
+  &__search {
+    display: flex;
+    flex-direction: column;
+    gap: get-spacing(2);
+  }
+
+  &__search-label {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: get-font-size(xs);
+    letter-spacing: 0.12em;
+  }
+
+  &__search-bar {
+    display: flex;
+    gap: get-spacing(2);
+    background: rgba(255, 255, 255, 0.95);
+  border-radius: map.get($border-radius, xl);
+    padding: get-spacing(1);
+    align-items: center;
+  }
+
+  &__search-input {
+    @include input-base;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: get-spacing(2) get-spacing(3);
+    font-size: get-font-size(sm);
+    color: neutral(gray-700);
+
+    &::placeholder {
+      color: neutral(gray-400);
+    }
+  }
+
+  &__search-button {
+    @include button-primary;
+    padding: get-spacing(2) get-spacing(4);
+    font-size: get-font-size(sm);
+    white-space: nowrap;
+  }
+
+  &__subjects {
+    display: grid;
+    gap: get-spacing(2);
+  }
+
+  &__subject {
+    @include flex-between;
+    padding: get-spacing(3) get-spacing(4);
+  border-radius: map.get($border-radius, lg);
+    background: rgba(255, 255, 255, 0.12);
+    color: neutral(white);
+    font-size: get-font-size(sm);
+    letter-spacing: 0.02em;
+  transition: map.get($transitions, fast);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    &::after {
+      content: '\2192';
+      font-size: get-font-size(sm);
+    }
+  }
+}
+
+// Responsive adjustments
+@include respond-to(sm) {
+  .hero {
+    padding: get-spacing(24) 0;
+    
+    &__decoration {
+      &--square-1 {
+        width: 100px;
+        height: 100px;
+      }
+      
+      &--square-2 {
+        width: 60px;
+        height: 60px;
+      }
+      
+      &--square-3 {
+        width: 120px;
+        height: 120px;
+      }
+    }
+  }
+}
+
+@include respond-to(lg) {
+  .hero {
+    padding: get-spacing(40) 0;
+    
+    &__decoration {
+      &--square-1 {
+        width: 140px;
+        height: 140px;
+      }
+      
+      &--square-2 {
+        width: 100px;
+        height: 100px;
+      }
+      
+      &--square-3 {
+        width: 180px;
+        height: 180px;
+      }
+    }
+  }
+}
+
+@media (max-width: 1023px) {
+  .hero {
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+
+    &__panel {
+      margin-top: get-spacing(6);
+    }
+  }
+}

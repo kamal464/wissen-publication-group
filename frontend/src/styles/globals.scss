@@ -1,0 +1,279 @@
+// ============================================
+// UNIVERSAL PUBLISHERS - GLOBAL STYLES
+// ============================================
+
+@use "sass:map";
+
+// Abstracts (Variables, Mixins, Functions)
+@use 'abstracts/variables' as *;
+@use 'abstracts/mixins' as *;
+
+// Base Styles (Reset, Typography, etc.)
+@use 'base/base';
+
+// Component Styles
+@use 'components/buttons';
+@use 'components/cards';
+@use 'components/dropdown';
+@use 'components/forms';
+@use 'components/header';
+@use 'components/hero';
+@use 'components/journal-card';
+@use 'components/subject-grid';
+@use 'components/article-detail';
+@use 'components/submit-manuscript';
+@use 'components/submission-success';
+
+// Page Styles
+@use 'pages/contact';
+@use 'pages/journals';
+@use 'pages/about';
+@use 'pages/editorial-board';
+@use 'pages/instructions';
+@use './pages/auth';
+
+// ============================================
+// CUSTOM ANIMATIONS
+// ============================================
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+// Floating particles animation
+.floating-particle {
+  
+  animation: float 3s ease-in-out infinite;
+  
+  &:nth-child(2n) {
+    animation-delay: -1s;
+    animation-duration: 4s;
+  }
+  
+  &:nth-child(3n) {
+    animation-delay: -2s;
+    animation-duration: 5s;
+  }
+}
+
+// Pulse glow effect
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+// Gradient animation for hero backgrounds
+.animated-gradient {
+  background-size: 400% 400%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+// ============================================
+// UTILITY CLASSES
+// ============================================
+
+// Layout
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.max-w-container {
+  max-width: map.get($container, '2xl');
+}
+
+// Positioning
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.fixed {
+  position: fixed;
+}
+
+.sticky {
+  position: sticky;
+}
+
+// Z-Index
+.z-dropdown {
+  z-index: map.get($z-index, dropdown);
+}
+
+.z-modal {
+  z-index: map.get($z-index, modal);
+}
+
+// Overflow
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-auto {
+  overflow: auto;
+}
+
+// Display
+.block {
+  display: block;
+}
+
+.inline {
+  display: inline;
+}
+
+.inline-block {
+  display: inline-block;
+}
+
+.hidden {
+  display: none;
+}
+
+// App-wide helpers
+:root {
+  --primary-50: #eff6ff;
+  --primary-100: #dbeafe;
+  --primary-200: #bfdbfe;
+  --primary-300: #93c5fd;
+  --primary-400: #60a5fa;
+  --primary-500: #3b82f6;
+  --primary-600: #2563eb;
+  --primary-700: #1d4ed8;
+  --primary-800: #1e40af;
+  --primary-900: #1e3a8a;
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+}
+
+.container-responsive {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.p-menubar {
+  border: none;
+  padding: 1rem 2rem;
+}
+
+.p-menubar-root-list > .p-menuitem > .p-menuitem-link {
+  padding: 0.75rem 1rem;
+  font-weight: map.get($font-weight, medium);
+}
+
+// Responsive utilities
+@include respond-to(sm) {
+  .sm\:block {
+    display: block;
+  }
+  
+  .sm\:hidden {
+    display: none;
+  }
+  
+  .sm\:flex {
+    display: flex;
+  }
+}
+
+@include respond-to(md) {
+  .md\:block {
+    display: block;
+  }
+  
+  .md\:hidden {
+    display: none;
+  }
+  
+  .md\:flex {
+    display: flex;
+  }
+}
+
+@include respond-to(lg) {
+  .lg\:block {
+    display: block;
+  }
+  
+  .lg\:hidden {
+    display: none;
+  }
+  
+  .lg\:flex {
+    display: flex;
+  }
+}
+
+// ============================================
+// THEME VARIATIONS
+// ============================================
+
+// Dark mode support (for future implementation)
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: #{neutral(white)};
+    --text-secondary: #{neutral(gray-300)};
+    --bg-primary: #{neutral(gray-900)};
+    --bg-secondary: #{neutral(gray-800)};
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  body {
+    color: neutral(black);
+    background: neutral(white);
+  }
+  
+  .btn-primary {
+    background: neutral(black);
+    color: neutral(white);
+    border: 2px solid neutral(black);
+  }
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

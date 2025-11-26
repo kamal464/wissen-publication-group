@@ -1,0 +1,261 @@
+@use "sass:map";
+@use "../abstracts/variables" as *;
+@use "../abstracts/mixins" as *;
+
+// ============================================
+// CARD COMPONENTS
+// ============================================
+
+.card {
+  @include card;
+  
+  &--interactive {
+    @include card-interactive;
+  }
+  
+  &--hover-lift {
+  transition: all map.get($transitions, normal);
+    
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: get-shadow(xl);
+    }
+  }
+  
+  // Card variants
+  &--flat {
+    box-shadow: none;
+    border: 1px solid neutral(gray-200);
+    
+    &:hover {
+      box-shadow: get-shadow(sm);
+    }
+  }
+  
+  &--elevated {
+    box-shadow: get-shadow(lg);
+    
+    &:hover {
+      box-shadow: get-shadow(xl);
+    }
+  }
+  
+  // Card sizes
+  &--compact {
+    padding: get-spacing(4);
+  }
+  
+  &--spacious {
+    padding: get-spacing(8);
+  }
+}
+
+// Card header
+.card__header {
+  margin-bottom: get-spacing(4);
+  padding-bottom: get-spacing(4);
+  border-bottom: 1px solid neutral(gray-200);
+  
+  &:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+}
+
+// Card title
+.card__title {
+  @include heading(xl, semibold);
+  margin-bottom: get-spacing(2);
+  color: neutral(gray-900);
+}
+
+// Card subtitle
+.card__subtitle {
+  @include body-text(sm);
+  color: neutral(gray-600);
+  margin-bottom: 0;
+}
+
+// Card content
+.card__content {
+  margin-bottom: get-spacing(4);
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// Card footer
+.card__footer {
+  margin-top: get-spacing(4);
+  padding-top: get-spacing(4);
+  border-top: 1px solid neutral(gray-200);
+  @include flex-between;
+  
+  &:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+}
+
+// Card image
+.card__image {
+  margin: -#{get-spacing(6)} -#{get-spacing(6)} get-spacing(4) -#{get-spacing(6)};
+  border-radius: map.get($border-radius, lg) map.get($border-radius, lg) 0 0;
+  overflow: hidden;
+  
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+
+// Specific card types
+.journal-card {
+  @extend .card;
+  @extend .card--interactive;
+  
+  display: flex;
+  gap: get-spacing(4);
+  
+  &__image {
+    flex-shrink: 0;
+    width: 120px;
+    height: 120px;
+  border-radius: map.get($border-radius, md);
+    overflow: hidden;
+    background: neutral(gray-200);
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+  
+  &__content {
+    flex: 1;
+    min-width: 0; // Prevents flex items from overflowing
+  }
+  
+  &__category {
+    display: inline-block;
+    padding: get-spacing(1) get-spacing(3);
+    background: $primary-blue;
+    color: white;
+    font-size: get-font-size(xs);
+  font-weight: map.get($font-weight, medium);
+    text-transform: uppercase;
+  border-radius: map.get($border-radius, base);
+    margin-bottom: get-spacing(2);
+    
+    &--life-science {
+      @include gradient-subject(life-science);
+    }
+    
+    &--social-science {
+      @include gradient-subject(social-science);
+    }
+    
+    &--engineering {
+      @include gradient-subject(engineering);
+    }
+    
+    &--medicine {
+      @include gradient-subject(medicine);
+    }
+    
+    &--economics {
+      @include gradient-subject(economics);
+    }
+    
+    &--information {
+      @include gradient-subject(information);
+    }
+  }
+  
+  &__title {
+    @include heading(lg, semibold);
+    margin-bottom: get-spacing(2);
+    color: neutral(gray-900);
+    @include text-clamp(2);
+  }
+  
+  &__meta {
+    @include body-text(sm);
+    color: neutral(gray-600);
+    margin-bottom: get-spacing(3);
+  }
+  
+  &__description {
+    @include body-text(sm);
+    color: neutral(gray-700);
+    @include text-clamp(3);
+  }
+}
+
+// Subject category card
+.subject-card {
+  @extend .card;
+  @extend .card--interactive;
+  
+  padding: get-spacing(6);
+  text-align: center;
+  color: white;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: inherit;
+    opacity: 0.9;
+  transition: opacity map.get($transitions, fast);
+  }
+  
+  &:hover::before {
+    opacity: 1;
+  }
+  
+  &__title {
+    position: relative;
+    z-index: 1;
+    font-size: get-font-size(sm);
+  font-weight: map.get($font-weight, medium);
+  line-height: map.get($line-height, tight);
+    margin: 0;
+  }
+  
+  // Subject variants
+  &--economics {
+    @include gradient-subject(economics);
+  }
+  
+  &--engineering {
+    @include gradient-subject(engineering);
+  }
+  
+  &--information {
+    @include gradient-subject(information);
+  }
+  
+  &--life-science {
+    @include gradient-subject(life-science);
+  }
+  
+  &--medicine {
+    @include gradient-subject(medicine);
+  }
+  
+  &--social-science {
+    @include gradient-subject(social-science);
+  }
+}

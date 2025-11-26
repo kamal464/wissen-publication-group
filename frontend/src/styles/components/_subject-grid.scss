@@ -1,0 +1,267 @@
+@use "sass:map";
+@use "../abstracts/variables" as *;
+@use "../abstracts/mixins" as *;
+
+// ============================================
+// SUBJECT GRID COMPONENT
+// ============================================
+
+.subject-browse {
+  &__container {
+  background: white;
+  border-radius: map.get($border-radius, lg);
+    padding: get-spacing(6);
+    box-shadow: get-shadow(base);
+    border: 1px solid neutral(gray-200);
+  }
+  
+  &__title {
+    @include heading(xl, semibold);
+    margin-bottom: get-spacing(6);
+    color: neutral(gray-900);
+  }
+  
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: get-spacing(3);
+    
+    @include respond-to(sm) {
+      gap: get-spacing(4);
+    }
+  }
+}
+
+.subject-tile {
+  @include card;
+  @include card-interactive;
+  
+  padding: get-spacing(4);
+  text-align: center;
+  color: white;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  min-height: 80px;
+  @include flex-center;
+  
+  // Gradient overlay
+  &::before {
+    content: '';
+    @include absolute-full;
+    background: inherit;
+    opacity: 0.9;
+  transition: opacity map.get($transitions, fast);
+    z-index: 1;
+  }
+  
+  &:hover::before {
+    opacity: 1;
+  }
+  
+  // Pattern overlay (optional decorative element)
+  &::after {
+    content: '';
+    @include absolute-full;
+    background-image: radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                      radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    z-index: 2;
+    pointer-events: none;
+  }
+  
+  &__title {
+    position: relative;
+    z-index: 3;
+    font-size: get-font-size(sm);
+  font-weight: map.get($font-weight, medium);
+  line-height: map.get($line-height, tight);
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    
+    @include respond-to(sm) {
+      font-size: get-font-size(base);
+    }
+  }
+  
+  // Subject-specific gradients and hover effects
+  &--economics {
+    @include gradient-subject(economics);
+    
+    &:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: get-shadow(lg);
+    }
+  }
+  
+  &--engineering {
+    @include gradient-subject(engineering);
+    
+    &:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 10px 25px rgba(251, 113, 133, 0.3);
+    }
+  }
+  
+  &--information {
+    @include gradient-subject(information);
+    
+    &:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 10px 25px rgba(52, 211, 153, 0.3);
+    }
+  }
+  
+  &--life-science {
+    @include gradient-subject(life-science);
+    
+    &:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
+    }
+  }
+  
+  &--medicine {
+    @include gradient-subject(medicine);
+    
+    &:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 10px 25px rgba(96, 165, 250, 0.3);
+    }
+  }
+  
+  &--social-science {
+    @include gradient-subject(social-science);
+    
+    &:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 10px 25px rgba(168, 85, 247, 0.3);
+    }
+  }
+  
+  // Icon support (if icons are added later)
+  &__icon {
+    margin-bottom: get-spacing(2);
+    font-size: get-font-size('2xl');
+    opacity: 0.9;
+  }
+  
+  // Count badge (if showing number of journals per subject)
+  &__count {
+    position: absolute;
+    top: get-spacing(2);
+    right: get-spacing(2);
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: get-font-size(xs);
+  font-weight: map.get($font-weight, medium);
+    padding: get-spacing(1) get-spacing(2);
+  border-radius: map.get($border-radius, full);
+    backdrop-filter: blur(10px);
+    z-index: 4;
+  }
+  
+  // Active state
+  &--active {
+    transform: translateY(-2px);
+    box-shadow: get-shadow(md);
+    
+    &::before {
+      opacity: 1;
+    }
+  }
+  
+  // Focus state for accessibility
+  &:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+  }
+}
+
+// Animation variants
+.subject-tile {
+  // Entrance animation
+  &--animate-in {
+    @include slide-up;
+    
+    @for $i from 1 through 6 {
+      &:nth-child(#{$i}) {
+        animation-delay: #{$i * 0.1}s;
+      }
+    }
+  }
+  
+  // Floating animation on hover
+  &--float {
+    &:hover {
+      animation: float 2s ease-in-out infinite;
+    }
+  }
+  
+  // Pulse effect
+  &--pulse {
+    &:hover {
+      animation: pulse 1s ease-in-out;
+    }
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// Responsive grid adjustments
+@include respond-to(lg) {
+  .subject-browse__grid {
+    gap: get-spacing(4);
+  }
+  
+  .subject-tile {
+    padding: get-spacing(5);
+    min-height: 90px;
+    
+    &__title {
+      font-size: get-font-size(base);
+    }
+  }
+}
+
+// Alternative layout: single column for mobile
+@media (max-width: 480px) {
+  .subject-browse__grid {
+    grid-template-columns: 1fr;
+    gap: get-spacing(3);
+  }
+  
+  .subject-tile {
+    min-height: 60px;
+    
+    &__title {
+      font-size: get-font-size(sm);
+    }
+  }
+}
+
+// Loading state for subject tiles
+.subject-tile--loading {
+  background: linear-gradient(90deg, neutral(gray-200) 25%, neutral(gray-300) 50%, neutral(gray-200) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  
+  .subject-tile__title {
+    color: transparent;
+  }
+  
+  &::before,
+  &::after {
+    display: none;
+  }
+}

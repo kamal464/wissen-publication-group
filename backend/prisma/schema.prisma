@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:kamaldb@localhost:5432/universal_publishers"
+}
+
+model Journal {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String
+  issn        String?   @unique
+  shortcode   String?   @unique
+  coverImage  String?
+  publisher   String?
+  accessType  String?
+  subjectArea String?
+  category    String?
+  discipline  String?
+  impactFactor String?
+  
+  // Content Management Fields
+  aimsScope   String?   @db.Text
+  guidelines  String?   @db.Text
+  editorialBoard String? @db.Text
+  homePageContent String? @db.Text
+  currentIssueContent String? @db.Text
+  archiveContent String? @db.Text
+  articlesInPress String? @db.Text
+  
+  // Meta Information
+  metaTitle   String?
+  metaDescription String? @db.Text
+  metaKeywords String?
+  doi         String?
+  indexing    String?   @db.Text
+  
+  articles       Article[]
+  boardMembers   BoardMember[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+}
+
+model Article {
+  id            Int      @id @default(autoincrement())
+  title         String
+  abstract      String   @db.Text
+  keywords      String?
+  authors       Author[]
+  journal       Journal  @relation(fields: [journalId], references: [id])
+  journalId     Int
+  status        String   @default("PENDING") // PENDING, UNDER_REVIEW, ACCEPTED, PUBLISHED
+  pdfUrl        String?
+  wordUrl       String?
+  articleType   String?  // Review Article, Case Report, Research Article, etc.
+  submittedAt   DateTime @default(now())
+  publishedAt   DateTime?
+  // Submission details (from author info)
+  submitterName    String?
+  submitterEmail   String?
+  submitterAddress String?
+  submitterCountry String?
+}
+
+model Author {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String
+  affiliation String?
+  articles  Article[]
+  createdAt DateTime  @default(now())
+}
+
+model Contact {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  subject   String
+  message   String   @db.Text
+  status    String   @default("PENDING") // PENDING, RESPONDED
+  createdAt DateTime @default(now())
+}
+
+model News {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String   @db.Text
+  link      String?
+  isPinned  Boolean  @default(false)
+  publishedAt DateTime? 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  userName      String   @unique
+  password      String?  // Optional password field
+  journalShort  String?
+  journalName   String?
+  category      String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model JournalShortcode {
+  id          Int      @id @default(autoincrement())
+  shortcode   String   @unique
+  journalName String
+  journalId   Int?     // Optional reference to Journal
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model WebPage {
+  id            Int      @id @default(autoincrement())
+  pageName      String
+  pageUrl       String   @unique
+  pageImage     String?
+  seoTitle      String?
+  seoDescription String? @db.Text
+  seoKeywords   String?
+  bannerImage   String?
+  pageDescription String? @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model BoardMember {
+  id          Int      @id @default(autoincrement())
+  name        String
+  position    String
+  affiliation String?
+  journalId   Int?
+  journal     Journal? @relation(fields: [journalId], references: [id])
+  email       String?
+  bio         String?  @db.Text
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String   @db.Text
+  type      String   @default("info") // info, warning, success, error
+  isRead    Boolean  @default(false)
+  userId    Int?     // Optional - for user-specific notifications
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

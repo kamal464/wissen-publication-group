@@ -1,0 +1,17 @@
+{
+  "name": "admin-flow-tester",
+  "version": "1.0.0",
+  "description": "End-to-end testing for Universal Publishers Admin Panel",
+  "main": "test-admin-flow.js",
+  "scripts": {
+    "test": "node test-admin-flow.js",
+    "test:headless": "HEADLESS=true node test-admin-flow.js"
+  },
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  },
+  "devDependencies": {},
+  "keywords": ["testing", "e2e", "admin", "puppeteer"],
+  "author": "Universal Publishers",
+  "license": "MIT"
+}
