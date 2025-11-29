@@ -106,7 +106,13 @@ async function bootstrap() {
         app.enableCors({
             origin: app_config_1.config.cors.origin,
             credentials: app_config_1.config.cors.credentials,
+            methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+            exposedHeaders: ['Content-Type', 'Authorization'],
+            preflightContinue: false,
+            optionsSuccessStatus: 200,
         });
+        console.log('🌐 CORS enabled for origins:', Array.isArray(app_config_1.config.cors.origin) ? app_config_1.config.cors.origin.join(', ') : app_config_1.config.cors.origin);
         const port = Number(process.env.PORT || 8080);
         console.log(`🔌 Starting server on port ${port}...`);
         await app.listen(port, '0.0.0.0');

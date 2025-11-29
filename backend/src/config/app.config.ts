@@ -13,7 +13,12 @@ export const config = {
     expiresIn: '1d',
   },
   cors: {
-    origin: process.env.CORS_ORIGIN || ['http://localhost:3000', 'http://localhost:3002'],
+    // Support both string (comma-separated) and array formats
+    origin: process.env.CORS_ORIGIN 
+      ? (process.env.CORS_ORIGIN.includes(',') 
+          ? process.env.CORS_ORIGIN.split(',').map((o: string) => o.trim())
+          : process.env.CORS_ORIGIN)
+      : ['http://localhost:3000', 'http://localhost:3002'],
     credentials: true,
   },
 };

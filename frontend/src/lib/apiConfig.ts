@@ -13,13 +13,19 @@ export const getApiBaseUrl = (): string => {
   let apiUrl: string | undefined;
   
   // First, try to get from a global variable that we'll inject at runtime via script tag
+  // The script tag is injected in layout.tsx (server-side) and should be available immediately
   if (typeof window !== 'undefined') {
     // Browser: Check for runtime-injected value (from layout.tsx script tag)
     const injectedUrl = (window as any).__API_BASE_URL__;
     if (injectedUrl) {
+      // Ensure the URL ends with /api
       const finalUrl = injectedUrl.endsWith('/api') ? injectedUrl : `${injectedUrl}/api`;
       console.log('✅ Using runtime-injected API URL:', finalUrl);
       return finalUrl;
+    } else {
+      // Script tag might not have executed yet, wait a bit and try again
+      // This is a fallback for edge cases
+      console.warn('⚠️ window.__API_BASE_URL__ not found, script tag may not have executed yet');
     }
   }
   

@@ -16,7 +16,11 @@ exports.config = {
         expiresIn: '1d',
     },
     cors: {
-        origin: process.env.CORS_ORIGIN || ['http://localhost:3000', 'http://localhost:3002'],
+        origin: process.env.CORS_ORIGIN
+            ? (process.env.CORS_ORIGIN.includes(',')
+                ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+                : process.env.CORS_ORIGIN)
+            : ['http://localhost:3000', 'http://localhost:3002'],
         credentials: true,
     },
 };

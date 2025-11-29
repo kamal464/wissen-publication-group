@@ -89,10 +89,19 @@ async function bootstrap() {
   // Set global prefix for all API routes (this doesn't affect the /uploads route above)
   app.setGlobalPrefix('api');
   
+  // Enable CORS with proper configuration to handle preflight requests
   app.enableCors({
     origin: config.cors.origin,
     credentials: config.cors.credentials,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+    exposedHeaders: ['Content-Type', 'Authorization'],
+    preflightContinue: false, // Don't continue to next handler for OPTIONS
+    optionsSuccessStatus: 200, // Return 200 for OPTIONS instead of 204
   });
+  
+  // Log CORS configuration
+  console.log('🌐 CORS enabled for origins:', Array.isArray(config.cors.origin) ? config.cors.origin.join(', ') : config.cors.origin);
   
     const port = Number(process.env.PORT || 8080);
     console.log(`🔌 Starting server on port ${port}...`);

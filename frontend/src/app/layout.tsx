@@ -20,9 +20,20 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  // Server-side: Read env var (available at runtime in Cloud Run, or from .env.local in dev)
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased min-h-screen`}>
+        {/* Inject API URL as script tag in body (server-side rendered) */}
+        {apiUrl && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.__API_BASE_URL__ = ${JSON.stringify(apiUrl)};`,
+            }}
+          />
+        )}
         <InjectApiUrl />
         <ReduxProvider>
           {children}

@@ -3,22 +3,19 @@
 import { useEffect } from 'react';
 
 /**
- * Client component to inject API URL at runtime
- * This works around the limitation that NEXT_PUBLIC_* vars aren't replaced
- * in standalone SSR builds
+ * Client component to verify API URL injection
+ * The actual injection happens via script tag in layout.tsx (server-side)
+ * This component just logs for debugging
  */
 export function InjectApiUrl() {
   useEffect(() => {
-    // Get API URL from environment (available at runtime in Cloud Run)
-    // In local dev, this comes from .env.local
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    
-    if (apiUrl && typeof window !== 'undefined') {
-      // Inject into window for client-side access
-      (window as any).__API_BASE_URL__ = apiUrl;
-      console.log('✅ Injected API URL:', apiUrl);
-    } else if (typeof window !== 'undefined') {
-      console.warn('⚠️ NEXT_PUBLIC_API_URL not available for injection');
+    if (typeof window !== 'undefined') {
+      const injectedUrl = (window as any).__API_BASE_URL__;
+      if (injectedUrl) {
+        console.log('✅ API URL injected successfully:', injectedUrl);
+      } else {
+        console.warn('⚠️ API URL not injected - check server-side script tag');
+      }
     }
   }, []);
 
