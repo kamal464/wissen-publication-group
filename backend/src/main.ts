@@ -9,8 +9,9 @@ async function bootstrap() {
   try {
     console.log('🚀 Starting Wissen Publication Group API...');
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔌 PORT: ${process.env.PORT || '8080'}`);
+    console.log(`🔌 PORT: ${process.env.PORT || config.app.port}`);
     console.log(`💾 DATABASE_URL: ${process.env.DATABASE_URL ? 'Set' : 'Not set'}`);
+    console.log(`🌐 CORS_ORIGIN: ${process.env.CORS_ORIGIN || 'Not set (using defaults)'}`);
     
     console.log('📦 Creating NestJS application...');
     const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -137,7 +138,7 @@ async function bootstrap() {
     console.log(`✅ Wissen Publication Group API running on http://0.0.0.0:${port}/api`);
     console.log(`📁 Files available at http://0.0.0.0:${port}/uploads/`);
     console.log(`🌐 Server is ready and listening on port ${port}`);
-    console.log(`💚 Health check available at http://0.0.0.0:${port}/api/health`);
+    console.log(`💚 Health check available at http://0.0.0.0:${port}/health`);
   } catch (error) {
     console.error('❌ Failed to start application:', error);
     if (error instanceof Error) {
