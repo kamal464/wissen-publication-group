@@ -47,7 +47,7 @@ export default function JournalShortcodePage() {
     try {
       setLoading(true);
       const response = await adminAPI.getJournalShortcodes();
-      setShortcodes(response.data || []);
+      setShortcodes((response.data as JournalShortcode[]) || []);
       setBackendOnline(true);
     } catch (error: any) {
       console.error('Error loading shortcodes:', error);

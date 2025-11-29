@@ -12,11 +12,13 @@ const menuItems: NavMenuItemProps[] = [
   { label: 'Home', href: '/' },
   { label: 'About Us', href: '/about' },
   { label: 'Journals', href: '/journals' },
-  { label: 'Articles', href: '/articles' },
-  { label: 'Editorial Board', href: '/editorial-board' },
-  { label: 'Instructions to Authors', href: '/instructions' },
+  { label: 'Guidelines', href: '/instructions' }, // Using /instructions as guidelines page
   { label: 'Submit Manuscript', href: '/submit-manuscript', variant: 'cta' },
   { label: 'Contact Us', href: '/contact' },
+  // Commented out items:
+  // { label: 'Articles', href: '/articles' },
+  // { label: 'Editorial Board', href: '/editorial-board' },
+  // { label: 'Instructions to Authors', href: '/instructions' },
 ];
 
 export default function Header() {
@@ -40,11 +42,11 @@ export default function Header() {
       <div className="header">
         <div className="header__container">
           {!isSearchOpen && (
-            <Link href="/" className="header__logo" aria-label="Universal Publishers homepage">
-              <div className="header__logo-icon">UP</div>
+            <Link href="/" className="header__logo" aria-label="Wissen Publication Group homepage">
+              <div className="header__logo-icon">WPG</div>
               <div className="header__logo-text">
-                <span className="primary">UNIVERSAL</span>
-                <span className="secondary">PUBLISHERS</span>
+                <span className="primary">WISSEN</span>
+                <span className="secondary">PUBLICATION GROUP</span>
               </div>
             </Link>
           )}

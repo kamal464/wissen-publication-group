@@ -176,7 +176,7 @@ export default function EditorialBoardPage() {
             <Card className="intro-card">
               <h2>About Our Editorial Board</h2>
               <p>
-                The Editorial Board of Universal Publishers consists of internationally recognized 
+                The Editorial Board of Wissen Publication Group consists of internationally recognized 
                 scholars and researchers who are leaders in their respective fields. Our editorial 
                 team is committed to maintaining the highest standards of scientific rigor, ethical 
                 publishing practices, and advancing knowledge across diverse disciplines.

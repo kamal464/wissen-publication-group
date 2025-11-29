@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const admin_service_1 = require("./admin.service");
 let AdminController = class AdminController {
     adminService;
@@ -105,6 +106,64 @@ let AdminController = class AdminController {
     }
     globalSearch(query) {
         return this.adminService.globalSearch(query);
+    }
+    async uploadJournalImage(id, field, file) {
+        if (!file) {
+            throw new Error('No file uploaded');
+        }
+        const fileUrl = `/uploads/${file.filename}`;
+        const updateData = {};
+        if (field === 'bannerImage')
+            updateData.bannerImage = fileUrl;
+        else if (field === 'flyerImage')
+            updateData.flyerImage = fileUrl;
+        else if (field === 'flyerPdf')
+            updateData.flyerPdf = fileUrl;
+        else if (field === 'googleIndexingImage')
+            updateData.googleIndexingImage = fileUrl;
+        else if (field === 'editorImage')
+            updateData.editorImage = fileUrl;
+        else {
+            throw new Error(`Invalid field: ${field}`);
+        }
+        const updated = await this.adminService.updateJournal(id, updateData);
+        return {
+            success: true,
+            url: fileUrl,
+            field,
+            journal: updated
+        };
+    }
+    getBoardMembers(journalId) {
+        const journalIdNum = journalId ? parseInt(journalId) : undefined;
+        return this.adminService.getBoardMembers(journalIdNum);
+    }
+    getBoardMember(id) {
+        return this.adminService.getBoardMember(id);
+    }
+    createBoardMember(memberData) {
+        if (!memberData.journalId) {
+            throw new Error('Journal ID is required');
+        }
+        return this.adminService.createBoardMember(memberData.journalId, memberData);
+    }
+    updateBoardMember(id, memberData) {
+        return this.adminService.updateBoardMember(id, memberData);
+    }
+    deleteBoardMember(id) {
+        return this.adminService.deleteBoardMember(id);
+    }
+    async uploadBoardMemberPhoto(id, file) {
+        if (!file) {
+            throw new Error('No file uploaded');
+        }
+        const fileUrl = `/uploads/${file.filename}`;
+        const updated = await this.adminService.updateBoardMember(id, { imageUrl: fileUrl });
+        return {
+            success: true,
+            path: fileUrl,
+            member: updated
+        };
     }
 };
 exports.AdminController = AdminController;
@@ -281,6 +340,61 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "globalSearch", null);
+__decorate([
+    (0, common_1.Post)('journals/:id/upload-image'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)('field')),
+    __param(2, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "uploadJournalImage", null);
+__decorate([
+    (0, common_1.Get)('board-members'),
+    __param(0, (0, common_1.Query)('journalId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getBoardMembers", null);
+__decorate([
+    (0, common_1.Get)('board-members/:id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getBoardMember", null);
+__decorate([
+    (0, common_1.Post)('board-members'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "createBoardMember", null);
+__decorate([
+    (0, common_1.Put)('board-members/:id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "updateBoardMember", null);
+__decorate([
+    (0, common_1.Delete)('board-members/:id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "deleteBoardMember", null);
+__decorate([
+    (0, common_1.Post)('board-members/:id/upload-photo'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "uploadBoardMemberPhoto", null);
 exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
     __metadata("design:paramtypes", [admin_service_1.AdminService])

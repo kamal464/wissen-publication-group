@@ -267,7 +267,7 @@ function SubmissionSuccessContent() {
     yPos += 10;
     doc.setFontSize(8);
     doc.setTextColor(153, 153, 153);
-    doc.text(`© ${new Date().getFullYear()} Universal Publishers. All rights reserved.`, pageWidth / 2, yPos, { align: 'center' });
+    doc.text(`© ${new Date().getFullYear()} Wissen Publication Group. All rights reserved.`, pageWidth / 2, yPos, { align: 'center' });
 
     // Save the PDF
     doc.save(`manuscript-receipt-${manuscriptData.id}.pdf`);
@@ -478,7 +478,7 @@ function SubmissionSuccessContent() {
   </div>
 
   <div class="footer">
-    <p>© ${new Date().getFullYear()} Universal Publishers. All rights reserved.</p>
+    <p>© ${new Date().getFullYear()} Wissen Publication Group. All rights reserved.</p>
     <p>This is an automated receipt. Please keep it for your records.</p>
   </div>
 

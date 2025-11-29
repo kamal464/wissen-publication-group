@@ -17,13 +17,6 @@ export default function MainContent() {
       icon: "pi pi-file-edit",
       link: "/articles",
       stats: "10,000+ Articles"
-    },
-    {
-      title: "Cultural Books",
-      description: "Diverse literature connecting global perspectives and cultural insights",
-      icon: "pi pi-globe",
-      link: "/books",
-      stats: "500+ Books"
     }
   ];
 
@@ -80,7 +73,7 @@ export default function MainContent() {
               What We Offer
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Discover our extensive collection of academic journals, research articles, and cultural books published to the highest standards.
+              Discover our extensive collection of academic journals and research articles published to the highest standards.
             </p>
           </div>
           
@@ -121,7 +114,7 @@ export default function MainContent() {
               Publish With Us
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Join thousands of researchers who trust Universal Publishers for their scholarly publications.
+              Join thousands of researchers who trust Wissen Publication Group for their scholarly publications.
             </p>
           </div>
           
@@ -158,7 +151,7 @@ export default function MainContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-4xl font-bold mb-4">
-                About Universal Publishers
+                About Wissen Publication Group
               </h2>
               <p className="text-lg text-blue-100 mb-6">
                 Since 1998, we've been advancing knowledge through excellence in academic publishing. 
@@ -244,7 +237,7 @@ export default function MainContent() {
               Ready to Share Your Research?
             </h2>
             <p className="text-xl mb-8 text-blue-100">
-              Join our global community of researchers and publish your work with Universal Publishers today.
+              Join our global community of researchers and publish your work with Wissen Publication Group today.
             </p>
             <div className="flex justify-center gap-4 flex-wrap">
               <Link href="/submit-manuscript">

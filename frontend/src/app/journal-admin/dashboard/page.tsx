@@ -34,9 +34,62 @@ export default function JournalAdminDashboard() {
   const [journals, setJournals] = useState<Journal[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editorsCount, setEditorsCount] = useState(0);
+  const [issuesCount, setIssuesCount] = useState(0);
+  const [articlesCount, setArticlesCount] = useState(0);
 
   useEffect(() => {
     loadDashboardData();
+    // Load counts from database
+    const loadCounts = async () => {
+      try {
+        const username = localStorage.getItem('journalAdminUser');
+        if (!username) return;
+
+        const usersResponse = await adminAPI.getUsers();
+        const users = (usersResponse.data as any[]) || [];
+        const user = users.find((u: any) => u.userName === username || u.journalShort === username);
+        
+        if (user && user.journalName) {
+          const journalsResponse = await adminAPI.getJournals();
+          const journals = (journalsResponse.data as any[]) || [];
+          const journal = journals.find((j: any) => j.title === user.journalName);
+          
+          if (journal) {
+            // Get articles count
+            const articlesResponse = await adminAPI.getArticles({ journalId: journal.id });
+            setArticlesCount(Array.isArray(articlesResponse.data) ? articlesResponse.data.length : 0);
+            
+            // Load board members count
+            try {
+              const boardMembersResponse = await adminAPI.getBoardMembers(journal.id);
+              setEditorsCount(Array.isArray(boardMembersResponse.data) ? boardMembersResponse.data.length : 0);
+            } catch (err) {
+              setEditorsCount(0);
+            }
+            
+            // Load published articles count for issues
+            try {
+              const publishedResponse = await adminAPI.getArticles({ journalId: journal.id, status: 'PUBLISHED' });
+              const publishedArticles = Array.isArray(publishedResponse.data) ? publishedResponse.data : [];
+              // Count unique volume/issue combinations
+              const uniqueIssues = new Set<string>();
+              publishedArticles.forEach((article: any) => {
+                if (article.volumeNo && article.issueNo) {
+                  uniqueIssues.add(`${article.volumeNo}-${article.issueNo}`);
+                }
+              });
+              setIssuesCount(uniqueIssues.size);
+            } catch (err) {
+              setIssuesCount(0);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading counts:', error);
+      }
+    };
+    loadCounts();
   }, []);
 
   const loadDashboardData = async () => {
@@ -100,40 +153,29 @@ export default function JournalAdminDashboard() {
     }
   };
 
+
   const stats = [
     { 
-      title: 'Total Journals', 
-      value: Array.isArray(journals) ? journals.length : 0, 
-      icon: 'pi pi-book', 
-      color: 'primary',
-      trend: '+2 this month',
-      trendType: 'positive'
+      title: 'Editors', 
+      value: editorsCount, 
+      icon: 'pi pi-users', 
+      color: 'primary'
     },
     { 
-      title: 'Total Articles', 
-      value: Array.isArray(articles) ? articles.length : 0, 
-      icon: 'pi pi-file-edit', 
-      color: 'success',
-      trend: '+12 this week',
-      trendType: 'positive'
-    },
-    { 
-      title: 'Pending Reviews', 
-      value: Array.isArray(articles) ? articles.filter(a => a.status === 'PENDING').length : 0, 
-      icon: 'pi pi-clock', 
-      color: 'warning',
-      trend: '+3 from last week',
-      trendType: 'negative'
-    },
-    { 
-      title: 'Published This Month', 
-      value: Array.isArray(articles) ? articles.filter(a => a.status === 'PUBLISHED').length : 0, 
+      title: 'Issues', 
+      value: issuesCount, 
       icon: 'pi pi-calendar', 
-      color: 'danger',
-      trend: '+5 from last month',
-      trendType: 'positive'
+      color: 'success'
+    },
+    { 
+      title: 'Articles', 
+      value: articlesCount, 
+      icon: 'pi pi-file-edit', 
+      color: 'info'
     }
   ];
+
+  const maxValue = Math.max(...stats.map(s => s.value), 1);
 
   return (
     <div className="admin-dashboard">
@@ -158,21 +200,40 @@ export default function JournalAdminDashboard() {
         </div>
       </div>
 
-      <div className="stats-grid">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {stats.map((stat, index) => (
-          <div key={index} className="stat-card">
-            <div className="stat-header">
-              <div className={`stat-icon ${stat.color}`}>
-                <i className={stat.icon}></i>
-              </div>
-              <div className={`stat-trend ${stat.trendType}`}>
-                {stat.trend}
+          <div key={index} className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className={`w-12 h-12 rounded-lg bg-${stat.color === 'primary' ? 'blue' : stat.color === 'success' ? 'green' : 'blue'}-100 flex items-center justify-center`}>
+                <i className={`${stat.icon} text-${stat.color === 'primary' ? 'blue' : stat.color === 'success' ? 'green' : 'blue'}-600 text-xl`}></i>
               </div>
             </div>
-            <div className="stat-value">{stat.value}</div>
-            <div className="stat-label">{stat.title}</div>
+            <div className="text-3xl font-bold text-gray-900 mb-1">{stat.value.toLocaleString()}</div>
+            <div className="text-sm text-gray-600">{stat.title}</div>
           </div>
         ))}
+      </div>
+
+      {/* Bar Chart */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Statistics Overview</h2>
+        <div className="space-y-4">
+          {stats.map((stat, index) => {
+            const percentage = (stat.value / maxValue) * 100;
+            return (
+              <div key={index} className="flex items-center gap-4">
+                <div className="w-24 text-sm text-gray-700 font-medium">{stat.title}</div>
+                <div className="flex-1 h-8 bg-gray-200 rounded overflow-hidden">
+                  <div 
+                    className={`h-full bg-${stat.color === 'primary' ? 'blue' : stat.color === 'success' ? 'green' : 'blue'}-600 transition-all duration-300`}
+                    style={{ width: `${percentage}%` }}
+                  ></div>
+                </div>
+                <div className="w-16 text-right font-bold text-gray-900">{stat.value}</div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -27,65 +27,76 @@ export default function JournalAdminLayout({ children }: JournalAdminLayoutProps
   const pathname = usePathname();
 
   const menuItems: MenuItem[] = [
+    // ✔ Welcome
     {
       id: 'dashboard',
-      label: 'Dashboard',
+      label: 'Welcome',
       icon: 'pi pi-home',
       href: '/journal-admin/dashboard'
     },
+    // Group: Journal Management
     {
       id: 'journals',
       label: 'Journal Management',
       icon: 'pi pi-book',
       children: [
+        // ✔ Manage Journal Information
         {
           id: 'journal-info',
           label: 'Manage Journal Information',
           icon: 'pi pi-info-circle',
           href: '/journal-admin/journals'
         },
+        // ✔ Manage Meta Information
         {
           id: 'journal-meta',
           label: 'Manage Meta Information',
           icon: 'pi pi-tags',
           href: '/journal-admin/journals/meta'
         },
+        // ✔ Journal Home Page
         {
           id: 'journal-home',
           label: 'Journal Home Page',
           icon: 'pi pi-globe',
           href: '/journal-admin/journals/home'
         },
+        // ✔ Aims & Scope
         {
           id: 'aims-scope',
           label: 'Aims & Scope',
           icon: 'pi pi-compass',
           href: '/journal-admin/journals/aims-scope'
         },
+        // ✔ Guidelines
         {
           id: 'guidelines',
           label: 'Guidelines',
           icon: 'pi pi-book',
           href: '/journal-admin/journals/guidelines'
         },
+        // ✔ Editorial Board
         {
           id: 'editorial-board',
           label: 'Editorial Board',
           icon: 'pi pi-users',
           href: '/journal-admin/journals/editorial-board'
         },
+        // ✔ Articles in Press
         {
           id: 'articles-press',
           label: 'Articles in Press',
           icon: 'pi pi-clock',
           href: '/journal-admin/journals/articles-press'
         },
+        // ✔ Current Issue
         {
           id: 'current-issue',
           label: 'Current Issue',
           icon: 'pi pi-calendar',
           href: '/journal-admin/journals/current-issue'
         },
+        // ✔ Archive Page
         {
           id: 'archive',
           label: 'Archive Page',
@@ -94,52 +105,14 @@ export default function JournalAdminLayout({ children }: JournalAdminLayoutProps
         }
       ]
     },
+    // ✔ Search Articles
     {
-      id: 'articles',
-      label: 'Article Management',
-      icon: 'pi pi-file-edit',
-      children: [
-        {
-          id: 'all-articles',
-          label: 'All Articles',
-          icon: 'pi pi-list',
-          href: '/journal-admin/articles',
-          badge: '45'
-        },
-        {
-          id: 'search-articles',
-          label: 'Search Articles',
-          icon: 'pi pi-search',
-          href: '/journal-admin/articles/search'
-        },
-        {
-          id: 'review-articles',
-          label: 'Review Articles',
-          icon: 'pi pi-eye',
-          href: '/journal-admin/articles/review',
-          badge: '12'
-        },
-        {
-          id: 'pending-articles',
-          label: 'Pending Submissions',
-          icon: 'pi pi-clock',
-          href: '/journal-admin/articles/pending',
-          badge: '8'
-        }
-      ]
-    },
-    {
-      id: 'analytics',
-      label: 'Analytics',
-      icon: 'pi pi-chart-bar',
-      href: '/journal-admin/analytics'
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: 'pi pi-cog',
-      href: '/journal-admin/settings'
+      id: 'search-articles',
+      label: 'Search Articles',
+      icon: 'pi pi-search',
+      href: '/journal-admin/articles/search'
     }
+    // NOT ALLOWED removed: User Management, Shortcodes, Site/SEO Settings, Analytics, etc.
   ];
 
   useEffect(() => {
@@ -304,7 +277,7 @@ export default function JournalAdminLayout({ children }: JournalAdminLayoutProps
               <i className="pi pi-shield"></i>
             </div>
             <div>
-              <div className="logo-text">Universal Publishers</div>
+              <div className="logo-text">Wissen Publication Group</div>
               <div className="logo-subtitle">Journal Admin</div>
             </div>
           </Link>

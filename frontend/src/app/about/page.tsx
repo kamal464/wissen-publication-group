@@ -21,7 +21,7 @@ export default function AboutPage() {
           {/* Hero Section */}
           <section className="about-hero">
             <div className="hero-content">
-              <h1>About Universal Publishers</h1>
+              <h1>About Wissen Publication Group</h1>
               <p className="lead">
                 Advancing knowledge through excellence in academic publishing since 1998
               </p>
@@ -36,7 +36,7 @@ export default function AboutPage() {
               </div>
               <h2>Our Mission</h2>
               <p>
-                Universal Publishers is committed to advancing scholarly research and academic excellence 
+                Wissen Publication Group is committed to advancing scholarly research and academic excellence 
                 by providing a premier platform for researchers, academics, and institutions worldwide. 
                 We strive to facilitate the dissemination of high-quality research across diverse 
                 disciplines through rigorous peer review and innovative publishing practices.
@@ -126,7 +126,7 @@ export default function AboutPage() {
                   <h3>1998</h3>
                   <h4>Foundation</h4>
                   <p>
-                    Universal Publishers was established with a vision to provide accessible 
+                    Wissen Publication Group was established with a vision to provide accessible 
                     academic publishing services to researchers worldwide.
                   </p>
                 </div>

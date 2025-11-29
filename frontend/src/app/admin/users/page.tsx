@@ -70,7 +70,7 @@ export default function UsersPage() {
     try {
       setLoading(true);
       const response = await adminAPI.getUsers(searchQuery || undefined);
-      setUsers(response.data || []);
+      setUsers((response.data as User[]) || []);
     } catch (error: any) {
       console.error('Error loading users:', error);
       const errorMessage = error.response?.data?.message || 
@@ -123,7 +123,7 @@ export default function UsersPage() {
     try {
       // Fetch all users to get unique categories from database
       const response = await adminAPI.getUsers();
-      const usersData = response.data || [];
+      const usersData = (response.data as User[]) || [];
       
       // Extract unique categories from users
       const uniqueCategories = new Set<string>();
@@ -209,16 +209,16 @@ export default function UsersPage() {
     try {
       // Fetch full user details from database
       const response = await adminAPI.getUser(user.id);
-      const userData = response.data;
+      const userData = response.data as any;
       
       // Populate form with database data
       setEditingUser({
         firstName: '', // These fields might not be in the User model yet
         lastName: '', // These fields might not be in the User model yet
-        userName: userData.userName || user.userName,
+        userName: userData?.userName || user.userName,
         password: '', // Don't populate password for security
-        managingJournalName: userData.journalName || '',
-        journalDomainName: userData.journalName || '',
+        managingJournalName: userData?.journalName || '',
+        journalDomainName: userData?.journalName || '',
         journalUrl: '', // This field might not be in the User model yet
         journalId: null, // Try to find matching journal by name
         journalShort: userData.journalShort || user.journalShort || '',
@@ -655,13 +655,12 @@ export default function UsersPage() {
               options={categories.map(c => ({ label: c, value: c }))}
               onChange={(e) => setEditingUser({ ...editingUser, category: e.value })}
               placeholder="Select Category"
-              className="w-full"
+              className="w-full category-dropdown"
               panelStyle={{ zIndex: 10000 }}
               appendTo="self"
               filter
               filterPlaceholder="Search categories..."
               showClear={!!editingUser.category}
-              className="category-dropdown"
             />
           </div>
 
@@ -723,14 +722,13 @@ export default function UsersPage() {
               options={[{ label: 'Select Journal', value: null }, ...journalOptions]}
               onChange={(e) => setEditingUser({ ...editingUser, journalId: e.value })}
               placeholder="Select Journal"
-              className="w-full"
+              className="w-full journal-dropdown"
               panelStyle={{ zIndex: 10000 }}
               appendTo="self"
               loading={loadingJournals}
               filter
               filterPlaceholder="Search journals..."
               showClear={!!editingUser.journalId}
-              className="journal-dropdown"
             />
           </div>
         </div>

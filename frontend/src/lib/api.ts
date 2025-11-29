@@ -75,6 +75,9 @@ export const adminAPI = {
     meta: (response.data as any)?.meta || {}
   })),
   getArticle: (id: number) => api.get(`/articles/${id}`),
+  createArticle: (data: any) => api.post('/articles', data),
+  updateArticle: (id: number, data: any) => api.patch(`/articles/${id}`, data),
+  deleteArticle: (id: number) => api.delete(`/articles/${id}`),
   updateArticleStatus: (id: number, status: string, comments?: string) => 
     api.put(`/admin/articles/${id}/status`, { status, comments }),
   
@@ -122,6 +125,35 @@ export const adminAPI = {
 
   // Global Search
   globalSearch: (query: string) => api.get('/admin/search', { params: { query } }),
+
+  // Journal Image Upload
+  uploadJournalImage: (journalId: number, field: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('field', field);
+    return api.post(`/admin/journals/${journalId}/upload-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Board Members
+  getBoardMembers: (journalId?: number) => 
+    api.get('/admin/board-members', { params: journalId ? { journalId } : {} }),
+  getBoardMember: (id: number) => api.get(`/admin/board-members/${id}`),
+  createBoardMember: (data: any) => api.post('/admin/board-members', data),
+  updateBoardMember: (id: number, data: any) => api.put(`/admin/board-members/${id}`, data),
+  deleteBoardMember: (id: number) => api.delete(`/admin/board-members/${id}`),
+  uploadBoardMemberPhoto: (id: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/admin/board-members/${id}/upload-photo`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 // Journal Management API

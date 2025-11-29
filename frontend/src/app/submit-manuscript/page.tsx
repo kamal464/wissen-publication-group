@@ -22,6 +22,7 @@ interface Author {
   name: string;
   email: string;
   affiliation: string;
+  phone: string;
 }
 
 interface Journal {
@@ -44,7 +45,7 @@ export default function SubmitManuscriptPage() {
   });
   
   const [authors, setAuthors] = useState<Author[]>([
-    { name: '', email: '', affiliation: '' }
+    { name: '', email: '', affiliation: '', phone: '' }
   ]);
   
   const [submitting, setSubmitting] = useState(false);
@@ -90,7 +91,7 @@ export default function SubmitManuscriptPage() {
   };
 
   const addAuthor = () => {
-    setAuthors([...authors, { name: '', email: '', affiliation: '' }]);
+    setAuthors([...authors, { name: '', email: '', affiliation: '', phone: '' }]);
   };
 
   const removeAuthor = (index: number) => {
@@ -141,8 +142,15 @@ export default function SubmitManuscriptPage() {
       toast.current?.show({ severity: 'warn', summary: 'Validation Error', detail: 'Abstract must be at least 100 characters', life: 3000 });
       return false;
     }
-    if (authors.some(a => !a.name.trim() || !a.email.trim())) {
-      toast.current?.show({ severity: 'warn', summary: 'Validation Error', detail: 'All authors must have name and email', life: 3000 });
+    if (authors.some(a => !a.name.trim() || !a.email.trim() || !a.phone.trim())) {
+      toast.current?.show({ severity: 'warn', summary: 'Validation Error', detail: 'All authors must have name, email, and phone number', life: 3000 });
+      return false;
+    }
+    
+    // Validate phone number format (basic validation)
+    const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+    if (authors.some(a => a.phone.trim() && !phoneRegex.test(a.phone.trim()))) {
+      toast.current?.show({ severity: 'warn', summary: 'Validation Error', detail: 'Please enter a valid phone number', life: 3000 });
       return false;
     }
     if (!form.pdf) {
@@ -395,7 +403,7 @@ export default function SubmitManuscriptPage() {
                     </div>
                     
                     <div className="form-row">
-                      <div className="form-group full-width">
+                      <div className="form-group">
                         <label htmlFor={`author-affiliation-${index}`} className="form-label">
                           Affiliation / Institution
                         </label>
@@ -404,6 +412,20 @@ export default function SubmitManuscriptPage() {
                           value={author.affiliation}
                           onChange={(e) => handleAuthorChange(index, 'affiliation', e.target.value)}
                           placeholder="e.g., Department of Computer Science, MIT"
+                          className="w-full"
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label htmlFor={`author-phone-${index}`} className="form-label required">
+                          Phone Number
+                        </label>
+                        <InputText
+                          id={`author-phone-${index}`}
+                          type="tel"
+                          value={author.phone}
+                          onChange={(e) => handleAuthorChange(index, 'phone', e.target.value)}
+                          placeholder="e.g., +1 (555) 123-4567"
                           className="w-full"
                         />
                       </div>

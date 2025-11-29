@@ -24,6 +24,8 @@ interface Submission {
   articleType: string | null;
   abstract: string;
   keywords: string | null;
+  pdfUrl?: string | null;
+  wordUrl?: string | null;
   authors: Array<{
     id: number;
     name: string;
@@ -49,7 +51,7 @@ export default function SubmissionsPage() {
     try {
       setLoading(true);
       const response = await adminAPI.getSubmissions(searchQuery || undefined);
-      setSubmissions(response.data || []);
+      setSubmissions(Array.isArray(response.data) ? response.data : []);
     } catch (error: any) {
       console.error('Error loading submissions:', error);
       const errorMessage = error.response?.data?.message || 
@@ -70,10 +72,84 @@ export default function SubmissionsPage() {
   const handleViewSubmission = async (id: number) => {
     try {
       const response = await adminAPI.getSubmission(id);
-      setSelectedSubmission(response.data);
+      const submissionData = response.data as Submission;
+      console.log('Submission data:', submissionData);
+      console.log('PDF URL:', submissionData?.pdfUrl);
+      console.log('Word URL:', submissionData?.wordUrl);
+      setSelectedSubmission(submissionData);
       setShowDialog(true);
     } catch (error) {
       toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to load submission details' });
+    }
+  };
+
+  const handleDownload = (url: string, filename: string) => {
+    try {
+      if (!url) {
+        toast.current?.show({ 
+          severity: 'warn', 
+          summary: 'Warning', 
+          detail: 'File not available for download' 
+        });
+        return;
+      }
+
+      // Construct the download URL - direct file link, no API calls
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      let downloadUrl: string;
+      
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        // Already a full URL
+        downloadUrl = url;
+      } else if (url.startsWith('/uploads/')) {
+        // Use API route /api/uploads/ (FilesController) - direct link, no fetch
+        // This is more reliable than static file serving
+        downloadUrl = `${apiBaseUrl}${url}`;
+      } else if (url.startsWith('/')) {
+        // Other absolute paths
+        const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+        downloadUrl = `${baseUrl}${url}`;
+      } else {
+        // Relative path
+        const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+        downloadUrl = `${baseUrl}/${url}`;
+      }
+
+      console.log('Download URL:', downloadUrl);
+
+      // Create a direct download link - force download behavior
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename; // This forces download instead of navigation
+      link.style.display = 'none';
+      link.setAttribute('download', filename); // Ensure download attribute is set
+      
+      // Append to body, click, then remove
+      document.body.appendChild(link);
+      
+      // Trigger click to start download
+      link.click();
+      
+      // Clean up after download starts
+      setTimeout(() => {
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+      }, 200);
+
+      toast.current?.show({ 
+        severity: 'success', 
+        summary: 'Success', 
+        detail: 'Download started' 
+      });
+    } catch (error: any) {
+      console.error('Download error:', error);
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: 'Failed to initiate download. Please check if the file exists on the server.',
+        life: 5000
+      });
     }
   };
 
@@ -189,7 +265,9 @@ export default function SubmissionsPage() {
         visible={showDialog}
         className="w-[95vw] sm:w-[80vw] max-w-[900px]"
         onHide={() => setShowDialog(false)}
-        footer={<Button label="Close" onClick={() => setShowDialog(false)} />}
+        footer={
+          <Button label="Close" onClick={() => setShowDialog(false)} />
+        }
       >
         {selectedSubmission && (
           <div className="flex flex-col gap-6">
@@ -250,6 +328,36 @@ export default function SubmissionsPage() {
               <div>
                 <h4 className="mb-2 text-slate-800">Keywords</h4>
                 <p className="text-slate-500">{selectedSubmission.keywords}</p>
+              </div>
+            )}
+
+            {(selectedSubmission.pdfUrl || selectedSubmission.wordUrl) && (
+              <div>
+                <h4 className="mb-2 text-slate-800">Download Files</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedSubmission.pdfUrl && (
+                    <Button
+                      label="Download PDF"
+                      icon="pi pi-file-pdf"
+                      className="p-button-danger p-button-outlined"
+                      onClick={() => handleDownload(
+                        selectedSubmission.pdfUrl!,
+                        `${selectedSubmission.title.replace(/[^a-z0-9]/gi, '_')}.pdf`
+                      )}
+                    />
+                  )}
+                  {selectedSubmission.wordUrl && (
+                    <Button
+                      label="Download Word Document"
+                      icon="pi pi-file-word"
+                      className="p-button-primary p-button-outlined"
+                      onClick={() => handleDownload(
+                        selectedSubmission.wordUrl!,
+                        `${selectedSubmission.title.replace(/[^a-z0-9]/gi, '_')}.docx`
+                      )}
+                    />
+                  )}
+                </div>
               </div>
             )}
           </div>

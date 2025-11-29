@@ -35,14 +35,11 @@ export default function HeroSection() {
             <span className="hero__eyebrow">JOURNALS</span>
             <h1 className="hero__title">Discover Journals by Renowned Databases</h1>
             <p className="hero__subtitle">
-              Explore an expansive catalogue of academic journals, cultural books, and research papers curated for scholars, professionals, and curious readers around the globe.
+              Explore an expansive catalogue of academic journals and research papers curated for scholars, professionals, and curious readers around the globe.
             </p>
             <div className="hero__actions">
               <Link href="/journals" className="btn btn--primary">
                 Explore Journals
-              </Link>
-              <Link href="/books" className="btn btn--secondary">
-                Browse Books
               </Link>
             </div>
           </div>
@@ -55,7 +52,7 @@ export default function HeroSection() {
                   type="search"
                   className="hero__search-input"
                   placeholder="What are you looking for?"
-                  aria-label="Search journals, books, or articles"
+                  aria-label="Search journals or articles"
                 />
                 <button type="submit" className="hero__search-button">
                   Search

@@ -58,7 +58,7 @@ export default function InstructionsPage() {
             <div className="hero-content">
               <h1>Instructions to Authors</h1>
               <p className="lead">
-                Complete guidelines for preparing and submitting your manuscript to Universal Publishers
+                Complete guidelines for preparing and submitting your manuscript to Wissen Publication Group
               </p>
             </div>
           </section>
@@ -185,7 +185,7 @@ export default function InstructionsPage() {
                 <div className="guideline-content">
                   <h3>Citation Style</h3>
                   <p>
-                    Universal Publishers accepts multiple citation styles. Please choose one and use 
+                    Wissen Publication Group accepts multiple citation styles. Please choose one and use 
                     it consistently throughout your manuscript:
                   </p>
                   <ul>
@@ -367,7 +367,7 @@ export default function InstructionsPage() {
                   <h3>Copyright</h3>
                   <ul>
                     <li>Authors retain copyright to their work</li>
-                    <li>Grant Universal Publishers license to publish</li>
+                    <li>Grant Wissen Publication Group license to publish</li>
                     <li>Authors can reuse their work freely</li>
                   </ul>
                 </div>

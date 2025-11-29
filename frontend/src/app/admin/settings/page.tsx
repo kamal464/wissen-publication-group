@@ -36,7 +36,7 @@ interface SettingsData {
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState<SettingsData>({
-    siteName: 'Universal Publishers',
+    siteName: 'Wissen Publication Group',
     siteDescription: 'Leading academic publishing platform',
     contactEmail: 'contact@universalpublishers.com',
     adminEmail: 'admin@universalpublishers.com',

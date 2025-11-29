@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:kamaldb@localhost:5432/universal_publishers"
+  url      = env("DATABASE_URL")
 }
 
 model Journal {
@@ -36,6 +36,38 @@ model Journal {
   metaKeywords String?
   doi         String?
   indexing    String?   @db.Text
+  
+  // Image Fields
+  bannerImage String?
+  flyerImage  String?
+  flyerPdf    String?
+  googleIndexingImage String?
+  
+  // Additional Journal Information
+  journalImpactFactor String?
+  articleProcessingCharge String?
+  icv String?
+  pubmedId String?
+  indexingAbstracting String? @db.Text
+  email String?
+  classification String?
+  citationsValue String?
+  acceptanceRate String?
+  conferenceUrl String?
+  
+  // Homepage Specific Fields
+  editorName String?
+  editorAffiliation String? @db.Text
+  editorImage String?
+  impactFactorValue String?
+  citationsPercentage String?
+  acceptancePercentage String?
+  googleAnalyticsTitle String?
+  googleAnalyticsValue String?
+  googleAnalyticsUrl String?
+  articleFormats String? @db.Text
+  journalDescription String? @db.Text
+  pubmedArticles String? @db.Text
   
   articles       Article[]
   boardMembers   BoardMember[]
@@ -138,18 +170,23 @@ model WebPage {
 }
 
 model BoardMember {
-  id          Int      @id @default(autoincrement())
-  name        String
-  position    String
-  affiliation String?
-  journalId   Int?
-  journal     Journal? @relation(fields: [journalId], references: [id])
-  email       String?
-  bio         String?  @db.Text
-  imageUrl    String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                Int      @id @default(autoincrement())
+  name              String
+  position          String
+  memberType        String?  // Editor-in-Chief, Associate Editor, etc.
+  editorType        String?  // Academic, Clinical, Industry, Other
+  affiliation       String?
+  journalId         Int?
+  journal           Journal? @relation(fields: [journalId], references: [id])
+  email             String?
+  bio               String?  @db.Text
+  description       String?  @db.Text  // Editor Description
+  biography         String?  @db.Text  // Editor Biography
+  imageUrl          String?
+  profileUrl        String?  // EB Profile URL
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model Notification {

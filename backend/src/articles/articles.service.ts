@@ -130,9 +130,19 @@ export class ArticlesService {
   async create(createArticleDto: CreateArticleDto) {
     const { authors, journalId, ...articleData } = createArticleDto;
 
+    // Only include fields that exist in the Article model
+    const validFields = ['title', 'abstract', 'keywords', 'status', 'pdfUrl', 'wordUrl', 'articleType', 'submittedAt', 'publishedAt', 'submitterName', 'submitterEmail', 'submitterAddress', 'submitterCountry'];
+    const filteredData: any = {};
+    
+    for (const key of validFields) {
+      if (articleData[key] !== undefined && articleData[key] !== null) {
+        filteredData[key] = articleData[key];
+      }
+    }
+
     return this.prisma.article.create({
       data: {
-        ...articleData,
+        ...filteredData,
         journal: {
           connect: { id: journalId },
         },
@@ -150,8 +160,26 @@ export class ArticlesService {
   async update(id: number, updateArticleDto: UpdateArticleDto) {
     const { authors, journalId, ...articleData } = updateArticleDto;
 
+    // Only include fields that exist in the Article model
+    const validFields = [
+      'title', 'abstract', 'keywords', 'status', 'pdfUrl', 'wordUrl', 'articleType',
+      'submittedAt', 'publishedAt', 'submitterName', 'submitterEmail', 'submitterAddress',
+      'submitterCountry', 'volumeNo', 'issueNo', 'issueMonth', 'year', 'specialIssue',
+      'firstPageNumber', 'lastPageNumber', 'doi', 'correspondingAuthorDetails', 'citeAs',
+      'country', 'fulltextImages', 'heading1Title', 'heading1Content', 'heading2Title',
+      'heading2Content', 'heading3Title', 'heading3Content', 'heading4Title', 'heading4Content',
+      'heading5Title', 'heading5Content'
+    ];
+    const filteredData: any = {};
+    
+    for (const key of validFields) {
+      if (articleData[key] !== undefined && articleData[key] !== null) {
+        filteredData[key] = articleData[key];
+      }
+    }
+
     const updateData: any = {
-      ...articleData,
+      ...filteredData,
     };
 
     if (journalId !== undefined) {
@@ -159,8 +187,9 @@ export class ArticlesService {
     }
 
     if (authors) {
+      // Delete existing authors and create new ones
+      await this.prisma.author.deleteMany({ where: { articles: { some: { id } } } });
       updateData.authors = {
-        set: [],
         create: authors,
       };
     }

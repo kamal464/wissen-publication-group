@@ -3,6 +3,7 @@ export type Journal = {
   title: string;
   description?: string;
   issn?: string;
+  shortcode?: string;
   coverImage?: string;
   publisher?: string;
   accessType?: string;

@@ -52,7 +52,7 @@ export default function AdminLogin() {
               <i className="pi pi-shield text-white text-2xl" />
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Admin Portal</h1>
-            <p className="mt-1 text-sm text-gray-500">Universal Publishers · Manage your academic publishing platform</p>
+            <p className="mt-1 text-sm text-gray-500">Wissen Publication Group · Manage your academic publishing platform</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-8">
@@ -111,7 +111,7 @@ export default function AdminLogin() {
       </div>
 
       <div className="w-full text-center text-gray-500 text-xs">
-        &copy; 2024 Universal Publishers. All rights reserved.
+        &copy; 2024 Wissen Publication Group. All rights reserved.
       </div>
     </div>
   );

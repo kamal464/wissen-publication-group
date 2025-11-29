@@ -50,7 +50,7 @@ export default function JournalAdminLogin() {
               <i className="pi pi-book text-white text-2xl"></i>
             </div>
             <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-gray-900">Journal Admin Portal</h1>
-            <p className="mt-1 text-sm text-gray-500">Universal Publishers · Manage journals and articles</p>
+            <p className="mt-1 text-sm text-gray-500">Wissen Publication Group · Manage journals and articles</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-8">
@@ -109,7 +109,7 @@ export default function JournalAdminLogin() {
       </div>
 
       <div className="w-full text-center text-gray-500 text-xs">
-        &copy; 2024 Universal Publishers. All rights reserved.
+        &copy; 2024 Wissen Publication Group. All rights reserved.
       </div>
     </div>
   );

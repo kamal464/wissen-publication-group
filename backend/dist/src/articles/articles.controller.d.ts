@@ -30,14 +30,40 @@ export declare class ArticlesController {
             metaKeywords: string | null;
             doi: string | null;
             indexing: string | null;
+            bannerImage: string | null;
+            flyerImage: string | null;
+            flyerPdf: string | null;
+            googleIndexingImage: string | null;
+            journalImpactFactor: string | null;
+            articleProcessingCharge: string | null;
+            icv: string | null;
+            pubmedId: string | null;
+            indexingAbstracting: string | null;
+            email: string | null;
+            classification: string | null;
+            citationsValue: string | null;
+            acceptanceRate: string | null;
+            conferenceUrl: string | null;
+            editorName: string | null;
+            editorAffiliation: string | null;
+            editorImage: string | null;
+            impactFactorValue: string | null;
+            citationsPercentage: string | null;
+            acceptancePercentage: string | null;
+            googleAnalyticsTitle: string | null;
+            googleAnalyticsValue: string | null;
+            googleAnalyticsUrl: string | null;
+            articleFormats: string | null;
+            journalDescription: string | null;
+            pubmedArticles: string | null;
             createdAt: Date;
             updatedAt: Date;
         };
         authors: {
             id: number;
+            email: string;
             createdAt: Date;
             name: string;
-            email: string;
             affiliation: string | null;
         }[];
     } & {
@@ -66,9 +92,9 @@ export declare class ArticlesController {
             };
             authors: {
                 id: number;
+                email: string;
                 createdAt: Date;
                 name: string;
-                email: string;
                 affiliation: string | null;
             }[];
         } & {
@@ -104,9 +130,9 @@ export declare class ArticlesController {
         };
         authors: {
             id: number;
+            email: string;
             createdAt: Date;
             name: string;
-            email: string;
             affiliation: string | null;
         }[];
     } & {
@@ -133,9 +159,9 @@ export declare class ArticlesController {
         };
         authors: {
             id: number;
+            email: string;
             createdAt: Date;
             name: string;
-            email: string;
             affiliation: string | null;
         }[];
     } & {
@@ -181,14 +207,40 @@ export declare class ArticlesController {
             metaKeywords: string | null;
             doi: string | null;
             indexing: string | null;
+            bannerImage: string | null;
+            flyerImage: string | null;
+            flyerPdf: string | null;
+            googleIndexingImage: string | null;
+            journalImpactFactor: string | null;
+            articleProcessingCharge: string | null;
+            icv: string | null;
+            pubmedId: string | null;
+            indexingAbstracting: string | null;
+            email: string | null;
+            classification: string | null;
+            citationsValue: string | null;
+            acceptanceRate: string | null;
+            conferenceUrl: string | null;
+            editorName: string | null;
+            editorAffiliation: string | null;
+            editorImage: string | null;
+            impactFactorValue: string | null;
+            citationsPercentage: string | null;
+            acceptancePercentage: string | null;
+            googleAnalyticsTitle: string | null;
+            googleAnalyticsValue: string | null;
+            googleAnalyticsUrl: string | null;
+            articleFormats: string | null;
+            journalDescription: string | null;
+            pubmedArticles: string | null;
             createdAt: Date;
             updatedAt: Date;
         };
         authors: {
             id: number;
+            email: string;
             createdAt: Date;
             name: string;
-            email: string;
             affiliation: string | null;
         }[];
     } & {
@@ -237,9 +289,9 @@ export declare class ArticlesController {
             };
             authors: {
                 id: number;
+                email: string;
                 createdAt: Date;
                 name: string;
-                email: string;
                 affiliation: string | null;
             }[];
         } & {

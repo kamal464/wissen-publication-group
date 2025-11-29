@@ -1,6 +1,6 @@
 export const config = {
   app: {
-    name: 'Universal Publishers API',
+    name: 'Wissen Publication Group API',
     version: '1.0.0',
     env: process.env.NODE_ENV || 'development',
     port: process.env.PORT || 3001,

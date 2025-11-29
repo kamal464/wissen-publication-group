@@ -231,27 +231,136 @@ export class AdminService {
   }
 
   async createJournal(journalData: any) {
-    return await this.prisma.journal.create({
+    const created = await this.prisma.journal.create({
       data: {
         title: journalData.title,
-        description: journalData.description,
+        description: journalData.description || journalData.title,
         issn: journalData.issn,
+        shortcode: journalData.shortcode,
         publisher: journalData.publisher,
         accessType: journalData.accessType,
         subjectArea: journalData.subjectArea,
         category: journalData.category,
         discipline: journalData.discipline,
-        impactFactor: journalData.impactFactor,
-        coverImage: journalData.coverImage
+        impactFactor: journalData.impactFactor || journalData.journalImpactFactor,
+        coverImage: journalData.coverImage,
+        bannerImage: journalData.bannerImage,
+        flyerImage: journalData.flyerImage,
+        flyerPdf: journalData.flyerPdf,
+        googleIndexingImage: journalData.googleIndexingImage,
+        journalImpactFactor: journalData.journalImpactFactor,
+        articleProcessingCharge: journalData.articleProcessingCharge,
+        icv: journalData.icv,
+        pubmedId: journalData.pubmedId,
+        indexingAbstracting: journalData.indexingAbstracting,
+        email: journalData.email,
+        classification: journalData.classification,
+        citationsValue: journalData.citationsValue,
+        acceptanceRate: journalData.acceptanceRate,
+        conferenceUrl: journalData.conferenceUrl,
+        aimsScope: journalData.aimsScope,
+        guidelines: journalData.guidelines,
+        editorialBoard: journalData.editorialBoard,
+        homePageContent: journalData.homePageContent,
+        currentIssueContent: journalData.currentIssueContent,
+        archiveContent: journalData.archiveContent,
+        articlesInPress: journalData.articlesInPress,
+        indexing: journalData.indexing || journalData.indexingAbstracting
       }
     });
+    
+    // Update JournalShortcode to link to the created journal
+    if (journalData.shortcode) {
+      try {
+        await this.prisma.journalShortcode.updateMany({
+          where: { shortcode: journalData.shortcode },
+          data: { journalId: created.id }
+        });
+      } catch (e) {
+        console.error('Error updating shortcode link:', e);
+      }
+    }
+    
+    return created;
   }
 
   async updateJournal(journalId: number, journalData: any) {
-    return await this.prisma.journal.update({
+    const updateData: any = {
+      title: journalData.title,
+      description: journalData.description || journalData.title,
+      issn: journalData.issn,
+      shortcode: journalData.shortcode,
+      publisher: journalData.publisher,
+      accessType: journalData.accessType,
+      subjectArea: journalData.subjectArea,
+      category: journalData.category,
+      discipline: journalData.discipline,
+      impactFactor: journalData.impactFactor || journalData.journalImpactFactor,
+      coverImage: journalData.coverImage
+    };
+
+    // Add image fields if provided
+    if (journalData.bannerImage !== undefined) updateData.bannerImage = journalData.bannerImage;
+    if (journalData.flyerImage !== undefined) updateData.flyerImage = journalData.flyerImage;
+    if (journalData.flyerPdf !== undefined) updateData.flyerPdf = journalData.flyerPdf;
+    if (journalData.googleIndexingImage !== undefined) updateData.googleIndexingImage = journalData.googleIndexingImage;
+
+    // Add additional journal information fields if provided
+    if (journalData.journalImpactFactor !== undefined) updateData.journalImpactFactor = journalData.journalImpactFactor;
+    if (journalData.articleProcessingCharge !== undefined) updateData.articleProcessingCharge = journalData.articleProcessingCharge;
+    if (journalData.icv !== undefined) updateData.icv = journalData.icv;
+    if (journalData.pubmedId !== undefined) updateData.pubmedId = journalData.pubmedId;
+    if (journalData.indexingAbstracting !== undefined) updateData.indexingAbstracting = journalData.indexingAbstracting;
+    if (journalData.email !== undefined) updateData.email = journalData.email;
+    if (journalData.classification !== undefined) updateData.classification = journalData.classification;
+    if (journalData.citationsValue !== undefined) updateData.citationsValue = journalData.citationsValue;
+    if (journalData.acceptanceRate !== undefined) updateData.acceptanceRate = journalData.acceptanceRate;
+    if (journalData.conferenceUrl !== undefined) updateData.conferenceUrl = journalData.conferenceUrl;
+
+    // Add homepage specific fields if provided
+    if (journalData.editorName !== undefined) updateData.editorName = journalData.editorName;
+    if (journalData.editorAffiliation !== undefined) updateData.editorAffiliation = journalData.editorAffiliation;
+    if (journalData.editorImage !== undefined) updateData.editorImage = journalData.editorImage;
+    if (journalData.impactFactorValue !== undefined) updateData.impactFactorValue = journalData.impactFactorValue;
+    if (journalData.citationsPercentage !== undefined) updateData.citationsPercentage = journalData.citationsPercentage;
+    if (journalData.acceptancePercentage !== undefined) updateData.acceptancePercentage = journalData.acceptancePercentage;
+    if (journalData.googleAnalyticsTitle !== undefined) updateData.googleAnalyticsTitle = journalData.googleAnalyticsTitle;
+    if (journalData.googleAnalyticsValue !== undefined) updateData.googleAnalyticsValue = journalData.googleAnalyticsValue;
+    if (journalData.googleAnalyticsUrl !== undefined) updateData.googleAnalyticsUrl = journalData.googleAnalyticsUrl;
+    if (journalData.articleFormats !== undefined) updateData.articleFormats = journalData.articleFormats;
+    if (journalData.journalDescription !== undefined) updateData.journalDescription = journalData.journalDescription;
+    if (journalData.pubmedArticles !== undefined) updateData.pubmedArticles = journalData.pubmedArticles;
+    if (journalData.homePageContent !== undefined) updateData.homePageContent = journalData.homePageContent;
+
+    // Add content fields if provided
+    if (journalData.aimsScope !== undefined) updateData.aimsScope = journalData.aimsScope;
+    if (journalData.guidelines !== undefined) updateData.guidelines = journalData.guidelines;
+    if (journalData.editorialBoard !== undefined) updateData.editorialBoard = journalData.editorialBoard;
+    if (journalData.homePageContent !== undefined) updateData.homePageContent = journalData.homePageContent;
+    if (journalData.currentIssueContent !== undefined) updateData.currentIssueContent = journalData.currentIssueContent;
+    if (journalData.archiveContent !== undefined) updateData.archiveContent = journalData.archiveContent;
+    if (journalData.articlesInPress !== undefined) updateData.articlesInPress = journalData.articlesInPress;
+    if (journalData.indexing !== undefined) updateData.indexing = journalData.indexing;
+    if (journalData.indexingAbstracting !== undefined && !journalData.indexing) updateData.indexing = journalData.indexingAbstracting;
+
+    const updated = await this.prisma.journal.update({
       where: { id: journalId },
-      data: journalData
+      data: updateData
     });
+    
+    // Update JournalShortcode to link to the journal if shortcode is provided
+    if (journalData.shortcode) {
+      try {
+        await this.prisma.journalShortcode.updateMany({
+          where: { shortcode: journalData.shortcode },
+          data: { journalId: updated.id }
+        });
+      } catch (e) {
+        console.error('Error updating shortcode link:', e);
+      }
+    }
+    
+    return updated;
   }
 
   async deleteJournal(journalId: number) {
@@ -475,13 +584,24 @@ export class AdminService {
       where: { title: { contains: journalName, mode: 'insensitive' } }
     });
 
-    return await this.prisma.journalShortcode.create({
+    // Create the shortcode
+    const journalShortcode = await this.prisma.journalShortcode.create({
       data: {
         shortcode,
         journalName,
         journalId: journal?.id
       }
     });
+
+    // If journal was found, update it with the shortcode
+    if (journal && !journal.shortcode) {
+      await this.prisma.journal.update({
+        where: { id: journal.id },
+        data: { shortcode }
+      });
+    }
+
+    return journalShortcode;
   }
 
   async deleteJournalShortcode(id: number) {
@@ -563,5 +683,73 @@ export class AdminService {
       journals,
       webPages
     };
+  }
+
+  // Board Members
+  async getBoardMembers(journalId?: number) {
+    const where: any = { isActive: true };
+    if (journalId) {
+      where.journalId = journalId;
+    }
+    return await this.prisma.boardMember.findMany({
+      where,
+      orderBy: [
+        { memberType: 'asc' },
+        { name: 'asc' }
+      ]
+    });
+  }
+
+  async getBoardMember(id: number) {
+    return await this.prisma.boardMember.findUnique({ where: { id } });
+  }
+
+  async createBoardMember(journalId: number, memberData: any) {
+    return await this.prisma.boardMember.create({
+      data: {
+        name: memberData.name || memberData.editorName,
+        position: memberData.position || memberData.memberType || 'Editorial Board Member',
+        memberType: memberData.memberType,
+        editorType: memberData.editorType,
+        affiliation: memberData.affiliation,
+        email: memberData.email,
+        bio: memberData.bio,
+        description: memberData.description || memberData.editorDescription,
+        biography: memberData.biography || memberData.editorBiography,
+        imageUrl: memberData.imageUrl || memberData.editorPhoto,
+        profileUrl: memberData.profileUrl,
+        journalId: journalId,
+        isActive: true
+      }
+    });
+  }
+
+  async updateBoardMember(id: number, memberData: any) {
+    const updateData: any = {};
+    if (memberData.name !== undefined) updateData.name = memberData.name;
+    if (memberData.editorName !== undefined) updateData.name = memberData.editorName;
+    if (memberData.position !== undefined) updateData.position = memberData.position;
+    if (memberData.memberType !== undefined) updateData.memberType = memberData.memberType;
+    if (memberData.editorType !== undefined) updateData.editorType = memberData.editorType;
+    if (memberData.affiliation !== undefined) updateData.affiliation = memberData.affiliation;
+    if (memberData.email !== undefined) updateData.email = memberData.email;
+    if (memberData.bio !== undefined) updateData.bio = memberData.bio;
+    if (memberData.description !== undefined) updateData.description = memberData.description;
+    if (memberData.editorDescription !== undefined) updateData.description = memberData.editorDescription;
+    if (memberData.biography !== undefined) updateData.biography = memberData.biography;
+    if (memberData.editorBiography !== undefined) updateData.biography = memberData.editorBiography;
+    if (memberData.imageUrl !== undefined) updateData.imageUrl = memberData.imageUrl;
+    if (memberData.editorPhoto !== undefined) updateData.imageUrl = memberData.editorPhoto;
+    if (memberData.profileUrl !== undefined) updateData.profileUrl = memberData.profileUrl;
+    if (memberData.isActive !== undefined) updateData.isActive = memberData.isActive;
+
+    return await this.prisma.boardMember.update({
+      where: { id },
+      data: updateData
+    });
+  }
+
+  async deleteBoardMember(id: number) {
+    return await this.prisma.boardMember.delete({ where: { id } });
   }
 }

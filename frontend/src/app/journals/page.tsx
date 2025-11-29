@@ -12,6 +12,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setError, setJournals, setLoading } from '@/store/slices/journalsSlice';
 import { Journal } from '@/types';
 import { journalService } from '@/services/api';
+import { adminAPI } from '@/lib/api';
 
 const SUBJECT_CLASS_MAP: Record<string, string> = {
   'life science': 'life-science',
@@ -122,28 +123,135 @@ export default function JournalsPage() {
   const [sortBy, setSortBy] = useState<string>('title-asc');
   const [first, setFirst] = useState(0);
   const [rows, setRows] = useState(9);
+  const [allocatedShortcodes, setAllocatedShortcodes] = useState<Set<string>>(new Set());
+  const [shortcodeToJournalName, setShortcodeToJournalName] = useState<Map<string, string>>(new Map());
+  const [shortcodeToJournalId, setShortcodeToJournalId] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     setIsClient(true);
+  }, []);
+
+  // Fetch shortcodes and users to determine which journals have allocated users
+  const fetchAllocatedShortcodes = useCallback(async () => {
+    try {
+      const [shortcodesRes, usersRes] = await Promise.all([
+        adminAPI.getJournalShortcodes(),
+        adminAPI.getUsers()
+      ]);
+      
+      const shortcodes = (shortcodesRes.data || []) as Array<{ 
+        shortcode: string; 
+        journalName: string; 
+        journalId?: number | null;
+        id?: number;
+      }>;
+      const users = (usersRes.data || []) as Array<{ journalShort: string | null }>;
+      
+      // Get shortcodes that have active users assigned
+      const allocated = new Set<string>();
+      const shortcodeMap = new Map<string, string>();
+      const shortcodeToJournalId = new Map<string, number>();
+      
+      shortcodes.forEach(sc => {
+        const hasUser = users.some(u => u.journalShort === sc.shortcode);
+        if (hasUser) {
+          allocated.add(sc.shortcode);
+          shortcodeMap.set(sc.shortcode, sc.journalName);
+          if (sc.journalId) {
+            shortcodeToJournalId.set(sc.shortcode, sc.journalId);
+          }
+        }
+      });
+      
+      
+      setAllocatedShortcodes(allocated);
+      setShortcodeToJournalName(shortcodeMap);
+      setShortcodeToJournalId(shortcodeToJournalId);
+    } catch (err) {
+      console.error('Error fetching allocated shortcodes:', err);
+      // Continue with empty set if fetch fails
+    }
   }, []);
 
   const fetchJournals = useCallback(async () => {
     dispatch(setLoading(true));
 
     try {
-      const response = await journalService.getAll();
-      const normalized = extractJournals(response.data ?? response);
-      dispatch(setJournals(normalized));
+      // Fetch both journals and shortcodes in parallel
+      const [journalsRes, shortcodesRes, usersRes] = await Promise.all([
+        journalService.getAll(),
+        adminAPI.getJournalShortcodes(),
+        adminAPI.getUsers()
+      ]);
+      
+      const normalized = extractJournals(journalsRes.data ?? journalsRes);
+      const shortcodes = (shortcodesRes.data || []) as Array<{ 
+        shortcode: string; 
+        journalName: string; 
+        journalId?: number | null;
+        id?: number;
+      }>;
+      const users = (usersRes.data || []) as Array<{ journalShort: string | null }>;
+      
+      // Get allocated shortcodes
+      const allocated = new Set<string>();
+      const shortcodeMap = new Map<string, string>();
+      const shortcodeToJournalId = new Map<string, number>();
+      
+      shortcodes.forEach(sc => {
+        const hasUser = users.some(u => u.journalShort === sc.shortcode);
+        if (hasUser) {
+          allocated.add(sc.shortcode);
+          shortcodeMap.set(sc.shortcode, sc.journalName);
+          if (sc.journalId) {
+            shortcodeToJournalId.set(sc.shortcode, sc.journalId);
+          }
+        }
+      });
+      
+      setAllocatedShortcodes(allocated);
+      setShortcodeToJournalName(shortcodeMap);
+      setShortcodeToJournalId(shortcodeToJournalId);
+      
+      // Create virtual journal objects for shortcodes that don't have Journal records yet
+      const virtualJournals: Journal[] = [];
+      allocated.forEach(shortcode => {
+        const journalName = shortcodeMap.get(shortcode) || '';
+        const journalId = shortcodeToJournalId.get(shortcode);
+        
+        // Check if a Journal record already exists for this shortcode
+        const existingJournal = normalized.find(j => 
+          j.shortcode === shortcode || 
+          (journalId && j.id === journalId) ||
+          j.title?.toLowerCase() === journalName.toLowerCase()
+        );
+        
+        // If no Journal record exists, create a virtual one
+        if (!existingJournal) {
+          virtualJournals.push({
+            id: -1, // Temporary ID for virtual journals
+            title: journalName,
+            description: 'Journal details will be available after journal admin completes setup.',
+            shortcode: shortcode,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      });
+      
+      // Combine real and virtual journals
+      const allJournals = [...normalized, ...virtualJournals];
+      dispatch(setJournals(allJournals));
     } catch (fetchError) {
       dispatch(setError(getErrorMessage(fetchError)));
+    } finally {
+      dispatch(setLoading(false));
     }
   }, [dispatch]);
 
   useEffect(() => {
-    if (!items.length) {
-      fetchJournals();
-    }
-  }, [fetchJournals, items.length]);
+    fetchJournals();
+  }, [fetchJournals]);
 
   const subjectOptions = useMemo(() => {
     const uniqueSubjects = new Set<string>();
@@ -170,11 +278,36 @@ export default function JournalsPage() {
     const hasSearch = normalizedSearch.length > 0;
     const hasSubjectFilter = selectedSubject !== 'all';
 
-    // Filter
-    let filtered = items;
+    // First filter: Only show journals with allocated users (have shortcode and user)
+    let filtered = items.filter((journal) => {
+      // Method 1: Check if journal has a shortcode field that matches allocated shortcode
+      const journalShortcode = journal.shortcode || '';
+      if (allocatedShortcodes.has(journalShortcode)) {
+        return true;
+      }
+      
+      // Method 2: Check if journal ID matches any allocated shortcode's journalId
+      for (const [shortcode, journalId] of shortcodeToJournalId.entries()) {
+        if (allocatedShortcodes.has(shortcode) && journal.id === journalId) {
+          return true;
+        }
+      }
+      
+      // Method 3: Check if journal name matches any allocated shortcode's journal name
+      for (const [shortcode, journalName] of shortcodeToJournalName.entries()) {
+        if (allocatedShortcodes.has(shortcode) && 
+            journal.title?.toLowerCase().trim() === journalName.toLowerCase().trim()) {
+          return true;
+        }
+      }
+      
+      return false;
+    });
     
+    
+    // Additional filters
     if (hasSearch || hasSubjectFilter) {
-      filtered = items.filter((journal) => {
+      filtered = filtered.filter((journal) => {
         // Subject filter
         if (hasSubjectFilter) {
           const subject = getSubjectLabel(journal);
@@ -241,7 +374,7 @@ export default function JournalsPage() {
     });
 
     return sorted;
-  }, [items, searchTerm, selectedSubject, sortBy]);
+  }, [items, searchTerm, selectedSubject, sortBy, allocatedShortcodes, shortcodeToJournalName, shortcodeToJournalId]);
 
   const paginatedJournals = useMemo(() => {
     return filteredAndSortedJournals.slice(first, first + rows);
@@ -275,23 +408,40 @@ export default function JournalsPage() {
   const renderCard = useCallback((journal: Journal) => {
     const subject = getSubjectLabel(journal);
     const subjectClass = getSubjectClass(subject);
+    
+    // Find shortcode for this journal
+    let journalShortcode = journal.shortcode || '';
+    if (!journalShortcode) {
+      // Try to find by journal name
+      for (const [shortcode, journalName] of shortcodeToJournalName.entries()) {
+        if (journal.title?.toLowerCase() === journalName.toLowerCase()) {
+          journalShortcode = shortcode;
+          break;
+        }
+      }
+    }
+    
+    // Enhance journal with shortcode if found
+    const journalWithShortcode = journalShortcode 
+      ? { ...journal, shortcode: journalShortcode }
+      : journal;
 
     return (
       <JournalCard
         key={journal.id}
-        journal={journal}
+        journal={journalWithShortcode}
         viewMode={viewMode}
         subjectLabel={subject}
         subjectClass={subjectClass}
       />
     );
-  }, [viewMode]);
+  }, [viewMode, shortcodeToJournalName]);
 
   return (
     <>
       <Header />
-      <main className="journals-page px-4 py-12 md:px-8 lg:px-12">
-        <section className="journal-list mx-auto w-full max-w-[1400px]">
+      <main className="journals-page px-4 py-12 md:px-8 lg:px-12 flex justify-center">
+        <section className="journal-list w-full">
           <div className="journal-list__header">
             <span className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-500">Journals</span>
             <h1 className="journal-list__title">Explore our library of peer-reviewed journals</h1>

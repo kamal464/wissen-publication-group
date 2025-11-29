@@ -238,7 +238,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <i className="pi pi-shield"></i>
             </div>
             <div>
-              <div className="logo-text">Universal Publishers</div>
+              <div className="logo-text">Wissen Publication Group</div>
               <div className="logo-subtitle">Admin Panel</div>
             </div>
           </Link>

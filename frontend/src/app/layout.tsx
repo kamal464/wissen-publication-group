@@ -13,8 +13,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Universal Publishers - Scientific Journals & Research",
-  description: "Universal Publishers - A leading platform for peer-reviewed scientific journals across multiple disciplines. Access cutting-edge research and scholarly articles.",
+  title: "Wissen Publication Group - Scientific Journals & Research",
+  description: "Wissen Publication Group - A leading platform for peer-reviewed scientific journals across multiple disciplines. Access cutting-edge research and scholarly articles.",
   keywords: "scientific journals, academic publishing, research papers, peer review, scholarly articles",
 };
 

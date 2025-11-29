@@ -22,11 +22,12 @@ export default function AdminDashboard() {
       const response = await adminAPI.getDashboardStats();
       const data = response.data;
 
+      const statsData = data as { users?: number; onlineSubmissions?: number; journalShortcodes?: number; webPages?: number };
       setStats([
-        { title: 'Users', value: data.users || 0 },
-        { title: 'Online Submissions', value: data.onlineSubmissions || 0 },
-        { title: 'Create Journal Shortcode', value: data.journalShortcodes || 0 },
-        { title: 'Manage Main Web Pages', value: data.webPages || 0 },
+        { title: 'Users', value: statsData.users || 0 },
+        { title: 'Online Submissions', value: statsData.onlineSubmissions || 0 },
+        { title: 'Create Journal Shortcode', value: statsData.journalShortcodes || 0 },
+        { title: 'Manage Main Web Pages', value: statsData.webPages || 0 },
       ]);
     } catch (error: any) {
       console.error('Error loading dashboard stats:', error);

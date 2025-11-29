@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE "Journal" ADD COLUMN     "acceptanceRate" TEXT,
+ADD COLUMN     "articleProcessingCharge" TEXT,
+ADD COLUMN     "bannerImage" TEXT,
+ADD COLUMN     "citationsValue" TEXT,
+ADD COLUMN     "classification" TEXT,
+ADD COLUMN     "conferenceUrl" TEXT,
+ADD COLUMN     "email" TEXT,
+ADD COLUMN     "flyerImage" TEXT,
+ADD COLUMN     "flyerPdf" TEXT,
+ADD COLUMN     "googleIndexingImage" TEXT,
+ADD COLUMN     "icv" TEXT,
+ADD COLUMN     "indexingAbstracting" TEXT,
+ADD COLUMN     "journalImpactFactor" TEXT,
+ADD COLUMN     "pubmedId" TEXT;
