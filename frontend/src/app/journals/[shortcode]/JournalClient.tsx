@@ -9,6 +9,7 @@ import Footer from '@/components/layout/Footer';
 import { journalService } from '@/services/api';
 import { adminAPI } from '@/lib/api';
 import { Journal } from '@/types';
+import { getFileUrl } from '@/lib/apiConfig';
 
 interface MenuItem {
   id: string;
@@ -368,11 +369,7 @@ export default function JournalDetailPage() {
   const isVirtualJournal = journal.id === -1;
   const getImageUrl = (imagePath: string | undefined) => {
     if (!imagePath) return null;
-    if (imagePath.startsWith('http')) return imagePath;
-    // Ensure path starts with / for proper URL construction
-    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    return `${baseUrl}${normalizedPath}`;
+    return getFileUrl(imagePath);
   };
 
   return (
@@ -722,12 +719,7 @@ export default function JournalDetailPage() {
                   {boardMembers.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {boardMembers.map((member) => {
-                        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-                        const imageUrl = member.imageUrl 
-                          ? (member.imageUrl.startsWith('http') 
-                              ? member.imageUrl 
-                              : `${baseUrl}${member.imageUrl}`)
-                          : null;
+                        const imageUrl = member.imageUrl ? getFileUrl(member.imageUrl) : null;
                         
                         return (
                           <div 
@@ -840,11 +832,9 @@ export default function JournalDetailPage() {
                           return authors.map((a: any) => a.name).join(', ');
                         };
                         
-                        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
                         const getImageUrl = (imagePath?: string) => {
                           if (!imagePath) return '';
-                          if (imagePath.startsWith('http')) return imagePath;
-                          return `${baseUrl}${imagePath}`;
+                          return getFileUrl(imagePath);
                         };
                         
                         return (
@@ -1210,8 +1200,7 @@ export default function JournalDetailPage() {
               
               const getImageUrl = (imagePath?: string) => {
                 if (!imagePath) return '';
-                if (imagePath.startsWith('http')) return imagePath;
-                return `http://localhost:3001${imagePath}`;
+                return getFileUrl(imagePath);
               };
               
               return (

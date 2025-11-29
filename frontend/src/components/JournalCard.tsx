@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import Link from 'next/link';
 import { Journal } from '@/types';
+import { getFileUrl } from '@/lib/apiConfig';
 
 interface JournalCardProps {
   journal: Journal;
@@ -20,9 +21,7 @@ const JournalCard = memo(function JournalCard({
 
   const getImageUrl = (imagePath: string | undefined) => {
     if (!imagePath) return null;
-    if (imagePath.startsWith('http')) return imagePath;
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    return `${baseUrl}${imagePath}`;
+    return getFileUrl(imagePath);
   };
 
   // For list/grid view: use coverImage or flyerImage (not bannerImage - that's for detail page hero)

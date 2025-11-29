@@ -6,6 +6,7 @@ import { Dialog } from 'primereact/dialog';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { FileUpload } from 'primereact/fileupload';
 import { adminAPI } from '@/lib/api';
+import { getFileUrl, getApiUrl } from '@/lib/apiConfig';
 
 interface Article {
   id: number;
@@ -112,9 +113,7 @@ export default function CurrentIssuePage() {
 
   const getImageUrl = (imagePath?: string) => {
     if (!imagePath) return '';
-    if (imagePath.startsWith('http')) return imagePath;
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    return `${baseUrl}${imagePath}`;
+    return getFileUrl(imagePath);
   };
 
   // Filter articles by selected month/year
@@ -528,7 +527,7 @@ export default function CurrentIssuePage() {
         {selectedArticle && (
           <FileUpload
             name="pdf"
-            url={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${process.env.NEXT_PUBLIC_API_URL?.endsWith('/api') ? '' : '/api'}/articles/${selectedArticle.id}/upload-pdf`}
+            url={getApiUrl(`/articles/${selectedArticle.id}/upload-pdf`)}
             accept="application/pdf"
             maxFileSize={10000000}
             chooseLabel="Choose PDF"
@@ -572,7 +571,7 @@ export default function CurrentIssuePage() {
         {selectedArticle && (
           <FileUpload
             name="files"
-            url={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${process.env.NEXT_PUBLIC_API_URL?.endsWith('/api') ? '' : '/api'}/articles/${selectedArticle.id}/upload-images`}
+            url={getApiUrl(`/articles/${selectedArticle.id}/upload-images`)}
             multiple
             accept="image/*"
             maxFileSize={5000000}

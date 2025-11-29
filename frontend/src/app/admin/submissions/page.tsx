@@ -8,6 +8,7 @@ import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
 import { adminAPI } from '@/lib/api';
+import { getFileUrl } from '@/lib/apiConfig';
 import '@/styles/admin-global.scss';
 
 interface Submission {
@@ -94,30 +95,8 @@ export default function SubmissionsPage() {
         return;
       }
 
-      // Construct the download URL - direct file link, no API calls
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL 
-        ? (process.env.NEXT_PUBLIC_API_URL.endsWith('/api') 
-          ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') 
-          : process.env.NEXT_PUBLIC_API_URL)
-        : 'http://localhost:3001';
-      let downloadUrl: string;
-      
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        // Already a full URL
-        downloadUrl = url;
-      } else if (url.startsWith('/uploads/')) {
-        // Use API route /api/uploads/ (FilesController) - direct link, no fetch
-        // This is more reliable than static file serving
-        downloadUrl = `${apiBaseUrl}${url}`;
-      } else if (url.startsWith('/')) {
-        // Other absolute paths
-        const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
-        downloadUrl = `${baseUrl}${url}`;
-      } else {
-        // Relative path
-        const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
-        downloadUrl = `${baseUrl}/${url}`;
-      }
+      // Construct the download URL using getFileUrl utility
+      const downloadUrl = getFileUrl(url);
 
       console.log('Download URL:', downloadUrl);
 

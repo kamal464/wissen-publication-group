@@ -11,6 +11,7 @@ import { Dialog } from 'primereact/dialog';
 import { FileUpload } from 'primereact/fileupload';
 import { Toast } from 'primereact/toast';
 import { adminAPI } from '@/lib/api';
+import { getFileUrl } from '@/lib/apiConfig';
 import 'quill/dist/quill.snow.css';
 
 interface BoardMember {
@@ -96,9 +97,7 @@ export default function EditorialBoardPage() {
 
   const getImageUrl = (imagePath: string | undefined) => {
     if (!imagePath) return null;
-    if (imagePath.startsWith('http')) return imagePath;
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    return `${baseUrl}${imagePath}`;
+    return getFileUrl(imagePath);
   };
 
   const handleAdd = () => {

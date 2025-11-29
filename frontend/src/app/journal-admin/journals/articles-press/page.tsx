@@ -11,6 +11,7 @@ import { Toast } from 'primereact/toast';
 import { TabView, TabPanel } from 'primereact/tabview';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { adminAPI } from '@/lib/api';
+import { getFileUrl } from '@/lib/apiConfig';
 import 'quill/dist/quill.snow.css';
 
 interface Article {
@@ -1720,9 +1721,7 @@ export default function ArticlesInPressPage() {
               {selectedArticleForUpload.fulltextImages && selectedArticleForUpload.fulltextImages.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {selectedArticleForUpload.fulltextImages.map((imagePath, index) => {
-                    const imageUrl = imagePath.startsWith('http') 
-                      ? imagePath 
-                      : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${imagePath.startsWith('/') ? imagePath : '/' + imagePath}`;
+                    const imageUrl = getFileUrl(imagePath);
                     
                     return (
                       <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
