@@ -30,8 +30,21 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
+
+      - name: Create Artifact Registry repositories if needed
+        run: |
+          # Check if repositories exist, create if they don't
+          if ! gcloud artifacts repositories describe wissen-frontend --location=us-central1 --format="value(name)" 2>/dev/null; then
+            echo "Creating wissen-frontend repository..."
+            gcloud artifacts repositories create wissen-frontend \
+              --repository-format=docker \
+              --location=us-central1 \
+              --description="Frontend Docker images" || echo "Repository may already exist or creation failed"
+          else
+            echo "Repository wissen-frontend already exists"
+          fi
 
       - name: Install Frontend Dependencies
         working-directory: ./frontend
@@ -57,7 +70,7 @@ jobs:
       - name: Deploy Frontend to Cloud Run
         run: |
           gcloud run deploy wissen-frontend \
-            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend:${{ github.sha }} \
+            --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend/wissen-frontend:${{ github.sha }} \
             --platform managed \
             --region us-central1 \
             --allow-unauthenticated \
@@ -87,8 +100,21 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
+
+      - name: Create Artifact Registry repositories if needed
+        run: |
+          # Check if repositories exist, create if they don't
+          if ! gcloud artifacts repositories describe wissen-api --location=us-central1 --format="value(name)" 2>/dev/null; then
+            echo "Creating wissen-api repository..."
+            gcloud artifacts repositories create wissen-api \
+              --repository-format=docker \
+              --location=us-central1 \
+              --description="Backend API Docker images" || echo "Repository may already exist or creation failed"
+          else
+            echo "Repository wissen-api already exists"
+          fi
 
       - name: Setup Backend Dependencies
         working-directory: ./backend
@@ -105,18 +131,18 @@ jobs:
       - name: Build Backend Docker Image
         working-directory: ./backend
         run: |
-          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-api:${{ github.sha }} .
-          docker tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-api:${{ github.sha }} gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-api:latest
+          docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-api/wissen-api:${{ github.sha }} .
+          docker tag us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-api/wissen-api:${{ github.sha }} us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-api/wissen-api:latest
 
       - name: Push Backend Image
         run: |
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-api:${{ github.sha }}
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-api:latest
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-api/wissen-api:${{ github.sha }}
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-api/wissen-api:latest
 
       - name: Deploy Backend to Cloud Run
         run: |
           gcloud run deploy wissen-api \
-            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-api:${{ github.sha }} \
+            --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-api/wissen-api:${{ github.sha }} \
             --platform managed \
             --region us-central1 \
             --allow-unauthenticated \
