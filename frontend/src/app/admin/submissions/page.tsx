@@ -95,7 +95,11 @@ export default function SubmissionsPage() {
       }
 
       // Construct the download URL - direct file link, no API calls
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL 
+        ? (process.env.NEXT_PUBLIC_API_URL.endsWith('/api') 
+          ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') 
+          : process.env.NEXT_PUBLIC_API_URL)
+        : 'http://localhost:3001';
       let downloadUrl: string;
       
       if (url.startsWith('http://') || url.startsWith('https://')) {

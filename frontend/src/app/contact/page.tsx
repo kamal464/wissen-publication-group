@@ -97,7 +97,10 @@ export default function ContactPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/messages', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL 
+        ? `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_API_URL.endsWith('/api') ? '' : '/api'}/messages`
+        : 'http://localhost:3001/api/messages';
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

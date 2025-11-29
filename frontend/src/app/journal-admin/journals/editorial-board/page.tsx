@@ -97,7 +97,8 @@ export default function EditorialBoardPage() {
   const getImageUrl = (imagePath: string | undefined) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
-    return `http://localhost:3001${imagePath}`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    return `${baseUrl}${imagePath}`;
   };
 
   const handleAdd = () => {

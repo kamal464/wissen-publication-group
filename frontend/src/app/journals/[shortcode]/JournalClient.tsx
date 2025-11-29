@@ -371,7 +371,8 @@ export default function JournalDetailPage() {
     if (imagePath.startsWith('http')) return imagePath;
     // Ensure path starts with / for proper URL construction
     const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
-    return `http://localhost:3001${normalizedPath}`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    return `${baseUrl}${normalizedPath}`;
   };
 
   return (

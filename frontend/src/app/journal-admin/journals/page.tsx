@@ -289,7 +289,7 @@ export default function ManageJournalInformation() {
                 <div>
                   <p className="text-xs text-gray-600 mb-1">Banner Image</p>
                   <img 
-                    src={journal.bannerImage.startsWith('http') ? journal.bannerImage : `http://localhost:3001${journal.bannerImage}`} 
+                    src={journal.bannerImage.startsWith('http') ? journal.bannerImage : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${journal.bannerImage}`} 
                     alt="Banner" 
                     className="w-full h-24 object-cover rounded border border-gray-200"
                     onError={(e) => {
@@ -302,7 +302,7 @@ export default function ManageJournalInformation() {
                 <div>
                   <p className="text-xs text-gray-600 mb-1">Flyer Image</p>
                   <img 
-                    src={journal.flyerImage.startsWith('http') ? journal.flyerImage : `http://localhost:3001${journal.flyerImage}`} 
+                    src={journal.flyerImage.startsWith('http') ? journal.flyerImage : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${journal.flyerImage}`} 
                     alt="Flyer" 
                     className="w-full h-24 object-cover rounded border border-gray-200"
                     onError={(e) => {
@@ -315,7 +315,7 @@ export default function ManageJournalInformation() {
                 <div>
                   <p className="text-xs text-gray-600 mb-1">Google Indexing Image</p>
                   <img 
-                    src={journal.googleIndexingImage.startsWith('http') ? journal.googleIndexingImage : `http://localhost:3001${journal.googleIndexingImage}`} 
+                    src={journal.googleIndexingImage.startsWith('http') ? journal.googleIndexingImage : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${journal.googleIndexingImage}`} 
                     alt="Google Indexing" 
                     className="w-full h-24 object-cover rounded border border-gray-200"
                     onError={(e) => {
@@ -545,7 +545,7 @@ export default function ManageJournalInformation() {
                   {journal.bannerImage && (
                     <div className="mt-2">
                       <img 
-                        src={journal.bannerImage.startsWith('http') ? journal.bannerImage : `http://localhost:3001${journal.bannerImage}`} 
+                        src={journal.bannerImage.startsWith('http') ? journal.bannerImage : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${journal.bannerImage}`} 
                         alt="Banner" 
                         className="w-full h-32 object-cover rounded border border-gray-200"
                         onError={(e) => {
@@ -577,7 +577,7 @@ export default function ManageJournalInformation() {
                   {journal.flyerImage && (
                     <div className="mt-2">
                       <img 
-                        src={journal.flyerImage.startsWith('http') ? journal.flyerImage : `http://localhost:3001${journal.flyerImage}`} 
+                        src={journal.flyerImage.startsWith('http') ? journal.flyerImage : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${journal.flyerImage}`} 
                         alt="Flyer" 
                         className="w-full h-32 object-cover rounded border border-gray-200"
                         onError={(e) => {
@@ -609,7 +609,7 @@ export default function ManageJournalInformation() {
                   {journal.flyerPdf && (
                     <div className="mt-2">
                       <a 
-                        href={journal.flyerPdf.startsWith('http') ? journal.flyerPdf : `http://localhost:3001${journal.flyerPdf}`}
+                        href={journal.flyerPdf.startsWith('http') ? journal.flyerPdf : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${journal.flyerPdf}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline text-sm flex items-center gap-1"
@@ -641,7 +641,7 @@ export default function ManageJournalInformation() {
                   {journal.googleIndexingImage && (
                     <div className="mt-2">
                       <img 
-                        src={journal.googleIndexingImage.startsWith('http') ? journal.googleIndexingImage : `http://localhost:3001${journal.googleIndexingImage}`} 
+                        src={journal.googleIndexingImage.startsWith('http') ? journal.googleIndexingImage : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${journal.googleIndexingImage}`} 
                         alt="Google Indexing" 
                         className="w-full h-32 object-cover rounded border border-gray-200"
                         onError={(e) => {

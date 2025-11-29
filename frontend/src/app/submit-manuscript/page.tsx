@@ -57,7 +57,10 @@ export default function SubmitManuscriptPage() {
   useEffect(() => {
     const fetchJournals = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/journals');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL 
+          ? `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_API_URL.endsWith('/api') ? '' : '/api'}/journals`
+          : 'http://localhost:3001/api/journals';
+        const response = await fetch(apiUrl);
         const data: Journal[] = await response.json();
         const journalOptions = data.map(journal => ({
           label: journal.title,

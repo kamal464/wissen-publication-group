@@ -113,7 +113,8 @@ export default function CurrentIssuePage() {
   const getImageUrl = (imagePath?: string) => {
     if (!imagePath) return '';
     if (imagePath.startsWith('http')) return imagePath;
-    return `http://localhost:3001${imagePath}`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    return `${baseUrl}${imagePath}`;
   };
 
   // Filter articles by selected month/year
@@ -527,7 +528,7 @@ export default function CurrentIssuePage() {
         {selectedArticle && (
           <FileUpload
             name="pdf"
-            url={`http://localhost:3001/api/articles/${selectedArticle.id}/upload-pdf`}
+            url={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${process.env.NEXT_PUBLIC_API_URL?.endsWith('/api') ? '' : '/api'}/articles/${selectedArticle.id}/upload-pdf`}
             accept="application/pdf"
             maxFileSize={10000000}
             chooseLabel="Choose PDF"
@@ -571,7 +572,7 @@ export default function CurrentIssuePage() {
         {selectedArticle && (
           <FileUpload
             name="files"
-            url={`http://localhost:3001/api/articles/${selectedArticle.id}/upload-images`}
+            url={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${process.env.NEXT_PUBLIC_API_URL?.endsWith('/api') ? '' : '/api'}/articles/${selectedArticle.id}/upload-images`}
             multiple
             accept="image/*"
             maxFileSize={5000000}

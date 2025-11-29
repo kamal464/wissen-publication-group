@@ -1722,7 +1722,7 @@ export default function ArticlesInPressPage() {
                   {selectedArticleForUpload.fulltextImages.map((imagePath, index) => {
                     const imageUrl = imagePath.startsWith('http') 
                       ? imagePath 
-                      : `http://localhost:3001${imagePath.startsWith('/') ? imagePath : '/' + imagePath}`;
+                      : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${imagePath.startsWith('/') ? imagePath : '/' + imagePath}`;
                     
                     return (
                       <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
