@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import "../styles/globals.scss";
 import "primereact/resources/themes/lara-light-blue/theme.css";
@@ -26,9 +27,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased min-h-screen`}>
-        {/* Inject API URL as script tag in body (server-side rendered) */}
+        {/* Inject API URL using Next.js Script with beforeInteractive - must be in body, not head */}
         {apiUrl && (
-          <script
+          <Script
+            id="api-url-injector"
+            strategy="beforeInteractive"
             dangerouslySetInnerHTML={{
               __html: `window.__API_BASE_URL__ = ${JSON.stringify(apiUrl)};`,
             }}
