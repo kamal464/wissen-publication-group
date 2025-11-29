@@ -59,13 +59,13 @@ jobs:
       - name: Build Frontend Docker Image
         working-directory: ./frontend
         run: |
-          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend:${{ github.sha }} .
-          docker tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend:${{ github.sha }} gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend:latest
+          docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend/wissen-frontend:${{ github.sha }} .
+          docker tag us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend/wissen-frontend:${{ github.sha }} us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend/wissen-frontend:latest
 
       - name: Push Frontend Image
         run: |
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend:${{ github.sha }}
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend:latest
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend/wissen-frontend:${{ github.sha }}
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend/wissen-frontend:latest
 
       - name: Deploy Frontend to Cloud Run
         run: |
