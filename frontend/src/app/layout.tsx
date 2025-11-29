@@ -36,11 +36,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
       </head>
       <body className={`${inter.variable} antialiased min-h-screen`}>
-        {/* Inject API URL using Next.js Script with beforeInteractive - must be in body, not head */}
+        {/* Inject API URL using Next.js Script - use afterInteractive to avoid hydration issues */}
         {apiUrl && (
           <Script
             id="api-url-injector"
-            strategy="beforeInteractive"
+            strategy="afterInteractive"
             dangerouslySetInnerHTML={{
               __html: `window.__API_BASE_URL__ = ${JSON.stringify(apiUrl)};`,
             }}
