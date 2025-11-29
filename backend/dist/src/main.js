@@ -37,18 +37,21 @@ const core_1 = require("@nestjs/core");
 const path_1 = require("path");
 const app_module_1 = require("./app.module");
 const app_config_1 = require("./config/app.config");
+const http_exception_filter_1 = require("./filters/http-exception.filter");
 const express = __importStar(require("express"));
 async function bootstrap() {
     try {
         console.log('🚀 Starting Wissen Publication Group API...');
         console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`🔌 PORT: ${process.env.PORT || '8080'}`);
+        console.log(`🔌 PORT: ${process.env.PORT || app_config_1.config.app.port}`);
         console.log(`💾 DATABASE_URL: ${process.env.DATABASE_URL ? 'Set' : 'Not set'}`);
+        console.log(`🌐 CORS_ORIGIN: ${process.env.CORS_ORIGIN || 'Not set (using defaults)'}`);
         console.log('📦 Creating NestJS application...');
         const app = await core_1.NestFactory.create(app_module_1.AppModule, {
             logger: ['error', 'warn', 'log'],
         });
         console.log('✅ NestJS application created');
+        app.useGlobalFilters(new http_exception_filter_1.AllExceptionsFilter());
         const expressApp = app.getHttpAdapter().getInstance();
         expressApp.set('strict routing', false);
         expressApp.set('case sensitive routing', false);
@@ -140,7 +143,7 @@ async function bootstrap() {
         console.log(`✅ Wissen Publication Group API running on http://0.0.0.0:${port}/api`);
         console.log(`📁 Files available at http://0.0.0.0:${port}/uploads/`);
         console.log(`🌐 Server is ready and listening on port ${port}`);
-        console.log(`💚 Health check available at http://0.0.0.0:${port}/api/health`);
+        console.log(`💚 Health check available at http://0.0.0.0:${port}/health`);
     }
     catch (error) {
         console.error('❌ Failed to start application:', error);

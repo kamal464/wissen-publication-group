@@ -2,6 +2,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateJournalDto } from './dto/create-journal.dto';
 export declare class JournalsService {
     private prisma;
+    private readonly logger;
     constructor(prisma: PrismaService);
     create(createJournalDto: CreateJournalDto): import("@prisma/client").Prisma.Prisma__JournalClient<{
         id: number;
@@ -57,7 +58,7 @@ export declare class JournalsService {
         createdAt: Date;
         updatedAt: Date;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
-    findAll(): import("@prisma/client").Prisma.PrismaPromise<({
+    findAll(): Promise<({
         _count: {
             articles: number;
         };

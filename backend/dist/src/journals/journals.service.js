@@ -8,12 +8,14 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var JournalsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JournalsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
-let JournalsService = class JournalsService {
+let JournalsService = JournalsService_1 = class JournalsService {
     prisma;
+    logger = new common_1.Logger(JournalsService_1.name);
     constructor(prisma) {
         this.prisma = prisma;
     }
@@ -22,14 +24,20 @@ let JournalsService = class JournalsService {
             data: createJournalDto,
         });
     }
-    findAll() {
-        return this.prisma.journal.findMany({
-            include: {
-                _count: {
-                    select: { articles: true },
+    async findAll() {
+        try {
+            return await this.prisma.journal.findMany({
+                include: {
+                    _count: {
+                        select: { articles: true },
+                    },
                 },
-            },
-        });
+            });
+        }
+        catch (error) {
+            this.logger.error('Error fetching journals:', error);
+            throw error;
+        }
     }
     findOne(id) {
         return this.prisma.journal.findUnique({
@@ -51,7 +59,7 @@ let JournalsService = class JournalsService {
     }
 };
 exports.JournalsService = JournalsService;
-exports.JournalsService = JournalsService = __decorate([
+exports.JournalsService = JournalsService = JournalsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], JournalsService);

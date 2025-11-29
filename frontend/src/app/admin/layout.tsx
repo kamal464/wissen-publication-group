@@ -11,7 +11,10 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   
   // Don't wrap login page with AdminLayout - it has its own full-page layout
-  if (pathname === '/admin/login') {
+  // Handle both with and without trailing slash
+  const isLoginPage = pathname === '/admin/login' || pathname === '/admin/login/';
+  
+  if (isLoginPage) {
     return <>{children}</>;
   }
   
