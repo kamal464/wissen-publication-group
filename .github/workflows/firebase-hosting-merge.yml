@@ -30,6 +30,12 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: Enable Required APIs
+        run: |
+          gcloud services enable artifactregistry.googleapis.com
+          gcloud services enable run.googleapis.com
+          gcloud services enable cloudbuild.googleapis.com
+
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker
 
@@ -86,6 +92,12 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Enable Required APIs
+        run: |
+          gcloud services enable artifactregistry.googleapis.com
+          gcloud services enable run.googleapis.com
+          gcloud services enable cloudbuild.googleapis.com
 
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker
