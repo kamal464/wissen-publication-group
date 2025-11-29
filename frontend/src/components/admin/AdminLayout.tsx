@@ -37,6 +37,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const toast = useRef<Toast>(null);
 
+  // Early return for login page - don't render layout at all
+  const isLoginPage = pathname === '/admin/login' || pathname === '/admin/login/';
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
   const menuItems: MenuItem[] = [
     {
       id: 'welcome',
@@ -67,8 +73,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   useEffect(() => {
     // Skip auth check if already on login page (shouldn't happen due to layout wrapper, but safety check)
-    if (pathname === '/admin/login') {
+    const isLoginPage = pathname === '/admin/login' || pathname === '/admin/login/';
+    
+    if (isLoginPage) {
       setLoading(false);
+      setIsAuthenticated(false);
       return;
     }
 
@@ -220,11 +229,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </div>
     );
   };
-
-  // Login page should never reach here (handled by layout wrapper), but safety check
-  if (pathname === '/admin/login') {
-    return <>{children}</>;
-  }
 
   // Show loading state while checking authentication
   if (loading) {

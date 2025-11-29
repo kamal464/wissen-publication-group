@@ -25,6 +25,12 @@ export default function JournalAdminLayout({ children }: JournalAdminLayoutProps
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  
+  // Early return for login page - don't render layout at all
+  const isLoginPage = pathname === '/journal-admin/login' || pathname === '/journal-admin/login/';
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   const menuItems: MenuItem[] = [
     // ✔ Welcome
@@ -116,18 +122,28 @@ export default function JournalAdminLayout({ children }: JournalAdminLayoutProps
   ];
 
   useEffect(() => {
+    // Skip auth check if already on login page (shouldn't happen due to layout wrapper, but safety check)
+    const isLoginPageCheck = pathname === '/journal-admin/login' || pathname === '/journal-admin/login/';
+    
+    if (isLoginPageCheck) {
+      setLoading(false);
+      setIsAuthenticated(false);
+      return;
+    }
+
     const checkAuth = () => {
       const auth = localStorage.getItem('journalAdminAuth');
-      const isLoginPage = pathname === '/journal-admin/login';
-      
-      if (!auth && !isLoginPage) {
+
+      if (!auth) {
+        // Not authenticated - redirect to login
         router.push('/journal-admin/login');
-      } else if (auth && isLoginPage) {
-        router.push('/journal-admin/dashboard');
+        setLoading(false);
+        return;
       } else {
-        setIsAuthenticated(!!auth);
+        // Authenticated - set state and continue
+        setIsAuthenticated(true);
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     checkAuth();
@@ -263,10 +279,35 @@ export default function JournalAdminLayout({ children }: JournalAdminLayoutProps
     );
   }
 
-  if (pathname === '/journal-admin/login') {
-    return <>{children}</>;
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="admin-layout">
+        <div className="loading-container">
+          <div className="loading-spinner">
+            <i className="pi pi-spin pi-spinner text-4xl text-blue-600"></i>
+            <p className="mt-4 text-gray-600">Loading Journal Admin Panel...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
+  // Not authenticated - show redirect message (redirect is happening in useEffect)
+  if (!isAuthenticated) {
+    return (
+      <div className="admin-layout">
+        <div className="loading-container">
+          <div className="loading-spinner">
+            <i className="pi pi-spin pi-spinner text-4xl text-blue-600"></i>
+            <p className="mt-4 text-gray-600">Redirecting to login...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Authenticated - show full layout
   return (
     <div className="admin-layout">
       {/* Sidebar */}
