@@ -66,23 +66,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   ];
 
   useEffect(() => {
+    // Skip auth check if already on login page (shouldn't happen due to layout wrapper, but safety check)
+    if (pathname === '/admin/login') {
+      setLoading(false);
+      return;
+    }
+
     const checkAuth = () => {
       const auth = localStorage.getItem('adminAuth');
-      const isLoginPage = pathname === '/admin/login';
 
-      if (!auth && !isLoginPage) {
-        // Not authenticated and not on login page - redirect immediately
+      if (!auth) {
+        // Not authenticated - redirect to login
         router.push('/admin/login');
         setLoading(false);
         return;
-      } else if (auth && isLoginPage) {
-        // Authenticated but on login page - redirect to dashboard
-        router.push('/admin/dashboard');
-        setLoading(false);
-        return;
       } else {
-        // Set authentication state
-        setIsAuthenticated(!!auth);
+        // Authenticated - set state and continue
+        setIsAuthenticated(true);
         setLoading(false);
       }
     };
@@ -221,7 +221,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   };
 
-  // Show loading state
+  // Login page should never reach here (handled by layout wrapper), but safety check
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
+
+  // Show loading state while checking authentication
   if (loading) {
     return (
       <div className="admin-layout">
@@ -235,12 +240,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  // Login page - don't show layout
-  if (pathname === '/admin/login') {
-    return <>{children}</>;
-  }
-
-  // Not authenticated - don't show layout, redirect will happen
+  // Not authenticated - show redirect message (redirect is happening in useEffect)
   if (!isAuthenticated) {
     return (
       <div className="admin-layout">
