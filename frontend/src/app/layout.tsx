@@ -28,14 +28,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const hasApiUrl = !!apiUrl;
   
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Meta tag for API URL - can be read by client-side code as fallback */}
         {apiUrl && (
           <meta name="api-base-url" content={apiUrl} />
         )}
       </head>
-      <body className={`${inter.variable} antialiased min-h-screen`}>
+      <body className={`${inter.variable} antialiased min-h-screen`} suppressHydrationWarning>
         {/* Inject API URL using Next.js Script - use afterInteractive to avoid hydration issues */}
         {apiUrl && (
           <Script

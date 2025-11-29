@@ -32,15 +32,19 @@ export function InjectApiUrl() {
         // This is a fallback - ideally the env var should be set
         const backendUrl = 'https://wissen-api-285326281784.us-central1.run.app';
         apiUrl = `${backendUrl}/api`;
-        console.warn('⚠️ Using fallback API URL construction:', apiUrl);
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Using fallback API URL construction:', apiUrl);
+        }
       }
       
       // If we found or constructed an API URL, inject it
       if (apiUrl && !(window as any).__API_BASE_URL__) {
         (window as any).__API_BASE_URL__ = apiUrl;
-        console.log('✅ API URL injected via client component:', apiUrl);
-      } else if ((window as any).__API_BASE_URL__) {
-        // Already injected, no need to log
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ API URL injected via client component:', apiUrl);
+        }
       }
     };
     

@@ -35,16 +35,25 @@ export const getApiBaseUrl = (): string => {
       const productionBackendUrl = 'https://wissen-api-285326281784.us-central1.run.app';
       injectedUrl = `${productionBackendUrl}/api`;
       (window as any).__API_BASE_URL__ = injectedUrl;
-      console.warn('⚠️ Using hardcoded production backend URL fallback:', injectedUrl);
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('⚠️ Using hardcoded production backend URL fallback:', injectedUrl);
+      }
     }
     
     if (injectedUrl) {
       // Ensure the URL ends with /api
       const finalUrl = injectedUrl.endsWith('/api') ? injectedUrl : `${injectedUrl}/api`;
-      console.log('✅ Using API URL:', finalUrl);
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Using API URL:', finalUrl);
+      }
       return finalUrl;
     } else {
-      console.warn('⚠️ window.__API_BASE_URL__ not found, script tag may not have executed yet');
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('⚠️ window.__API_BASE_URL__ not found, script tag may not have executed yet');
+      }
     }
   }
   
@@ -61,8 +70,8 @@ export const getApiBaseUrl = (): string => {
     apiUrl = process.env.NEXT_PUBLIC_API_URL;
   }
   
-  // Debug logging (only in browser)
-  if (typeof window !== 'undefined') {
+  // Debug logging (only in browser and development)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     if (!apiUrl) {
       console.warn('⚠️ NEXT_PUBLIC_API_URL not set, using localhost fallback');
       console.warn('process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
