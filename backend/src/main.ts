@@ -21,6 +21,10 @@ async function bootstrap() {
   // Get the underlying Express instance
   const expressApp = app.getHttpAdapter().getInstance();
   
+  // Disable strict routing and trailing slash redirects that cause 308 errors
+  expressApp.set('strict routing', false);
+  expressApp.set('case sensitive routing', false);
+  
   // IMPORTANT: Serve static files BEFORE setting global prefix
   // This ensures /uploads/ routes work without /api prefix
   const uploadsPath = join(process.cwd(), 'uploads');
@@ -123,7 +127,7 @@ async function bootstrap() {
   // Set global prefix for all API routes (this doesn't affect the /uploads route above)
   // IMPORTANT: Do this AFTER CORS to ensure CORS applies to all routes
   app.setGlobalPrefix('api', {
-    exclude: ['/health', '/uploads/(.*)'], // Exclude health and uploads from /api prefix
+    exclude: ['health', 'uploads'], // Exclude health and uploads from /api prefix
   });
   
     // Use port from config (3001 for local dev, 8080 for Cloud Run)

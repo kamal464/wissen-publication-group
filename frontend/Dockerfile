@@ -38,8 +38,8 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-# NEXT_PUBLIC_API_URL will be set by Cloud Run at runtime
-# It will be available to the Node.js process and can be read by the server-side layout
+# NEXT_PUBLIC_API_URL will be set by Cloud Run at runtime via --update-env-vars
+# The server.js will have access to process.env.NEXT_PUBLIC_API_URL
 
 CMD ["node", "server.js"]
 

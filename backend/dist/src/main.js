@@ -50,6 +50,8 @@ async function bootstrap() {
         });
         console.log('✅ NestJS application created');
         const expressApp = app.getHttpAdapter().getInstance();
+        expressApp.set('strict routing', false);
+        expressApp.set('case sensitive routing', false);
         const uploadsPath = (0, path_1.join)(process.cwd(), 'uploads');
         const uploadsPathDist = (0, path_1.join)(__dirname, '..', 'uploads');
         console.log(`[Main] Uploads path (cwd): ${uploadsPath}`);
@@ -102,9 +104,22 @@ async function bootstrap() {
                 index: false,
             });
         }
-        app.setGlobalPrefix('api');
         app.enableCors({
-            origin: app_config_1.config.cors.origin,
+            origin: (origin, callback) => {
+                if (!origin) {
+                    return callback(null, true);
+                }
+                const allowedOrigins = Array.isArray(app_config_1.config.cors.origin)
+                    ? app_config_1.config.cors.origin
+                    : [app_config_1.config.cors.origin];
+                if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+                    callback(null, true);
+                }
+                else {
+                    console.warn(`⚠️ CORS: Blocked origin: ${origin}`);
+                    callback(new Error('Not allowed by CORS'));
+                }
+            },
             credentials: app_config_1.config.cors.credentials,
             methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
             allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
@@ -112,8 +127,14 @@ async function bootstrap() {
             preflightContinue: false,
             optionsSuccessStatus: 200,
         });
-        console.log('🌐 CORS enabled for origins:', Array.isArray(app_config_1.config.cors.origin) ? app_config_1.config.cors.origin.join(', ') : app_config_1.config.cors.origin);
-        const port = Number(process.env.PORT || 8080);
+        const allowedOrigins = Array.isArray(app_config_1.config.cors.origin)
+            ? app_config_1.config.cors.origin
+            : [app_config_1.config.cors.origin];
+        console.log('🌐 CORS enabled for origins:', allowedOrigins.join(', '));
+        app.setGlobalPrefix('api', {
+            exclude: ['health', 'uploads'],
+        });
+        const port = Number(process.env.PORT || app_config_1.config.app.port);
         console.log(`🔌 Starting server on port ${port}...`);
         await app.listen(port, '0.0.0.0');
         console.log(`✅ Wissen Publication Group API running on http://0.0.0.0:${port}/api`);
