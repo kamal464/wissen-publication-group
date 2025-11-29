@@ -39,71 +39,93 @@ const app_module_1 = require("./app.module");
 const app_config_1 = require("./config/app.config");
 const express = __importStar(require("express"));
 async function bootstrap() {
-    const app = await core_1.NestFactory.create(app_module_1.AppModule);
-    const expressApp = app.getHttpAdapter().getInstance();
-    const uploadsPath = (0, path_1.join)(process.cwd(), 'uploads');
-    const uploadsPathDist = (0, path_1.join)(__dirname, '..', 'uploads');
-    console.log(`[Main] Uploads path (cwd): ${uploadsPath}`);
-    console.log(`[Main] Uploads path (dist): ${uploadsPathDist}`);
-    const staticOptions = {
-        setHeaders: (res, path) => {
-            const ext = path.split('.').pop()?.toLowerCase();
-            const contentTypeMap = {
-                'pdf': 'application/pdf',
-                'doc': 'application/msword',
-                'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'png': 'image/png',
-                'jpg': 'image/jpeg',
-                'jpeg': 'image/jpeg',
-            };
-            const contentType = contentTypeMap[ext || ''] || 'application/octet-stream';
-            res.setHeader('Content-Type', contentType);
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    try {
+        console.log('🚀 Starting Wissen Publication Group API...');
+        console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`🔌 PORT: ${process.env.PORT || '8080'}`);
+        console.log(`💾 DATABASE_URL: ${process.env.DATABASE_URL ? 'Set' : 'Not set'}`);
+        console.log('📦 Creating NestJS application...');
+        const app = await core_1.NestFactory.create(app_module_1.AppModule, {
+            logger: ['error', 'warn', 'log'],
+        });
+        console.log('✅ NestJS application created');
+        const expressApp = app.getHttpAdapter().getInstance();
+        const uploadsPath = (0, path_1.join)(process.cwd(), 'uploads');
+        const uploadsPathDist = (0, path_1.join)(__dirname, '..', 'uploads');
+        console.log(`[Main] Uploads path (cwd): ${uploadsPath}`);
+        console.log(`[Main] Uploads path (dist): ${uploadsPathDist}`);
+        const staticOptions = {
+            setHeaders: (res, path) => {
+                const ext = path.split('.').pop()?.toLowerCase();
+                const contentTypeMap = {
+                    'pdf': 'application/pdf',
+                    'doc': 'application/msword',
+                    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'png': 'image/png',
+                    'jpg': 'image/jpeg',
+                    'jpeg': 'image/jpeg',
+                };
+                const contentType = contentTypeMap[ext || ''] || 'application/octet-stream';
+                res.setHeader('Content-Type', contentType);
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+                res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            }
+        };
+        const fs = require('fs');
+        if (fs.existsSync(uploadsPath)) {
+            console.log(`[Main] ✅ Using uploads path: ${uploadsPath}`);
+            expressApp.use('/uploads', express.static(uploadsPath, staticOptions));
+            console.log(`[Main] ✅ Static file serving enabled for /uploads/`);
         }
-    };
-    const fs = require('fs');
-    if (fs.existsSync(uploadsPath)) {
-        console.log(`[Main] ✅ Using uploads path: ${uploadsPath}`);
-        expressApp.use('/uploads', express.static(uploadsPath, staticOptions));
-        console.log(`[Main] ✅ Static file serving enabled for /uploads/`);
-    }
-    else if (fs.existsSync(uploadsPathDist)) {
-        console.log(`[Main] ✅ Using uploads path: ${uploadsPathDist}`);
-        expressApp.use('/uploads', express.static(uploadsPathDist, staticOptions));
-        console.log(`[Main] ✅ Static file serving enabled for /uploads/`);
-    }
-    else {
-        console.error(`[Main] ❌ WARNING: Uploads directory not found!`);
-        console.error(`[Main] Tried: ${uploadsPath}`);
-        console.error(`[Main] Tried: ${uploadsPathDist}`);
-        console.error(`[Main] Current working directory: ${process.cwd()}`);
-        console.error(`[Main] __dirname: ${__dirname}`);
-    }
-    if (require('fs').existsSync(uploadsPath)) {
-        app.useStaticAssets(uploadsPath, {
-            prefix: '/uploads/',
-            index: false,
+        else if (fs.existsSync(uploadsPathDist)) {
+            console.log(`[Main] ✅ Using uploads path: ${uploadsPathDist}`);
+            expressApp.use('/uploads', express.static(uploadsPathDist, staticOptions));
+            console.log(`[Main] ✅ Static file serving enabled for /uploads/`);
+        }
+        else {
+            console.error(`[Main] ❌ WARNING: Uploads directory not found!`);
+            console.error(`[Main] Tried: ${uploadsPath}`);
+            console.error(`[Main] Tried: ${uploadsPathDist}`);
+            console.error(`[Main] Current working directory: ${process.cwd()}`);
+            console.error(`[Main] __dirname: ${__dirname}`);
+        }
+        if (require('fs').existsSync(uploadsPath)) {
+            app.useStaticAssets(uploadsPath, {
+                prefix: '/uploads/',
+                index: false,
+            });
+        }
+        else if (require('fs').existsSync(uploadsPathDist)) {
+            app.useStaticAssets(uploadsPathDist, {
+                prefix: '/uploads/',
+                index: false,
+            });
+        }
+        app.setGlobalPrefix('api');
+        app.enableCors({
+            origin: app_config_1.config.cors.origin,
+            credentials: app_config_1.config.cors.credentials,
         });
+        const port = Number(process.env.PORT || 8080);
+        console.log(`🔌 Starting server on port ${port}...`);
+        await app.listen(port, '0.0.0.0');
+        console.log(`✅ Wissen Publication Group API running on http://0.0.0.0:${port}/api`);
+        console.log(`📁 Files available at http://0.0.0.0:${port}/uploads/`);
+        console.log(`🌐 Server is ready and listening on port ${port}`);
+        console.log(`💚 Health check available at http://0.0.0.0:${port}/api/health`);
     }
-    else if (require('fs').existsSync(uploadsPathDist)) {
-        app.useStaticAssets(uploadsPathDist, {
-            prefix: '/uploads/',
-            index: false,
-        });
+    catch (error) {
+        console.error('❌ Failed to start application:', error);
+        if (error instanceof Error) {
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+        }
+        process.exit(1);
     }
-    app.setGlobalPrefix('api');
-    app.enableCors({
-        origin: app_config_1.config.cors.origin,
-        credentials: app_config_1.config.cors.credentials,
-    });
-    const port = Number(process.env.PORT ?? 3001);
-    await app.listen(port, '0.0.0.0');
-    console.log(`🚀 Wissen Publication Group API running on http://localhost:${port}/api`);
-    console.log(`📁 Files available at http://localhost:${port}/uploads/`);
-    console.log(`📁 Files also at http://localhost:${port}/api/uploads/ (via controller)`);
-    console.log(`📄 Test file: http://localhost:${port}/uploads/93496f5c3a68fe9e38acee222098f6a6.pdf`);
 }
-bootstrap();
+bootstrap().catch((error) => {
+    console.error('❌ Unhandled error during bootstrap:', error);
+    process.exit(1);
+});
 //# sourceMappingURL=main.js.map

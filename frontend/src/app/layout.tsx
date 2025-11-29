@@ -6,6 +6,7 @@ import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.css";
 import "primeicons/primeicons.css";
 import { ReduxProvider } from "@/store/Provider";
+import { InjectApiUrl } from "@/components/InjectApiUrl";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -19,22 +20,10 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  // Get API URL from environment (server-side only)
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-  
   return (
     <html lang="en">
-      <head>
-        {/* Inject API URL at runtime for client-side access */}
-        {apiUrl && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `window.__API_BASE_URL__ = ${JSON.stringify(apiUrl)};`,
-            }}
-          />
-        )}
-      </head>
       <body className={`${inter.variable} antialiased min-h-screen`}>
+        <InjectApiUrl />
         <ReduxProvider>
           {children}
         </ReduxProvider>
