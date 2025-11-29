@@ -6,7 +6,13 @@ import { config } from './config/app.config';
 import * as express from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  try {
+    console.log('🚀 Starting Wissen Publication Group API...');
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔌 PORT: ${process.env.PORT || '3001'}`);
+    console.log(`💾 DATABASE_URL: ${process.env.DATABASE_URL ? 'Set' : 'Not set'}`);
+    
+    const app = await NestFactory.create<NestExpressApplication>(AppModule);
   
   // Get the underlying Express instance
   const expressApp = app.getHttpAdapter().getInstance();
@@ -84,12 +90,22 @@ async function bootstrap() {
     credentials: config.cors.credentials,
   });
   
-  const port = Number(process.env.PORT ?? 3001);
-  await app.listen(port, '0.0.0.0'); // Listen on all interfaces for Cloud Run
-  console.log(`🚀 Wissen Publication Group API running on http://localhost:${port}/api`);
-  console.log(`📁 Files available at http://localhost:${port}/uploads/`);
-  console.log(`📁 Files also at http://localhost:${port}/api/uploads/ (via controller)`);
-  console.log(`📄 Test file: http://localhost:${port}/uploads/93496f5c3a68fe9e38acee222098f6a6.pdf`);
+    const port = Number(process.env.PORT ?? 3001);
+    await app.listen(port, '0.0.0.0'); // Listen on all interfaces for Cloud Run
+    console.log(`✅ Wissen Publication Group API running on http://0.0.0.0:${port}/api`);
+    console.log(`📁 Files available at http://0.0.0.0:${port}/uploads/`);
+    console.log(`🌐 Server is ready and listening on port ${port}`);
+  } catch (error) {
+    console.error('❌ Failed to start application:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    process.exit(1);
+  }
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('❌ Unhandled error during bootstrap:', error);
+  process.exit(1);
+});
