@@ -1,9 +1,9 @@
-import ArticleClient from './ArticleClient';
-
-// Required for static export - must be exported before default export
+// Required for static export - export must be at top level
 export async function generateStaticParams() {
   return [];
 }
+
+import ArticleClient from './ArticleClient';
 
 export default function ArticlePage() {
   return <ArticleClient />;
