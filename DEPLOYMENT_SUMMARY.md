@@ -1,5 +1,8 @@
 # ✅ Deployment Setup Complete - Wissen Publication Group
 
+> **Last Updated**: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+> **Auto-Deployment**: ✅ Enabled
+
 ## 🎉 What Has Been Done
 
 ### 1. ✅ Branding Updated
