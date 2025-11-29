@@ -126,7 +126,8 @@ async function bootstrap() {
     exclude: ['/health', '/uploads/(.*)'], // Exclude health and uploads from /api prefix
   });
   
-    const port = Number(process.env.PORT || 8080);
+    // Use port from config (3001 for local dev, 8080 for Cloud Run)
+    const port = Number(process.env.PORT || config.app.port);
     console.log(`🔌 Starting server on port ${port}...`);
     await app.listen(port, '0.0.0.0'); // Listen on all interfaces for Cloud Run
     console.log(`✅ Wissen Publication Group API running on http://0.0.0.0:${port}/api`);
