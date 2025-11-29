@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateJournalDto } from './dto/create-journal.dto';
 
 @Injectable()
 export class JournalsService {
+  private readonly logger = new Logger(JournalsService.name);
+
   constructor(private prisma: PrismaService) {}
 
   create(createJournalDto: CreateJournalDto) {
@@ -12,14 +14,19 @@ export class JournalsService {
     });
   }
 
-  findAll() {
-    return this.prisma.journal.findMany({
-      include: {
-        _count: {
-          select: { articles: true },
+  async findAll() {
+    try {
+      return await this.prisma.journal.findMany({
+        include: {
+          _count: {
+            select: { articles: true },
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      this.logger.error('Error fetching journals:', error);
+      throw error;
+    }
   }
 
   findOne(id: number) {

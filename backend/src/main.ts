@@ -3,6 +3,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { AppModule } from './app.module';
 import { config } from './config/app.config';
+import { AllExceptionsFilter } from './filters/http-exception.filter';
 import * as express from 'express';
 
 async function bootstrap() {
@@ -18,6 +19,9 @@ async function bootstrap() {
       logger: ['error', 'warn', 'log'],
     });
     console.log('✅ NestJS application created');
+    
+    // Add global exception filter for better error handling
+    app.useGlobalFilters(new AllExceptionsFilter());
   
   // Get the underlying Express instance
   const expressApp = app.getHttpAdapter().getInstance();
