@@ -147,14 +147,18 @@ jobs:
 
       - name: Deploy Backend to Cloud Run
         run: |
+          # Create env vars file to handle comma-separated values properly
+          cat > /tmp/env-vars.yaml << EOF
+          DATABASE_URL: "${{ secrets.DATABASE_URL }}"
+          NODE_ENV: "production"
+          CORS_ORIGIN: "https://wissen-frontend-285326281784.us-central1.run.app,http://localhost:3000,http://localhost:3002"
+          EOF
           gcloud run deploy wissen-api \
             --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-api/wissen-api:${{ github.sha }} \
             --platform managed \
             --region us-central1 \
             --allow-unauthenticated \
-            --update-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }}" \
-            --update-env-vars "NODE_ENV=production" \
-            --update-env-vars "CORS_ORIGIN=https://wissen-frontend-285326281784.us-central1.run.app,http://localhost:3000,http://localhost:3002" \
+            --env-vars-file /tmp/env-vars.yaml \
             --memory 512Mi \
             --cpu 1 \
             --timeout 300 \
