@@ -7,6 +7,10 @@ export const size = {
 
 export const contentType = 'image/png';
 
+// Required for static export
+export const dynamic = 'force-static';
+export const revalidate = false;
+
 export default function Icon() {
   return new ImageResponse(
     (
@@ -23,7 +27,7 @@ export default function Icon() {
           fontWeight: 700,
         }}
       >
-        UP
+        WPG
       </div>
     ),
     size,

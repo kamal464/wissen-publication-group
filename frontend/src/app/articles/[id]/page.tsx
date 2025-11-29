@@ -1,5 +1,8 @@
 'use client';
 
+// For static export compatibility
+export const dynamicParams = true;
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';

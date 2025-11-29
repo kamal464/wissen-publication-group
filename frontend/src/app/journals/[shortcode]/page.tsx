@@ -17,6 +17,9 @@ interface MenuItem {
   href: string;
 }
 
+// For static export compatibility
+export const dynamicParams = true;
+
 export default function JournalDetailPage() {
   const params = useParams();
   const router = useRouter();
