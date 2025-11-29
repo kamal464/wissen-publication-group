@@ -43,5 +43,5 @@ RUN mkdir -p uploads
 EXPOSE 8080
 
 # Start application
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
 
