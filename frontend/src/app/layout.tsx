@@ -7,6 +7,7 @@ import "primereact/resources/primereact.css";
 import "primeicons/primeicons.css";
 import { ReduxProvider } from "@/store/Provider";
 import { InjectApiUrl } from "@/components/InjectApiUrl";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -23,23 +24,35 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Server-side: Read env var (available at runtime in Cloud Run, or from .env.local in dev)
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   
-  // Also add as meta tag for client-side fallback reading
-  const hasApiUrl = !!apiUrl;
-  
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Meta tag for API URL - can be read by client-side code as fallback */}
+        {/* Meta tag for API URL - provides fallback for client-side injection */}
         {apiUrl && (
           <meta name="api-base-url" content={apiUrl} />
         )}
+        {/* Prevent FOUC (Flash of Unstyled Content) */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            html { visibility: hidden; }
+            html.hydrated { visibility: visible; }
+          `
+        }} />
       </head>
       <body className={`${inter.variable} antialiased min-h-screen`} suppressHydrationWarning>
-        {/* Inject API URL - use only client-side component to avoid hydration issues */}
+        {/* Inject API URL - client-side only, no rendering */}
         <InjectApiUrl />
-        <ReduxProvider>
-          {children}
-        </ReduxProvider>
+        <ErrorBoundary>
+          <ReduxProvider>
+            {children}
+          </ReduxProvider>
+        </ErrorBoundary>
+        {/* Mark as hydrated after client-side JS loads */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `document.documentElement.classList.add('hydrated');`,
+          }}
+        />
       </body>
     </html>
   );

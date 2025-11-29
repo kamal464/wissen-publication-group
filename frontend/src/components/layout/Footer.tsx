@@ -3,10 +3,10 @@ export default function Footer() {
   // Update this manually each year or use a build-time constant
   const currentYear = 2025;
   return (
-    <footer className="bg-gray-800 text-white py-8">
+    <footer className="bg-gray-800 text-white py-8" suppressHydrationWarning>
       <div className="container mx-auto px-4">
         <div className="text-center">
-          <p>&copy; {currentYear} Wissen Publication Group. All rights reserved.</p>
+          <p suppressHydrationWarning>&copy; {currentYear} Wissen Publication Group. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -1,91 +1,73 @@
 /**
- * API Configuration Utility
- * Centralized place to get API base URL and construct full URLs
+ * Robust API Configuration Utility
+ * Handles all scenarios: SSR, CSR, production, development
+ * Multiple fallback mechanisms for maximum reliability
  */
 
-// Get API base URL from environment variable
-// If NEXT_PUBLIC_API_URL is set, use it (should include /api if needed)
-// Otherwise fallback to localhost for development
-// For SSR with standalone output, we need to inject the env var at runtime
-// This function will be called both server-side and client-side
+// Production backend URL (fallback)
+const PRODUCTION_BACKEND_URL = 'https://wissen-api-285326281784.us-central1.run.app';
+const DEVELOPMENT_BACKEND_URL = 'http://localhost:3001';
+
+/**
+ * Get API base URL with multiple fallback mechanisms
+ * Priority:
+ * 1. window.__API_BASE_URL__ (injected by InjectApiUrl component)
+ * 2. Meta tag (set by server in layout.tsx)
+ * 3. process.env.NEXT_PUBLIC_API_URL (build-time or runtime)
+ * 4. __NEXT_DATA__.env (Next.js runtime env)
+ * 5. Production/development fallback based on hostname
+ */
 export const getApiBaseUrl = (): string => {
-  // Try multiple ways to get the env var (for different Next.js versions and deployment scenarios)
   let apiUrl: string | undefined;
-  
-  // First, try to get from a global variable that we'll inject at runtime via script tag
-  // The script tag is injected in layout.tsx (server-side) and should be available immediately
+
+  // Client-side: Try multiple sources
   if (typeof window !== 'undefined') {
-    // Browser: Check for runtime-injected value (from layout.tsx script tag)
-    let injectedUrl = (window as any).__API_BASE_URL__;
-    
-    // Fallback 1: Try to read from meta tag
-    if (!injectedUrl) {
-      const metaTag = document.querySelector('meta[name="api-base-url"]');
-      if (metaTag) {
-        injectedUrl = metaTag.getAttribute('content');
-        if (injectedUrl) {
-          // Cache it in window for future use
-          (window as any).__API_BASE_URL__ = injectedUrl;
+    // Priority 1: Runtime-injected value
+    apiUrl = (window as any).__API_BASE_URL__;
+
+    // Priority 2: Meta tag (if not already injected)
+    if (!apiUrl) {
+      try {
+        const metaTag = document.querySelector('meta[name="api-base-url"]');
+        if (metaTag) {
+          apiUrl = metaTag.getAttribute('content') || undefined;
+          // Cache it for future use
+          if (apiUrl) {
+            (window as any).__API_BASE_URL__ = apiUrl;
+          }
         }
+      } catch (e) {
+        // Silently fail if DOM access fails
       }
     }
-    
-    // Fallback 2: If in production and still no URL, use known backend URL
-    if (!injectedUrl && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      const productionBackendUrl = 'https://wissen-api-285326281784.us-central1.run.app';
-      injectedUrl = `${productionBackendUrl}/api`;
-      (window as any).__API_BASE_URL__ = injectedUrl;
-      // Only log in development
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('⚠️ Using hardcoded production backend URL fallback:', injectedUrl);
-      }
+
+    // Priority 3: Next.js runtime env
+    if (!apiUrl) {
+      apiUrl = (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_API_URL;
     }
-    
-    if (injectedUrl) {
-      // Ensure the URL ends with /api
-      const finalUrl = injectedUrl.endsWith('/api') ? injectedUrl : `${injectedUrl}/api`;
-      // Only log in development
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Using API URL:', finalUrl);
-      }
-      return finalUrl;
-    } else {
-      // Only log in development
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('⚠️ window.__API_BASE_URL__ not found, script tag may not have executed yet');
-      }
-    }
-  }
-  
-  // Try standard Next.js env var replacement (works at build time for client code)
-  if (typeof window !== 'undefined') {
-    // Browser: Try Next.js runtime env
-    apiUrl = (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_API_URL;
-    // Fallback to process.env (Next.js injects NEXT_PUBLIC_* vars here at build time)
+
+    // Priority 4: process.env (build-time replacement)
     if (!apiUrl) {
       apiUrl = process.env.NEXT_PUBLIC_API_URL;
     }
+
+    // Priority 5: Production fallback based on hostname
+    if (!apiUrl) {
+      const hostname = window.location.hostname;
+      if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.includes('localhost')) {
+        apiUrl = `${PRODUCTION_BACKEND_URL}/api`;
+        // Cache it
+        (window as any).__API_BASE_URL__ = apiUrl;
+      }
+    }
   } else {
-    // Server-side: Use process.env directly (from Cloud Run env vars)
+    // Server-side: Use process.env directly
     apiUrl = process.env.NEXT_PUBLIC_API_URL;
   }
-  
-  // Debug logging (only in browser and development)
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    if (!apiUrl) {
-      console.warn('⚠️ NEXT_PUBLIC_API_URL not set, using localhost fallback');
-      console.warn('process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
-      console.warn('__NEXT_DATA__.env:', (window as any).__NEXT_DATA__?.env);
-      console.warn('window.__API_BASE_URL__:', (window as any).__API_BASE_URL__);
-      console.warn('All NEXT_PUBLIC_* vars:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC')));
-    } else {
-      console.log('✅ Using API URL:', apiUrl);
-    }
-  }
-  
+
+  // Normalize the URL
   if (apiUrl) {
-    // If the URL already includes /api, use it as is
-    // Otherwise, append /api
+    // Ensure it ends with /api
     if (apiUrl.endsWith('/api')) {
       return apiUrl;
     } else if (apiUrl.endsWith('/')) {
@@ -94,52 +76,64 @@ export const getApiBaseUrl = (): string => {
       return `${apiUrl}/api`;
     }
   }
-  
-  // Fallback to localhost for local development
-  // In production, this should never be reached if NEXT_PUBLIC_API_URL is set
-  return 'http://localhost:3001/api';
+
+  // Final fallback: development localhost
+  return `${DEVELOPMENT_BACKEND_URL}/api`;
 };
 
-// Get base URL for file uploads/images (without /api)
+/**
+ * Get base URL for file uploads/images (without /api)
+ */
 export const getFileBaseUrl = (): string => {
-  const envUrl = 
-    typeof window !== 'undefined' 
-      ? (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_API_URL 
-      : process.env.NEXT_PUBLIC_API_URL;
-  const apiUrl = envUrl || process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = getApiBaseUrl();
   
-  if (apiUrl) {
-    // Remove /api if present, or trailing slash
-    if (apiUrl.endsWith('/api')) {
-      return apiUrl.replace('/api', '');
-    } else if (apiUrl.endsWith('/')) {
-      return apiUrl.slice(0, -1);
-    }
-    return apiUrl;
+  // Remove /api from the end
+  if (apiUrl.endsWith('/api')) {
+    return apiUrl.replace('/api', '');
   }
   
-  // Fallback to localhost for local development
-  // In production, this should never be reached if NEXT_PUBLIC_API_URL is set
-  return 'http://localhost:3001';
+  return apiUrl.replace(/\/api\/?$/, '');
 };
 
-// Construct full URL for API endpoints
+/**
+ * Construct full URL for API endpoints
+ */
 export const getApiUrl = (endpoint: string): string => {
   const baseUrl = getApiBaseUrl();
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   return `${baseUrl}${cleanEndpoint}`;
 };
 
-// Construct full URL for file/image paths
+/**
+ * Construct full URL for file/image paths
+ */
 export const getFileUrl = (path: string): string => {
-  const baseUrl = getFileBaseUrl();
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  
   // If path already starts with http, return as is
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
   }
-  
+
+  const baseUrl = getFileBaseUrl();
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
   return `${baseUrl}${cleanPath}`;
 };
 
+/**
+ * Verify API URL is accessible (client-side only)
+ */
+export const verifyApiUrl = async (): Promise<boolean> => {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    const apiUrl = getApiBaseUrl();
+    const response = await fetch(`${apiUrl.replace('/api', '')}/health`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      // Don't wait too long
+      signal: AbortSignal.timeout(3000),
+    });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+};
