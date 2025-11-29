@@ -1,7 +1,7 @@
 'use client';
 
-// For static export compatibility
-export const dynamicParams = true;
+// Note: Client components can't use generateStaticParams
+// Dynamic routes will be handled client-side via catch-all
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';

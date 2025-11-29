@@ -17,8 +17,8 @@ interface MenuItem {
   href: string;
 }
 
-// For static export compatibility
-export const dynamicParams = true;
+// Note: Client components can't use generateStaticParams
+// Dynamic routes will be handled client-side via catch-all
 
 export default function JournalDetailPage() {
   const params = useParams();

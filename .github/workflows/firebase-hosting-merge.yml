@@ -29,16 +29,18 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:3001' }}
-      
-      - name: Verify build output
-        working-directory: ./frontend
-        run: |
-          if [ ! -f "out/index.html" ]; then
-            echo "Error: index.html not found in out directory"
-            ls -la out/ || echo "out directory does not exist"
-            exit 1
-          fi
-          echo "✅ Build output verified - index.html found"
+
+      - name: Setup Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: ./backend
+        run: npx prisma generate
+
+      - name: Build Backend
+        working-directory: ./backend
+        run: npm run build
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
@@ -47,4 +49,3 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_WISSEN_PUBLICATION_GROUP }}'
           channelId: live
           projectId: wissen-publication-group
-
