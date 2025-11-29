@@ -22,6 +22,10 @@ export const getApiBaseUrl = (): string => {
   }
   
   // Fallback to localhost for local development
+  // In production, this should never be reached if NEXT_PUBLIC_API_URL is set
+  if (typeof window !== 'undefined') {
+    console.warn('⚠️ NEXT_PUBLIC_API_URL not set, using localhost fallback');
+  }
   return 'http://localhost:3001/api';
 };
 
@@ -40,6 +44,10 @@ export const getFileBaseUrl = (): string => {
   }
   
   // Fallback to localhost for local development
+  // In production, this should never be reached if NEXT_PUBLIC_API_URL is set
+  if (typeof window !== 'undefined') {
+    console.warn('⚠️ NEXT_PUBLIC_API_URL not set, using localhost fallback');
+  }
   return 'http://localhost:3001';
 };
 
