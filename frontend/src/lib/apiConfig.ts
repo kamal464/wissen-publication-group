@@ -7,21 +7,30 @@
 // If NEXT_PUBLIC_API_URL is set, use it (should include /api if needed)
 // Otherwise fallback to localhost for development
 export const getApiBaseUrl = (): string => {
-  // Next.js replaces NEXT_PUBLIC_* vars at build time
-  // In browser, these are available as process.env.NEXT_PUBLIC_*
-  // Use a more reliable way to get the env var
-  const envUrl = 
-    typeof window !== 'undefined' 
-      ? (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_API_URL 
-      : process.env.NEXT_PUBLIC_API_URL;
+  // Try multiple ways to get the env var (for different Next.js versions and deployment scenarios)
+  let apiUrl: string | undefined;
   
-  // Fallback to process.env if window method didn't work
-  const apiUrl = envUrl || process.env.NEXT_PUBLIC_API_URL;
+  if (typeof window !== 'undefined') {
+    // Browser: Try Next.js runtime env
+    apiUrl = (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_API_URL;
+    // Fallback to process.env (Next.js injects NEXT_PUBLIC_* vars here)
+    if (!apiUrl) {
+      apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    }
+  } else {
+    // Server-side: Use process.env directly
+    apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  }
   
-  // Debug logging (only in browser, not during build)
-  if (typeof window !== 'undefined' && !apiUrl) {
-    console.warn('⚠️ NEXT_PUBLIC_API_URL not set, using localhost fallback');
-    console.warn('Available env vars:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC')));
+  // Debug logging (only in browser)
+  if (typeof window !== 'undefined') {
+    if (!apiUrl) {
+      console.warn('⚠️ NEXT_PUBLIC_API_URL not set, using localhost fallback');
+      console.warn('process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+      console.warn('__NEXT_DATA__.env:', (window as any).__NEXT_DATA__?.env);
+    } else {
+      console.log('✅ Using API URL:', apiUrl);
+    }
   }
   
   if (apiUrl) {

@@ -80,7 +80,8 @@ jobs:
             --port 3000 \
             --memory 1Gi \
             --cpu 1 \
-            --set-env-vars "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}"
+            --set-env-vars "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" \
+            --update-env-vars "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}"
 
   deploy-backend:
     runs-on: ubuntu-latest
