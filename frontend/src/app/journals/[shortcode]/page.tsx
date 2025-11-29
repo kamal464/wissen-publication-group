@@ -1,9 +1,7 @@
-// Server component wrapper that exports generateStaticParams
 import JournalClient from './JournalClient';
 
-// Required for static export
-export async function generateStaticParams(): Promise<Array<{ shortcode: string }>> {
-  // Return empty array - routes will be handled client-side
+// Required for static export - must be exported before default export
+export async function generateStaticParams() {
   return [];
 }
 
