@@ -53,10 +53,12 @@ RUN echo '#!/bin/sh' > /app/entrypoint.sh && \
     echo 'set -e' >> /app/entrypoint.sh && \
     echo 'echo "🔄 Running database migrations..."' >> /app/entrypoint.sh && \
     echo 'npx prisma migrate deploy || echo "⚠️ Migration failed or already applied"' >> /app/entrypoint.sh && \
-    echo 'echo "✅ Starting application..."' >> /app/entrypoint.sh && \
+    echo 'echo "✅ Migrations completed"' >> /app/entrypoint.sh && \
+    echo 'echo "🚀 Starting application..."' >> /app/entrypoint.sh && \
     echo 'exec node dist/src/main.js' >> /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh
 
-# Start application (runs migrations first)
+# Start application (runs migrations first, but NOT data migration)
+# Note: Data migration must be done separately using scripts/migrate-data.ts
 CMD ["/app/entrypoint.sh"]
 
