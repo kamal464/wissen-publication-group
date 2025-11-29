@@ -722,10 +722,11 @@ export default function JournalDetailPage() {
                   {boardMembers.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {boardMembers.map((member) => {
+                        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
                         const imageUrl = member.imageUrl 
                           ? (member.imageUrl.startsWith('http') 
                               ? member.imageUrl 
-                              : `http://localhost:3001${member.imageUrl}`)
+                              : `${baseUrl}${member.imageUrl}`)
                           : null;
                         
                         return (
@@ -839,10 +840,11 @@ export default function JournalDetailPage() {
                           return authors.map((a: any) => a.name).join(', ');
                         };
                         
+                        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
                         const getImageUrl = (imagePath?: string) => {
                           if (!imagePath) return '';
                           if (imagePath.startsWith('http')) return imagePath;
-                          return `http://localhost:3001${imagePath}`;
+                          return `${baseUrl}${imagePath}`;
                         };
                         
                         return (
