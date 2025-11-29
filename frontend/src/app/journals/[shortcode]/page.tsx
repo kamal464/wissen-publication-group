@@ -1,8 +1,4 @@
-// Required for static export - export must be at top level
-export async function generateStaticParams() {
-  return [];
-}
-
+// SSR - no generateStaticParams needed
 import JournalClient from './JournalClient';
 
 export default function JournalPage() {

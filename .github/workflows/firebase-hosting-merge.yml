@@ -1,4 +1,4 @@
-name: Deploy to Firebase Hosting on Merge
+name: Deploy to Cloud Run (SSR)
 
 on:
   push:
@@ -6,9 +6,8 @@ on:
       - main
 
 jobs:
-  build_and_deploy:
+  deploy-frontend:
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,6 +19,19 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
       - name: Install Frontend Dependencies
         working-directory: ./frontend
         run: npm ci
@@ -28,7 +40,54 @@ jobs:
         working-directory: ./frontend
         run: npm run build
         env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:3001' }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+
+      - name: Build Frontend Docker Image
+        working-directory: ./frontend
+        run: |
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend:${{ github.sha }} .
+          docker tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend:${{ github.sha }} gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend:latest
+
+      - name: Push Frontend Image
+        run: |
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend:${{ github.sha }}
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend:latest
+
+      - name: Deploy Frontend to Cloud Run
+        run: |
+          gcloud run deploy wissen-frontend \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-frontend:${{ github.sha }} \
+            --platform managed \
+            --region us-central1 \
+            --allow-unauthenticated \
+            --port 3000 \
+            --memory 1Gi \
+            --cpu 1 \
+            --set-env-vars "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}"
+
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
 
       - name: Setup Backend Dependencies
         working-directory: ./backend
@@ -42,10 +101,24 @@ jobs:
         working-directory: ./backend
         run: npm run build
 
-      - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_WISSEN_PUBLICATION_GROUP }}'
-          channelId: live
-          projectId: wissen-publication-group
+      - name: Build Backend Docker Image
+        working-directory: ./backend
+        run: |
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-api:${{ github.sha }} .
+          docker tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-api:${{ github.sha }} gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-api:latest
+
+      - name: Push Backend Image
+        run: |
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-api:${{ github.sha }}
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-api:latest
+
+      - name: Deploy Backend to Cloud Run
+        run: |
+          gcloud run deploy wissen-api \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/wissen-api:${{ github.sha }} \
+            --platform managed \
+            --region us-central1 \
+            --allow-unauthenticated \
+            --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }},PORT=8080,NODE_ENV=production" \
+            --memory 512Mi \
+            --cpu 1
