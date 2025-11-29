@@ -24,8 +24,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Server-side: Read env var (available at runtime in Cloud Run, or from .env.local in dev)
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   
+  // Also add as meta tag for client-side fallback reading
+  const hasApiUrl = !!apiUrl;
+  
   return (
     <html lang="en">
+      <head>
+        {/* Meta tag for API URL - can be read by client-side code as fallback */}
+        {apiUrl && (
+          <meta name="api-base-url" content={apiUrl} />
+        )}
+      </head>
       <body className={`${inter.variable} antialiased min-h-screen`}>
         {/* Inject API URL using Next.js Script with beforeInteractive - must be in body, not head */}
         {apiUrl && (
@@ -34,6 +43,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             strategy="beforeInteractive"
             dangerouslySetInnerHTML={{
               __html: `window.__API_BASE_URL__ = ${JSON.stringify(apiUrl)};`,
+            }}
+          />
+        )}
+        {/* Also inject inline script as immediate fallback */}
+        {apiUrl && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `if(typeof window!=='undefined'){window.__API_BASE_URL__=window.__API_BASE_URL__||${JSON.stringify(apiUrl)};}`,
             }}
           />
         )}
