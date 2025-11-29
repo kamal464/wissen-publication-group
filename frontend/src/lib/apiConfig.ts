@@ -7,7 +7,14 @@
 // If NEXT_PUBLIC_API_URL is set, use it (should include /api if needed)
 // Otherwise fallback to localhost for development
 export const getApiBaseUrl = (): string => {
+  // Next.js replaces NEXT_PUBLIC_* vars at build time
+  // In browser, these are available as process.env.NEXT_PUBLIC_*
   const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  
+  // Debug logging (only in browser, not during build)
+  if (typeof window !== 'undefined' && !envUrl) {
+    console.warn('⚠️ NEXT_PUBLIC_API_URL not set, using localhost fallback');
+  }
   
   if (envUrl) {
     // If the URL already includes /api, use it as is
@@ -23,9 +30,6 @@ export const getApiBaseUrl = (): string => {
   
   // Fallback to localhost for local development
   // In production, this should never be reached if NEXT_PUBLIC_API_URL is set
-  if (typeof window !== 'undefined') {
-    console.warn('⚠️ NEXT_PUBLIC_API_URL not set, using localhost fallback');
-  }
   return 'http://localhost:3001/api';
 };
 
@@ -45,9 +49,6 @@ export const getFileBaseUrl = (): string => {
   
   // Fallback to localhost for local development
   // In production, this should never be reached if NEXT_PUBLIC_API_URL is set
-  if (typeof window !== 'undefined') {
-    console.warn('⚠️ NEXT_PUBLIC_API_URL not set, using localhost fallback');
-  }
   return 'http://localhost:3001';
 };
 
