@@ -86,12 +86,26 @@ async function bootstrap() {
     });
   }
   
-  // Set global prefix for all API routes (this doesn't affect the /uploads route above)
-  app.setGlobalPrefix('api');
-  
+  // Enable CORS BEFORE setting global prefix to ensure it applies to all routes
   // Enable CORS with proper configuration to handle preflight requests
   app.enableCors({
-    origin: config.cors.origin,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      const allowedOrigins = Array.isArray(config.cors.origin) 
+        ? config.cors.origin 
+        : [config.cors.origin];
+      
+      if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        callback(null, true);
+      } else {
+        console.warn(`⚠️ CORS: Blocked origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: config.cors.credentials,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
@@ -101,7 +115,16 @@ async function bootstrap() {
   });
   
   // Log CORS configuration
-  console.log('🌐 CORS enabled for origins:', Array.isArray(config.cors.origin) ? config.cors.origin.join(', ') : config.cors.origin);
+  const allowedOrigins = Array.isArray(config.cors.origin) 
+    ? config.cors.origin 
+    : [config.cors.origin];
+  console.log('🌐 CORS enabled for origins:', allowedOrigins.join(', '));
+  
+  // Set global prefix for all API routes (this doesn't affect the /uploads route above)
+  // IMPORTANT: Do this AFTER CORS to ensure CORS applies to all routes
+  app.setGlobalPrefix('api', {
+    exclude: ['/health', '/uploads/(.*)'], // Exclude health and uploads from /api prefix
+  });
   
     const port = Number(process.env.PORT || 8080);
     console.log(`🔌 Starting server on port ${port}...`);
