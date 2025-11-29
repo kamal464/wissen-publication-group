@@ -7,10 +7,8 @@ const nextConfig: NextConfig = {
     unoptimized: false, // Can use optimized images with SSR
   },
   trailingSlash: true,
-  // Explicitly expose environment variables
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-  },
+  // Note: NEXT_PUBLIC_* variables are automatically available
+  // No need to explicitly declare them in env
 };
 
 export default nextConfig;
