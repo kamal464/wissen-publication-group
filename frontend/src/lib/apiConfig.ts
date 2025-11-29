@@ -28,6 +28,13 @@ export const getApiBaseUrl = (): string => {
       console.warn('⚠️ NEXT_PUBLIC_API_URL not set, using localhost fallback');
       console.warn('process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
       console.warn('__NEXT_DATA__.env:', (window as any).__NEXT_DATA__?.env);
+      console.warn('All NEXT_PUBLIC_* vars:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC')));
+      // For production, try to get from Cloud Run env var (if set at runtime)
+      const cloudRunUrl = (window as any).__NEXT_DATA__?.runtimeConfig?.NEXT_PUBLIC_API_URL;
+      if (cloudRunUrl) {
+        console.log('✅ Found API URL from runtime config:', cloudRunUrl);
+        return cloudRunUrl.endsWith('/api') ? cloudRunUrl : `${cloudRunUrl}/api`;
+      }
     } else {
       console.log('✅ Using API URL:', apiUrl);
     }
