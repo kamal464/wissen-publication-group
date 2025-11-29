@@ -62,7 +62,7 @@ export default function HeroSection() {
 
             <div className="hero__subjects">
               {subjects.map((subject) => (
-                <Link key={subject} href={`/subjects/${subject.toLowerCase().replace(/[^a-z]+/g, '-')}`} className="hero__subject">
+                <Link key={subject} href="/journals" className="hero__subject">
                   {subject}
                 </Link>
               ))}

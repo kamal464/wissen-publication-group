@@ -1,16 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 /**
  * Client component to inject API URL at runtime
  * This works as a fallback if the Script component doesn't execute in time
+ * Uses suppressHydrationWarning to avoid hydration mismatches
  */
 export function InjectApiUrl() {
-  const [injected, setInjected] = useState(false);
-
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    // Only run on client side after hydration
+    if (typeof window === 'undefined') return;
+    
+    // Wait a tick to ensure Script component has executed
+    const checkAndInject = () => {
       // First check if already injected by Script component
       let apiUrl = (window as any).__API_BASE_URL__;
       
@@ -36,14 +39,13 @@ export function InjectApiUrl() {
       if (apiUrl && !(window as any).__API_BASE_URL__) {
         (window as any).__API_BASE_URL__ = apiUrl;
         console.log('✅ API URL injected via client component:', apiUrl);
-        setInjected(true);
       } else if ((window as any).__API_BASE_URL__) {
-        console.log('✅ API URL already injected:', (window as any).__API_BASE_URL__);
-        setInjected(true);
-      } else {
-        console.warn('⚠️ API URL not available - using localhost fallback');
+        // Already injected, no need to log
       }
-    }
+    };
+    
+    // Use requestAnimationFrame to ensure this runs after initial render
+    requestAnimationFrame(checkAndInject);
   }, []);
 
   return null; // This component doesn't render anything

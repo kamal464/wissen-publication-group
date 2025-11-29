@@ -46,14 +46,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             }}
           />
         )}
-        {/* Also inject inline script as immediate fallback */}
-        {apiUrl && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `if(typeof window!=='undefined'){window.__API_BASE_URL__=window.__API_BASE_URL__||${JSON.stringify(apiUrl)};}`,
-            }}
-          />
-        )}
         <InjectApiUrl />
         <ReduxProvider>
           {children}

@@ -11,7 +11,7 @@ const newsItems = [
   {
     id: 2,
     text: 'New Cultural Anthology Release: Voices Across Continents',
-    href: '/books/cultural-anthology'
+    href: '#' // Route not implemented yet
   },
   {
     id: 3,
