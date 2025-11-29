@@ -1,17 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // For Firebase Hosting - static export
-  output: 'export',
+  // For Cloud Run deployment (supports SSR and dynamic routes)
+  output: 'standalone',
   images: {
-    unoptimized: true, // Required for static export
+    unoptimized: true,
   },
-  // Enable trailing slash for better routing
   trailingSlash: true,
-  // Disable server-side features for static export
-  distDir: 'out',
-  // Skip dynamic routes during static export (they'll be handled client-side)
-  skipTrailingSlashRedirect: true,
 };
 
 export default nextConfig;
