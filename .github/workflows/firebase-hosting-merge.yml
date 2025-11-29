@@ -150,4 +150,6 @@ jobs:
             --allow-unauthenticated \
             --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }},NODE_ENV=production" \
             --memory 512Mi \
-            --cpu 1
+            --cpu 1 \
+            --timeout 300 \
+            --max-instances 10
