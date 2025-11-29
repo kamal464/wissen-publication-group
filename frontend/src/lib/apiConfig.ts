@@ -16,15 +16,34 @@ export const getApiBaseUrl = (): string => {
   // The script tag is injected in layout.tsx (server-side) and should be available immediately
   if (typeof window !== 'undefined') {
     // Browser: Check for runtime-injected value (from layout.tsx script tag)
-    const injectedUrl = (window as any).__API_BASE_URL__;
+    let injectedUrl = (window as any).__API_BASE_URL__;
+    
+    // Fallback 1: Try to read from meta tag
+    if (!injectedUrl) {
+      const metaTag = document.querySelector('meta[name="api-base-url"]');
+      if (metaTag) {
+        injectedUrl = metaTag.getAttribute('content');
+        if (injectedUrl) {
+          // Cache it in window for future use
+          (window as any).__API_BASE_URL__ = injectedUrl;
+        }
+      }
+    }
+    
+    // Fallback 2: If in production and still no URL, use known backend URL
+    if (!injectedUrl && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      const productionBackendUrl = 'https://wissen-api-285326281784.us-central1.run.app';
+      injectedUrl = `${productionBackendUrl}/api`;
+      (window as any).__API_BASE_URL__ = injectedUrl;
+      console.warn('⚠️ Using hardcoded production backend URL fallback:', injectedUrl);
+    }
+    
     if (injectedUrl) {
       // Ensure the URL ends with /api
       const finalUrl = injectedUrl.endsWith('/api') ? injectedUrl : `${injectedUrl}/api`;
-      console.log('✅ Using runtime-injected API URL:', finalUrl);
+      console.log('✅ Using API URL:', finalUrl);
       return finalUrl;
     } else {
-      // Script tag might not have executed yet, wait a bit and try again
-      // This is a fallback for edge cases
       console.warn('⚠️ window.__API_BASE_URL__ not found, script tag may not have executed yet');
     }
   }
