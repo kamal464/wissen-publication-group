@@ -4,52 +4,46 @@ import { useEffect } from 'react';
 
 /**
  * Client component to inject API URL at runtime
- * This works as a fallback if the Script component doesn't execute in time
- * Uses suppressHydrationWarning to avoid hydration mismatches
+ * Runs only on client side after hydration to avoid any server/client mismatches
  */
 export function InjectApiUrl() {
   useEffect(() => {
     // Only run on client side after hydration
     if (typeof window === 'undefined') return;
     
-    // Wait a tick to ensure Script component has executed
-    const checkAndInject = () => {
-      // First check if already injected by Script component
-      let apiUrl = (window as any).__API_BASE_URL__;
-      
-      // If not found, try to get from server-side rendered data
-      if (!apiUrl) {
-        // Try to read from a data attribute or meta tag
-        const metaTag = document.querySelector('meta[name="api-base-url"]');
-        if (metaTag) {
-          apiUrl = metaTag.getAttribute('content');
-        }
+    // Inject immediately on client side
+    const injectApiUrl = () => {
+      // First, try to read from meta tag (set by server)
+      let apiUrl: string | null = null;
+      const metaTag = document.querySelector('meta[name="api-base-url"]');
+      if (metaTag) {
+        apiUrl = metaTag.getAttribute('content');
       }
       
-      // If still not found, try to infer from current location (production)
-      if (!apiUrl && window.location.hostname !== 'localhost') {
+      // If not found, try to infer from current location (production)
+      if (!apiUrl && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
         // We're in production, construct API URL from backend URL
-        // This is a fallback - ideally the env var should be set
         const backendUrl = 'https://wissen-api-285326281784.us-central1.run.app';
         apiUrl = `${backendUrl}/api`;
-        // Only log in development
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('⚠️ Using fallback API URL construction:', apiUrl);
-        }
       }
       
-      // If we found or constructed an API URL, inject it
+      // Fallback to localhost for development
+      if (!apiUrl) {
+        apiUrl = 'http://localhost:3001/api';
+      }
+      
+      // Inject the API URL
       if (apiUrl && !(window as any).__API_BASE_URL__) {
         (window as any).__API_BASE_URL__ = apiUrl;
         // Only log in development
         if (process.env.NODE_ENV === 'development') {
-          console.log('✅ API URL injected via client component:', apiUrl);
+          console.log('✅ API URL injected:', apiUrl);
         }
       }
     };
     
-    // Use requestAnimationFrame to ensure this runs after initial render
-    requestAnimationFrame(checkAndInject);
+    // Run immediately (after hydration)
+    injectApiUrl();
   }, []);
 
   return null; // This component doesn't render anything

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import "../styles/globals.scss";
 import "primereact/resources/themes/lara-light-blue/theme.css";
@@ -36,16 +35,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
       </head>
       <body className={`${inter.variable} antialiased min-h-screen`} suppressHydrationWarning>
-        {/* Inject API URL using Next.js Script - use afterInteractive to avoid hydration issues */}
-        {apiUrl && (
-          <Script
-            id="api-url-injector"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `window.__API_BASE_URL__ = ${JSON.stringify(apiUrl)};`,
-            }}
-          />
-        )}
+        {/* Inject API URL - use only client-side component to avoid hydration issues */}
         <InjectApiUrl />
         <ReduxProvider>
           {children}
