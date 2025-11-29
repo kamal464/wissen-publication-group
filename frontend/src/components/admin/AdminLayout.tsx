@@ -71,21 +71,31 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       const isLoginPage = pathname === '/admin/login';
 
       if (!auth && !isLoginPage) {
+        // Not authenticated and not on login page - redirect immediately
         router.push('/admin/login');
+        setLoading(false);
+        return;
       } else if (auth && isLoginPage) {
+        // Authenticated but on login page - redirect to dashboard
         router.push('/admin/dashboard');
+        setLoading(false);
+        return;
       } else {
+        // Set authentication state
         setIsAuthenticated(!!auth);
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     checkAuth();
+  }, [pathname, router]);
 
-    if (isAuthenticated && pathname !== '/admin/login') {
+  useEffect(() => {
+    // Load notifications only after authentication is confirmed
+    if (isAuthenticated && pathname !== '/admin/login' && !loading) {
       loadNotifications();
     }
-  }, [pathname, router, isAuthenticated]);
+  }, [isAuthenticated, pathname, loading]);
 
   const loadNotifications = async () => {
     try {
@@ -211,6 +221,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   };
 
+  // Show loading state
   if (loading) {
     return (
       <div className="admin-layout">
@@ -224,10 +235,26 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
+  // Login page - don't show layout
   if (pathname === '/admin/login') {
     return <>{children}</>;
   }
 
+  // Not authenticated - don't show layout, redirect will happen
+  if (!isAuthenticated) {
+    return (
+      <div className="admin-layout">
+        <div className="loading-container">
+          <div className="loading-spinner">
+            <i className="pi pi-spin pi-spinner text-4xl text-blue-600"></i>
+            <p className="mt-4 text-gray-600">Redirecting to login...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Authenticated - show full layout
   return (
     <div className="admin-layout">
       {/* Sidebar */}

@@ -251,6 +251,26 @@ async function main() {
     
     console.log('Articles seeded successfully!');
   }
+
+  // Seed default admin user
+  console.log('Seeding default admin user...');
+  await prisma.user.upsert({
+    where: { userName: 'admin' },
+    update: {
+      password: 'Bharath@321',
+      isActive: true,
+      journalName: 'Administrator',
+      category: 'System'
+    },
+    create: {
+      userName: 'admin',
+      password: 'Bharath@321',
+      isActive: true,
+      journalName: 'Administrator',
+      category: 'System'
+    }
+  });
+  console.log('✅ Default admin user created: username="admin", password="Bharath@321"');
 }
 
 main()
