@@ -1,9 +1,8 @@
-name: Deploy Application
+name: Deploy Application (DISABLED - Use firebase-hosting-merge.yml instead)
 
 on:
-  push:
-    branches:
-      - main
+  # DISABLED - This workflow is disabled. Use firebase-hosting-merge.yml for Cloud Run deployment.
+  workflow_dispatch: # Only manual trigger
 
 jobs:
   deploy-backend:

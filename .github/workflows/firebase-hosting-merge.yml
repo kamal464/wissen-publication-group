@@ -1,9 +1,10 @@
-name: Deploy to Cloud Run (SSR)
+name: Deploy to Cloud Run (SSR) - Production
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch: # Allow manual trigger
 
 jobs:
   deploy-frontend:

@@ -1,12 +1,8 @@
-name: Deploy to Firebase Hosting
+name: Deploy to Firebase Hosting (DISABLED - Using Cloud Run SSR)
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  # DISABLED - We're using Cloud Run SSR now. Use firebase-hosting-merge.yml instead.
+  workflow_dispatch: # Only manual trigger
 
 jobs:
   build_and_deploy:
