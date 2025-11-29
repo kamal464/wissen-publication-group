@@ -16,7 +16,7 @@ const newsItems = [
   {
     id: 3,
     text: 'Upcoming Webinar: Global Perspectives in Bilingual Publishing',
-    href: '/events/global-perspectives-webinar'
+    href: '#' // TODO: Create events page or remove this link
   }
 ];
 
