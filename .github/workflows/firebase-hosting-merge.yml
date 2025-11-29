@@ -54,7 +54,8 @@ jobs:
         working-directory: ./frontend
         run: |
           echo "Building with NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}"
-          npm run build
+          echo "NEXT_PUBLIC_API_URL length: $(echo -n '${{ secrets.NEXT_PUBLIC_API_URL }}' | wc -c)"
+          NEXT_PUBLIC_API_URL="${{ secrets.NEXT_PUBLIC_API_URL }}" npm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
