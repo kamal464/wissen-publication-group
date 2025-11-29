@@ -9,10 +9,14 @@ async function bootstrap() {
   try {
     console.log('🚀 Starting Wissen Publication Group API...');
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔌 PORT: ${process.env.PORT || '3001'}`);
+    console.log(`🔌 PORT: ${process.env.PORT || '8080'}`);
     console.log(`💾 DATABASE_URL: ${process.env.DATABASE_URL ? 'Set' : 'Not set'}`);
     
-    const app = await NestFactory.create<NestExpressApplication>(AppModule);
+    console.log('📦 Creating NestJS application...');
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+      logger: ['error', 'warn', 'log'],
+    });
+    console.log('✅ NestJS application created');
   
   // Get the underlying Express instance
   const expressApp = app.getHttpAdapter().getInstance();
@@ -90,11 +94,13 @@ async function bootstrap() {
     credentials: config.cors.credentials,
   });
   
-    const port = Number(process.env.PORT ?? 3001);
+    const port = Number(process.env.PORT || 8080);
+    console.log(`🔌 Starting server on port ${port}...`);
     await app.listen(port, '0.0.0.0'); // Listen on all interfaces for Cloud Run
     console.log(`✅ Wissen Publication Group API running on http://0.0.0.0:${port}/api`);
     console.log(`📁 Files available at http://0.0.0.0:${port}/uploads/`);
     console.log(`🌐 Server is ready and listening on port ${port}`);
+    console.log(`💚 Health check available at http://0.0.0.0:${port}/api/health`);
   } catch (error) {
     console.error('❌ Failed to start application:', error);
     if (error instanceof Error) {
