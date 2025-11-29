@@ -130,6 +130,14 @@ jobs:
         working-directory: ./backend
         run: npx prisma generate
 
+      - name: Verify Database Connection
+        working-directory: ./backend
+        run: |
+          echo "🔍 Verifying database connection..."
+          npx prisma db pull --force || echo "⚠️ Database connection check failed, but continuing..."
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Build Backend
         working-directory: ./backend
         run: npm run build

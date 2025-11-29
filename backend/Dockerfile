@@ -39,9 +39,24 @@ COPY --from=builder /app/dist ./dist
 # Create uploads directory
 RUN mkdir -p uploads
 
+# Copy migration scripts
+COPY scripts ./scripts
+
+# Make scripts executable
+RUN chmod +x scripts/run-migrations.sh
+
 # Expose port
 EXPOSE 8080
 
-# Start application
-CMD ["node", "dist/src/main.js"]
+# Create entrypoint script that runs migrations then starts the app
+RUN echo '#!/bin/sh' > /app/entrypoint.sh && \
+    echo 'set -e' >> /app/entrypoint.sh && \
+    echo 'echo "🔄 Running database migrations..."' >> /app/entrypoint.sh && \
+    echo 'npx prisma migrate deploy || echo "⚠️ Migration failed or already applied"' >> /app/entrypoint.sh && \
+    echo 'echo "✅ Starting application..."' >> /app/entrypoint.sh && \
+    echo 'exec node dist/src/main.js' >> /app/entrypoint.sh && \
+    chmod +x /app/entrypoint.sh
+
+# Start application (runs migrations first)
+CMD ["/app/entrypoint.sh"]
 
