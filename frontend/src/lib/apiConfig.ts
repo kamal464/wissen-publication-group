@@ -6,30 +6,31 @@
 // Get API base URL from environment variable
 // If NEXT_PUBLIC_API_URL is set, use it (should include /api if needed)
 // Otherwise fallback to localhost for development
+// For SSR with standalone output, we need to inject the env var at runtime
+// This function will be called both server-side and client-side
 export const getApiBaseUrl = (): string => {
   // Try multiple ways to get the env var (for different Next.js versions and deployment scenarios)
   let apiUrl: string | undefined;
   
+  // First, try to get from a global variable that we'll inject at runtime
   if (typeof window !== 'undefined') {
-    // Browser: Try Next.js runtime config first (for Turbopack compatibility)
-    const runtimeConfig = (window as any).__NEXT_DATA__?.runtimeConfig;
-    if (runtimeConfig?.apiUrl) {
-      apiUrl = runtimeConfig.apiUrl;
+    // Browser: Check for runtime-injected value
+    const injectedUrl = (window as any).__API_BASE_URL__;
+    if (injectedUrl) {
+      return injectedUrl.endsWith('/api') ? injectedUrl : `${injectedUrl}/api`;
     }
-    // Try Next.js runtime env
-    if (!apiUrl) {
-      apiUrl = (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_API_URL;
-    }
-    // Fallback to process.env (Next.js injects NEXT_PUBLIC_* vars here)
+  }
+  
+  // Try standard Next.js env var replacement (works at build time for client code)
+  if (typeof window !== 'undefined') {
+    // Browser: Try Next.js runtime env
+    apiUrl = (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_API_URL;
+    // Fallback to process.env (Next.js injects NEXT_PUBLIC_* vars here at build time)
     if (!apiUrl) {
       apiUrl = process.env.NEXT_PUBLIC_API_URL;
     }
-    // Last resort: Try to get from window (if injected by Cloud Run)
-    if (!apiUrl && (window as any).NEXT_PUBLIC_API_URL) {
-      apiUrl = (window as any).NEXT_PUBLIC_API_URL;
-    }
   } else {
-    // Server-side: Use process.env directly
+    // Server-side: Use process.env directly (from Cloud Run env vars)
     apiUrl = process.env.NEXT_PUBLIC_API_URL;
   }
   
@@ -39,7 +40,7 @@ export const getApiBaseUrl = (): string => {
       console.warn('⚠️ NEXT_PUBLIC_API_URL not set, using localhost fallback');
       console.warn('process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
       console.warn('__NEXT_DATA__.env:', (window as any).__NEXT_DATA__?.env);
-      console.warn('__NEXT_DATA__.runtimeConfig:', (window as any).__NEXT_DATA__?.runtimeConfig);
+      console.warn('window.__API_BASE_URL__:', (window as any).__API_BASE_URL__);
       console.warn('All NEXT_PUBLIC_* vars:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC')));
     } else {
       console.log('✅ Using API URL:', apiUrl);
