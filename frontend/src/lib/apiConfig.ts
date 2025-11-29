@@ -11,11 +11,22 @@ export const getApiBaseUrl = (): string => {
   let apiUrl: string | undefined;
   
   if (typeof window !== 'undefined') {
-    // Browser: Try Next.js runtime env
-    apiUrl = (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_API_URL;
+    // Browser: Try Next.js runtime config first (for Turbopack compatibility)
+    const runtimeConfig = (window as any).__NEXT_DATA__?.runtimeConfig;
+    if (runtimeConfig?.apiUrl) {
+      apiUrl = runtimeConfig.apiUrl;
+    }
+    // Try Next.js runtime env
+    if (!apiUrl) {
+      apiUrl = (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_API_URL;
+    }
     // Fallback to process.env (Next.js injects NEXT_PUBLIC_* vars here)
     if (!apiUrl) {
       apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    }
+    // Last resort: Try to get from window (if injected by Cloud Run)
+    if (!apiUrl && (window as any).NEXT_PUBLIC_API_URL) {
+      apiUrl = (window as any).NEXT_PUBLIC_API_URL;
     }
   } else {
     // Server-side: Use process.env directly
@@ -28,13 +39,8 @@ export const getApiBaseUrl = (): string => {
       console.warn('⚠️ NEXT_PUBLIC_API_URL not set, using localhost fallback');
       console.warn('process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
       console.warn('__NEXT_DATA__.env:', (window as any).__NEXT_DATA__?.env);
+      console.warn('__NEXT_DATA__.runtimeConfig:', (window as any).__NEXT_DATA__?.runtimeConfig);
       console.warn('All NEXT_PUBLIC_* vars:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC')));
-      // For production, try to get from Cloud Run env var (if set at runtime)
-      const cloudRunUrl = (window as any).__NEXT_DATA__?.runtimeConfig?.NEXT_PUBLIC_API_URL;
-      if (cloudRunUrl) {
-        console.log('✅ Found API URL from runtime config:', cloudRunUrl);
-        return cloudRunUrl.endsWith('/api') ? cloudRunUrl : `${cloudRunUrl}/api`;
-      }
     } else {
       console.log('✅ Using API URL:', apiUrl);
     }
