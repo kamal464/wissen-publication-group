@@ -12,12 +12,14 @@ export const getApiBaseUrl = (): string => {
   // Try multiple ways to get the env var (for different Next.js versions and deployment scenarios)
   let apiUrl: string | undefined;
   
-  // First, try to get from a global variable that we'll inject at runtime
+  // First, try to get from a global variable that we'll inject at runtime via script tag
   if (typeof window !== 'undefined') {
-    // Browser: Check for runtime-injected value
+    // Browser: Check for runtime-injected value (from layout.tsx script tag)
     const injectedUrl = (window as any).__API_BASE_URL__;
     if (injectedUrl) {
-      return injectedUrl.endsWith('/api') ? injectedUrl : `${injectedUrl}/api`;
+      const finalUrl = injectedUrl.endsWith('/api') ? injectedUrl : `${injectedUrl}/api`;
+      console.log('✅ Using runtime-injected API URL:', finalUrl);
+      return finalUrl;
     }
   }
   
