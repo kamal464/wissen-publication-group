@@ -10,6 +10,7 @@ import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 import { Card } from 'primereact/card';
 import { Divider } from 'primereact/divider';
+import { getApiUrl } from '@/lib/apiConfig';
 
 interface FormData {
   name: string;
@@ -97,9 +98,7 @@ export default function ContactPage() {
     setLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL 
-        ? `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_API_URL.endsWith('/api') ? '' : '/api'}/messages`
-        : 'http://localhost:3001/api/messages';
+      const apiUrl = getApiUrl('/messages');
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {

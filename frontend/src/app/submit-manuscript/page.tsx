@@ -15,6 +15,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { Chip } from 'primereact/chip';
 import { Divider } from 'primereact/divider';
 import { articleService } from '@/services/api';
+import { getApiUrl } from '@/lib/apiConfig';
 import 'primereact/resources/primereact.min.css';
 import 'primereact/resources/themes/lara-light-blue/theme.css';
 
@@ -57,9 +58,7 @@ export default function SubmitManuscriptPage() {
   useEffect(() => {
     const fetchJournals = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL 
-          ? `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_API_URL.endsWith('/api') ? '' : '/api'}/journals`
-          : 'http://localhost:3001/api/journals';
+        const apiUrl = getApiUrl('/journals');
         const response = await fetch(apiUrl);
         const data: Journal[] = await response.json();
         const journalOptions = data.map(journal => ({
