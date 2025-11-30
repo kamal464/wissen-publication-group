@@ -3,7 +3,9 @@ import type { Response } from 'express';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
-@Controller('uploads') // This will be at /api/uploads/ due to global prefix
+// This controller handles /uploads/:filename (without /api prefix)
+// It's excluded from global prefix in main.ts
+@Controller('uploads')
 export class FilesController {
   @Get(':filename')
   async serveFile(@Param('filename') filename: string, @Res() res: Response) {
@@ -16,26 +18,40 @@ export class FilesController {
         throw new NotFoundException('Invalid filename');
       }
 
-      // Try multiple possible paths
+      // Try multiple possible paths (Cloud Run uses different paths than local)
       const possiblePaths = [
-        join(process.cwd(), 'uploads', filename),
+        // Production: files are in /app/uploads (Docker working directory)
+        join('/app', 'uploads', filename),
+        // Production: relative to dist
         join(__dirname, '..', '..', 'uploads', filename),
         join(__dirname, '..', 'uploads', filename),
+        // Development: relative to process.cwd()
+        join(process.cwd(), 'uploads', filename),
+        // Fallback: absolute path from root
+        join(process.cwd(), 'backend', 'uploads', filename),
       ];
+      
+      console.log(`[FilesController] Current working directory: ${process.cwd()}`);
+      console.log(`[FilesController] __dirname: ${__dirname}`);
+      console.log(`[FilesController] Searching for file: ${filename}`);
       
       let filePath: string | null = null;
       for (const path of possiblePaths) {
         console.log(`[FilesController] Checking path: ${path}`);
         if (existsSync(path)) {
           filePath = path;
-          console.log(`[FilesController] File found at: ${filePath}`);
+          console.log(`[FilesController] ✅ File found at: ${filePath}`);
           break;
+        } else {
+          console.log(`[FilesController] ❌ File not found at: ${path}`);
         }
       }
       
       if (!filePath) {
-        console.error(`[FilesController] File not found in any location. Tried:`, possiblePaths);
-        throw new NotFoundException(`File ${filename} not found`);
+        console.error(`[FilesController] ❌ File not found in any location. Tried:`, possiblePaths);
+        console.error(`[FilesController] Current working directory: ${process.cwd()}`);
+        console.error(`[FilesController] __dirname: ${__dirname}`);
+        throw new NotFoundException(`File ${filename} not found. Files may have been lost due to container restart (Cloud Run containers are ephemeral).`);
       }
 
       // Determine content type based on file extension

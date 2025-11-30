@@ -25,22 +25,32 @@ let FilesController = class FilesController {
                 throw new common_1.NotFoundException('Invalid filename');
             }
             const possiblePaths = [
-                (0, path_1.join)(process.cwd(), 'uploads', filename),
+                (0, path_1.join)('/app', 'uploads', filename),
                 (0, path_1.join)(__dirname, '..', '..', 'uploads', filename),
                 (0, path_1.join)(__dirname, '..', 'uploads', filename),
+                (0, path_1.join)(process.cwd(), 'uploads', filename),
+                (0, path_1.join)(process.cwd(), 'backend', 'uploads', filename),
             ];
+            console.log(`[FilesController] Current working directory: ${process.cwd()}`);
+            console.log(`[FilesController] __dirname: ${__dirname}`);
+            console.log(`[FilesController] Searching for file: ${filename}`);
             let filePath = null;
             for (const path of possiblePaths) {
                 console.log(`[FilesController] Checking path: ${path}`);
                 if ((0, fs_1.existsSync)(path)) {
                     filePath = path;
-                    console.log(`[FilesController] File found at: ${filePath}`);
+                    console.log(`[FilesController] ✅ File found at: ${filePath}`);
                     break;
+                }
+                else {
+                    console.log(`[FilesController] ❌ File not found at: ${path}`);
                 }
             }
             if (!filePath) {
-                console.error(`[FilesController] File not found in any location. Tried:`, possiblePaths);
-                throw new common_1.NotFoundException(`File ${filename} not found`);
+                console.error(`[FilesController] ❌ File not found in any location. Tried:`, possiblePaths);
+                console.error(`[FilesController] Current working directory: ${process.cwd()}`);
+                console.error(`[FilesController] __dirname: ${__dirname}`);
+                throw new common_1.NotFoundException(`File ${filename} not found. Files may have been lost due to container restart (Cloud Run containers are ephemeral).`);
             }
             const ext = filename.split('.').pop()?.toLowerCase();
             const contentTypeMap = {
