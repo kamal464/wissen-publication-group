@@ -49,11 +49,22 @@ export default function LatestNewsPage() {
     try {
       setLoading(true);
       const journalData = await loadJournalData();
+      
+      if (!journalData) {
+        toast.current?.show({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load journal data. Please refresh the page.',
+        });
+        return;
+      }
+      
       setJournalId(journalData.journalId);
       setJournalTitle(journalData.journalTitle);
 
       const response = await adminAPI.getNews();
-      setNews(response.data || []);
+      const newsData = Array.isArray(response.data) ? response.data : [];
+      setNews(newsData);
     } catch (error: any) {
       console.error('Error loading news:', error);
       toast.current?.show({

@@ -241,9 +241,7 @@ export default function JournalSlider() {
               content: { className: 'custom-carousel-content' },
               item: { className: 'custom-carousel-item' },
               indicators: { className: 'custom-carousel-indicators' },
-              indicator: { className: 'custom-carousel-indicator' },
-              prevButton: { className: 'custom-carousel-prev' },
-              nextButton: { className: 'custom-carousel-next' }
+              indicator: { className: 'custom-carousel-indicator' }
             }}
           />
         </div>

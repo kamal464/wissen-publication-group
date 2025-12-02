@@ -26,7 +26,8 @@ export default function LatestNewsSection() {
   const loadNews = async () => {
     try {
       const response = await adminAPI.getLatestNews(5);
-      setNews(response.data || []);
+      const newsData = (response.data as NewsItem[]) || [];
+      setNews(Array.isArray(newsData) ? newsData : []);
     } catch (error: any) {
       console.error('Error loading news:', error);
       // Silently fail - don't show error to users if news endpoint doesn't exist yet

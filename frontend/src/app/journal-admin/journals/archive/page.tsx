@@ -49,6 +49,7 @@ export default function ArchivePage() {
           summary: 'Error', 
           detail: 'Failed to load journal data. Please check console for details.' 
         });
+        setLoading(false);
         return;
       }
 
@@ -64,61 +65,59 @@ export default function ArchivePage() {
       console.log('Articles response:', articlesResponse);
       const allArticles = (articlesResponse.data as any[]) || [];
       setArticles(allArticles);
-          
-          // Organize articles by year and volume/issue
-          const issuesByYear = new Map<number, ArchiveIssue[]>();
-          
-          allArticles.forEach((article: any) => {
-            // Use year from article, or derive from publishedAt
-            let year: number;
-            if (article.year) {
-              year = parseInt(article.year);
-            } else if (article.publishedAt) {
-              const publishedDate = new Date(article.publishedAt);
-              year = publishedDate.getFullYear();
-            } else {
-              return; // Skip articles without year info
-            }
-            
-            const volume = article.volumeNo || '1';
-            const issue = article.issueNo || '1';
-            
-            if (!issuesByYear.has(year)) {
-              issuesByYear.set(year, []);
-              setExpandedYears(prev => new Set(prev).add(year));
-            }
-            
-            const yearIssues = issuesByYear.get(year)!;
-            const existingIssue = yearIssues.find(
-              i => i.volume === volume && i.issue === issue
-            );
-            
-            if (existingIssue) {
-              existingIssue.articleCount++;
-              existingIssue.articles.push(article);
-            } else {
-              yearIssues.push({
-                volume,
-                issue,
-                year,
-                articleCount: 1,
-                articles: [article]
-              });
-            }
-          });
-          
-          // Sort issues within each year
-          issuesByYear.forEach((issues, year) => {
-            issues.sort((a, b) => {
-              const volCompare = parseInt(b.volume) - parseInt(a.volume);
-              if (volCompare !== 0) return volCompare;
-              return parseInt(b.issue) - parseInt(a.issue);
-            });
-          });
-          
-          setArchiveIssues(issuesByYear);
+      
+      // Organize articles by year and volume/issue
+      const issuesByYear = new Map<number, ArchiveIssue[]>();
+      
+      allArticles.forEach((article: any) => {
+        // Use year from article, or derive from publishedAt
+        let year: number;
+        if (article.year) {
+          year = parseInt(article.year);
+        } else if (article.publishedAt) {
+          const publishedDate = new Date(article.publishedAt);
+          year = publishedDate.getFullYear();
+        } else {
+          return; // Skip articles without year info
         }
-      }
+        
+        const volume = article.volumeNo || '1';
+        const issue = article.issueNo || '1';
+        
+        if (!issuesByYear.has(year)) {
+          issuesByYear.set(year, []);
+          setExpandedYears(prev => new Set(prev).add(year));
+        }
+        
+        const yearIssues = issuesByYear.get(year)!;
+        const existingIssue = yearIssues.find(
+          i => i.volume === volume && i.issue === issue
+        );
+        
+        if (existingIssue) {
+          existingIssue.articleCount++;
+          existingIssue.articles.push(article);
+        } else {
+          yearIssues.push({
+            volume,
+            issue,
+            year,
+            articleCount: 1,
+            articles: [article]
+          });
+        }
+      });
+      
+      // Sort issues within each year
+      issuesByYear.forEach((issues, year) => {
+        issues.sort((a, b) => {
+          const volCompare = parseInt(b.volume) - parseInt(a.volume);
+          if (volCompare !== 0) return volCompare;
+          return parseInt(b.issue) - parseInt(a.issue);
+        });
+      });
+      
+      setArchiveIssues(issuesByYear);
     } catch (error: any) {
       console.error('=== ERROR loading archive ===', error);
       console.error('Error details:', {

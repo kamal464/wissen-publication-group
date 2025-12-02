@@ -21,7 +21,8 @@ export default function TopNewsBar() {
   const loadNews = async () => {
     try {
       const response = await adminAPI.getLatestNews(5);
-      const news = (response.data || []).slice(0, 5);
+      const newsData = (response.data as NewsItem[]) || [];
+      const news = Array.isArray(newsData) ? newsData.slice(0, 5) : [];
       setNewsItems(news);
     } catch (error: any) {
       console.error('Error loading news:', error);
