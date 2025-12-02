@@ -37,6 +37,9 @@ export default function SubmitManuscriptPage() {
   const toast = useRef<Toast>(null);
   const fileUploadRef = useRef<FileUpload>(null);
   
+  // Prevent hydration mismatch by only rendering form after client-side mount
+  const [mounted, setMounted] = useState(false);
+  
   const [form, setForm] = useState({
     title: '',
     journalId: null as number | null,
@@ -53,6 +56,11 @@ export default function SubmitManuscriptPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [journals, setJournals] = useState<{ label: string; value: number }[]>([]);
   const [loadingJournals, setLoadingJournals] = useState(true);
+  
+  // Set mounted to true after component mounts on client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fetch journals from API
   useEffect(() => {
@@ -255,6 +263,29 @@ export default function SubmitManuscriptPage() {
     }
   };
 
+  // Prevent hydration mismatch - only render form after client-side mount
+  if (!mounted) {
+    return (
+      <>
+        <Header />
+        <main className="submit-manuscript-page">
+          <div className="container">
+            <Toast ref={toast} />
+            <div className="page-header">
+              <h1 className="page-title">Submit Your Manuscript</h1>
+              <p className="page-description">
+                Share your research with the global academic community. Fill out the form below to submit your manuscript for peer review.
+              </p>
+            </div>
+            <div className="flex items-center justify-center py-12">
+              <i className="pi pi-spin pi-spinner text-4xl text-blue-600"></i>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <Header />
@@ -271,7 +302,7 @@ export default function SubmitManuscriptPage() {
           </div>
 
           <div className="manuscript-form-wrapper">
-            <form className="manuscript-form" onSubmit={handleSubmit}>
+            <form className="manuscript-form" onSubmit={handleSubmit} suppressHydrationWarning>
               
               {/* Manuscript Details Section */}
               <div className="form-section">

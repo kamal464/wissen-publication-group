@@ -257,7 +257,7 @@ gcloud run deploy wissen-api \
 9. Verify database connection
 10. Build backend (`npm run build`)
 11. Build Docker image
-12. Push Docker image to Artifact Registry
+12. Push Docker image to Artifact Registry-
 13. Deploy to Cloud Run with environment variables
 
 ### GitHub Secrets Required

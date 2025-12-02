@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Editor } from 'primereact/editor';
 import { Toast } from 'primereact/toast';
 import { adminAPI } from '@/lib/api';
+import { loadJournalData } from '@/lib/journalAdminUtils';
 import 'quill/dist/quill.snow.css';
 
 export default function JournalHomePage() {
@@ -23,28 +24,40 @@ export default function JournalHomePage() {
   const loadContent = async () => {
     try {
       setLoading(true);
-      const username = localStorage.getItem('journalAdminUser');
-      if (!username) return;
-
-      const usersResponse = await adminAPI.getUsers();
-      const users = (usersResponse.data as any[]) || [];
-      const user = users.find((u: any) => u.userName === username || u.journalShort === username);
+      const journalData = await loadJournalData();
       
-      if (user && user.journalName) {
-        const journalsResponse = await adminAPI.getJournals();
-        const journals = (journalsResponse.data as any[]) || [];
-        const journal = journals.find((j: any) => j.title === user.journalName);
-        if (journal) {
-          setJournalId(journal.id);
-          setJournalTitle(journal.title || '');
-          const homeContent = journal.homePageContent || '';
-          setContent(homeContent);
-          setOriginalContent(homeContent);
-        }
+      if (!journalData) {
+        toast.current?.show({ 
+          severity: 'error', 
+          summary: 'Error', 
+          detail: 'Failed to load journal data. Please check console for details.' 
+        });
+        return;
       }
+
+      setJournalId(journalData.journalId);
+      setJournalTitle(journalData.journalTitle);
+
+      // Fetch journal details to get homePageContent
+      const journalResponse = await adminAPI.getJournal(journalData.journalId);
+      const journal = journalResponse.data as any;
+      const homeContent = journal?.homePageContent || '';
+      setContent(homeContent);
+      setOriginalContent(homeContent);
     } catch (error: any) {
-      console.error('Error loading content:', error);
-      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to load content' });
+      console.error('=== ERROR in loadContent ===', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack
+      });
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to load content';
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: `Failed to load content: ${errorMessage}` 
+      });
     } finally {
       setLoading(false);
     }
@@ -60,17 +73,56 @@ export default function JournalHomePage() {
   };
 
   const handleSave = async () => {
-    if (!journalId) return;
+    console.log('=== handleSave called ===');
+    console.log('1. Current journalId state:', journalId);
+    console.log('2. Content length:', content.length);
+    console.log('3. Content preview:', content.substring(0, 100));
+    
+    if (!journalId) {
+      console.error('4. Journal ID is NULL - cannot proceed with save');
+      console.error('5. This means loadContent() failed to set journalId');
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: `Journal ID not found (current value: ${journalId}). Please refresh the page and check console for details.` 
+      });
+      return;
+    }
 
     try {
       setSaving(true);
-      await adminAPI.updateJournal(journalId, { homePageContent: content });
+      console.log('6. Calling API: adminAPI.updateJournal');
+      console.log('7. Parameters:', { journalId, homePageContent: content.substring(0, 50) + '...' });
+      
+      const response = await adminAPI.updateJournal(journalId, { homePageContent: content });
+      
+      console.log('8. Save API call successful');
+      console.log('9. Response:', response);
+      console.log('10. Response data:', response.data);
+      
       setOriginalContent(content);
       setIsEditing(false);
       toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Home page content updated successfully' });
+      console.log('11. === handleSave completed successfully ===');
     } catch (error: any) {
-      console.error('Error saving content:', error);
-      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to save content' });
+      console.error('=== ERROR in handleSave ===', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          data: error.config?.data
+        },
+        stack: error.stack
+      });
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to save content';
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: `Save failed: ${errorMessage}. Check console for details.` 
+      });
     } finally {
       setSaving(false);
     }
@@ -101,6 +153,13 @@ export default function JournalHomePage() {
           )}
           <h1 className="text-2xl font-bold text-slate-800 mb-2">Journal Home Page</h1>
           <p className="text-slate-600">Edit your journal home page content</p>
+          {/* Debug indicator */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-2 text-xs text-gray-500">
+              Debug: journalId = {journalId !== null ? journalId : 'NULL'} | 
+              Username: {typeof window !== 'undefined' ? localStorage.getItem('journalAdminUser') || 'N/A' : 'N/A'}
+            </div>
+          )}
         </div>
         {!isEditing && (
           <button

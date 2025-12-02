@@ -1,26 +1,42 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { adminAPI } from '@/lib/api';
 
-const newsItems = [
-  {
-    id: 1,
-    text: 'Call for Papers: Latest Research in Environmental & Earth Sciences',
-    href: '/journals/environmental-earth-sciences'
-  },
-  {
-    id: 2,
-    text: 'New Cultural Anthology Release: Voices Across Continents',
-    href: '#' // Route not implemented yet
-  },
-  {
-    id: 3,
-    text: 'Upcoming Webinar: Global Perspectives in Bilingual Publishing',
-    href: '#' // TODO: Create events page or remove this link
-  }
-];
+interface NewsItem {
+  id: number;
+  title: string;
+  link?: string;
+}
 
 export default function TopNewsBar() {
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadNews();
+  }, []);
+
+  const loadNews = async () => {
+    try {
+      const response = await adminAPI.getLatestNews(5);
+      const news = (response.data || []).slice(0, 5);
+      setNewsItems(news);
+    } catch (error: any) {
+      console.error('Error loading news:', error);
+      // Silently fail - don't show error to users if news endpoint doesn't exist yet
+      // This allows the page to load even if backend hasn't been updated
+      setNewsItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading || newsItems.length === 0) {
+    return null; // Don't show bar if no news
+  }
+
   return (
     <div className="top-bar" role="banner">
       <div className="top-bar__container">
@@ -31,10 +47,10 @@ export default function TopNewsBar() {
               {[...newsItems, ...newsItems].map((item, index) => (
                 <Link
                   key={`${item.id}-${index}`}
-                  href={item.href}
+                  href={item.link || '#'}
                   className="top-bar__ticker-item"
                 >
-                  {item.text}
+                  {item.title}
                 </Link>
               ))}
             </div>

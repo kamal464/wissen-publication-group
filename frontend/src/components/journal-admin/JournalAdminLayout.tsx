@@ -219,6 +219,12 @@ export default function JournalAdminLayout({ children }: JournalAdminLayoutProps
             }
           }
           break;
+        case 'latest-news':
+          breadcrumbs.push('Latest News');
+          break;
+        case 'latest-news':
+          breadcrumbs.push('Latest News');
+          break;
         case 'analytics':
           breadcrumbs.push('Analytics');
           break;

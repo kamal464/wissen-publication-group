@@ -6,6 +6,7 @@ import { Dialog } from 'primereact/dialog';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { FileUpload } from 'primereact/fileupload';
 import { adminAPI } from '@/lib/api';
+import { loadJournalData } from '@/lib/journalAdminUtils';
 import { getFileUrl, getApiUrl } from '@/lib/apiConfig';
 
 interface Article {
@@ -65,32 +66,37 @@ export default function CurrentIssuePage() {
   const loadJournalAndArticles = async () => {
     try {
       setLoading(true);
-      const username = localStorage.getItem('journalAdminUser');
-      if (!username) return;
-
-      const usersResponse = await adminAPI.getUsers();
-      const users = (usersResponse.data as any[]) || [];
-      const user = users.find((u: any) => u.userName === username || u.journalShort === username);
+      const journalData = await loadJournalData();
       
-      if (user && user.journalName) {
-        const journalsResponse = await adminAPI.getJournals();
-        const journals = (journalsResponse.data as any[]) || [];
-        const journal = journals.find((j: any) => j.title === user.journalName);
-        if (journal) {
-          setJournalId(journal.id);
-          setJournalTitle(journal.title || '');
-          
-          // Fetch published articles for current issue
-          const articlesResponse = await adminAPI.getArticles({ 
-            journalId: journal.id, 
-            status: 'PUBLISHED' 
-          });
-              setArticles((articlesResponse.data as any[]) || []);
-        }
+      if (!journalData) {
+        toast.current?.show({ 
+          severity: 'error', 
+          summary: 'Error', 
+          detail: 'Failed to load journal data. Please check console for details.' 
+        });
+        return;
       }
+
+      setJournalId(journalData.journalId);
+      setJournalTitle(journalData.journalTitle);
+      
+      console.log('Loading articles for journal:', journalData.journalId);
+      // Fetch published articles for current issue
+      const articlesResponse = await adminAPI.getArticles({ 
+        journalId: journalData.journalId, 
+        status: 'PUBLISHED' 
+      });
+      console.log('Articles response:', articlesResponse);
+      setArticles((articlesResponse.data as any[]) || []);
     } catch (error: any) {
-      console.error('Error loading articles:', error);
-      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to load articles' });
+      console.error('=== ERROR loading articles ===', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to load articles';
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: errorMessage });
     } finally {
       setLoading(false);
     }

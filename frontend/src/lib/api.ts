@@ -155,6 +155,16 @@ export const adminAPI = {
       },
     });
   },
+
+  // Latest News
+  getNews: (journalId?: number) => 
+    api.get('/news', { params: journalId ? { journalId } : {} }),
+  getLatestNews: (limit?: number) => 
+    api.get('/news/latest', { params: limit ? { limit } : {} }),
+  getNewsItem: (id: number) => api.get(`/news/${id}`),
+  createNews: (data: any) => api.post('/news', data),
+  updateNews: (id: number, data: any) => api.put(`/news/${id}`, data),
+  deleteNews: (id: number) => api.delete(`/news/${id}`),
 };
 
 // Journal Management API

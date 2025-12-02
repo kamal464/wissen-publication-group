@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -29,6 +29,10 @@ interface FormErrors {
 export default function ContactPage() {
   const router = useRouter();
   const toast = useRef<Toast>(null);
+  
+  // Prevent hydration mismatch by only rendering form after client-side mount
+  const [mounted, setMounted] = useState(false);
+  
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -37,6 +41,11 @@ export default function ContactPage() {
     message: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Set mounted to true after component mounts on client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -151,6 +160,31 @@ export default function ContactPage() {
     }
   };
 
+  // Prevent hydration mismatch - only render form after client-side mount
+  if (!mounted) {
+    return (
+      <>
+        <Header />
+        <Toast ref={toast} position="top-right" />
+        <div className="contact-page">
+          <div className="contact-hero">
+            <div className="container">
+              <h1 className="contact-title">Get in Touch</h1>
+              <p className="contact-subtitle">
+                Have a question or feedback? We'd love to hear from you.
+              </p>
+            </div>
+          </div>
+          <div className="container contact-container">
+            <div className="flex items-center justify-center py-12">
+              <i className="pi pi-spin pi-spinner text-4xl text-blue-600"></i>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Header />
@@ -176,7 +210,7 @@ export default function ContactPage() {
                   Fill out the form below and we'll get back to you as soon as possible.
                 </p>
 
-                <form onSubmit={handleSubmit} className="contact-form">
+                <form onSubmit={handleSubmit} className="contact-form" suppressHydrationWarning>
                   {/* Name Field */}
                   <div className="form-field">
                     <label htmlFor="name" className="form-label">

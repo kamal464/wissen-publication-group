@@ -11,6 +11,7 @@ import { Dialog } from 'primereact/dialog';
 import { FileUpload } from 'primereact/fileupload';
 import { Toast } from 'primereact/toast';
 import { adminAPI } from '@/lib/api';
+import { loadJournalData } from '@/lib/journalAdminUtils';
 import { getFileUrl } from '@/lib/apiConfig';
 import 'quill/dist/quill.snow.css';
 
@@ -68,28 +69,34 @@ export default function EditorialBoardPage() {
   const loadJournalAndMembers = async () => {
     try {
       setLoading(true);
-      const username = localStorage.getItem('journalAdminUser');
-      if (!username) return;
-
-      const usersResponse = await adminAPI.getUsers();
-      const users = (usersResponse.data as any[]) || [];
-      const user = users.find((u: any) => u.userName === username || u.journalShort === username);
+      const journalData = await loadJournalData();
       
-      if (user && user.journalName) {
-        const journalsResponse = await adminAPI.getJournals();
-        const journals = (journalsResponse.data as any[]) || [];
-        const journal = journals.find((j: any) => j.title === user.journalName);
-        if (journal) {
-          setJournalId(journal.id);
-          setJournalTitle(journal.title || '');
-          // Load board members
-          const membersResponse = await adminAPI.getBoardMembers(journal.id);
-          setMembers((membersResponse.data as any[]) || []);
-        }
+      if (!journalData) {
+        toast.current?.show({ 
+          severity: 'error', 
+          summary: 'Error', 
+          detail: 'Failed to load journal data. Please check console for details.' 
+        });
+        return;
       }
+
+      setJournalId(journalData.journalId);
+      setJournalTitle(journalData.journalTitle);
+      
+      console.log('Loading board members for journal:', journalData.journalId);
+      // Load board members
+      const membersResponse = await adminAPI.getBoardMembers(journalData.journalId);
+      console.log('Board members response:', membersResponse);
+      setMembers((membersResponse.data as any[]) || []);
     } catch (error: any) {
-      console.error('Error loading members:', error);
-      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to load board members' });
+      console.error('=== ERROR loading board members ===', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to load board members';
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -177,7 +184,19 @@ export default function EditorialBoardPage() {
   };
 
   const handleSave = async () => {
-    if (!selectedMember || !journalId) return;
+    console.log('=== handleSave called ===');
+    console.log('1. Current journalId state:', journalId);
+    console.log('2. Selected member:', selectedMember?.id, selectedMember?.name);
+    
+    if (!selectedMember || !journalId) {
+      console.error('3. Missing required data:', { selectedMember: !!selectedMember, journalId });
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: `Missing required data. Journal ID: ${journalId}, Member: ${selectedMember ? 'present' : 'missing'}` 
+      });
+      return;
+    }
 
     try {
       setSaving(true);

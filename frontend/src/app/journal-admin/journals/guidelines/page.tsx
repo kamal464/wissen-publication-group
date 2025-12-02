@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Editor } from 'primereact/editor';
 import { Toast } from 'primereact/toast';
 import { adminAPI } from '@/lib/api';
+import { loadJournalData } from '@/lib/journalAdminUtils';
 import 'quill/dist/quill.snow.css';
 
 export default function GuidelinesPage() {
@@ -23,28 +24,30 @@ export default function GuidelinesPage() {
   const loadContent = async () => {
     try {
       setLoading(true);
-      const username = localStorage.getItem('journalAdminUser');
-      if (!username) return;
-
-      const usersResponse = await adminAPI.getUsers();
-      const users = (usersResponse.data as any[]) || [];
-      const user = users.find((u: any) => u.userName === username || u.journalShort === username);
+      const journalData = await loadJournalData();
       
-      if (user && user.journalName) {
-        const journalsResponse = await adminAPI.getJournals();
-        const journals = (journalsResponse.data as any[]) || [];
-        const journal = journals.find((j: any) => j.title === user.journalName);
-        if (journal) {
-          setJournalId(journal.id);
-          setJournalTitle(journal.title || '');
-          const guidelinesContent = journal.guidelines || '';
-          setContent(guidelinesContent);
-          setOriginalContent(guidelinesContent);
-        }
+      if (!journalData) {
+        toast.current?.show({ 
+          severity: 'error', 
+          summary: 'Error', 
+          detail: 'Failed to load journal data. Please check console for details.' 
+        });
+        return;
       }
+
+      setJournalId(journalData.journalId);
+      setJournalTitle(journalData.journalTitle);
+
+      // Fetch journal details to get guidelines content
+      const journalResponse = await adminAPI.getJournal(journalData.journalId);
+      const journal = journalResponse.data as any;
+      const guidelinesContent = journal?.guidelines || '';
+      setContent(guidelinesContent);
+      setOriginalContent(guidelinesContent);
     } catch (error: any) {
       console.error('Error loading content:', error);
-      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to load content' });
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to load content';
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -60,17 +63,52 @@ export default function GuidelinesPage() {
   };
 
   const handleSave = async () => {
-    if (!journalId) return;
+    console.log('=== handleSave called ===');
+    console.log('1. Current journalId state:', journalId);
+    console.log('2. Content length:', content.length);
+    
+    if (!journalId) {
+      console.error('3. Journal ID is NULL - cannot proceed with save');
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: `Journal ID not found (current value: ${journalId}). Please refresh the page and check console for details.` 
+      });
+      return;
+    }
 
     try {
       setSaving(true);
-      await adminAPI.updateJournal(journalId, { guidelines: content });
+      console.log('4. Calling API: adminAPI.updateJournal');
+      console.log('5. Parameters:', { journalId, guidelines: content.substring(0, 50) + '...' });
+      
+      const response = await adminAPI.updateJournal(journalId, { guidelines: content });
+      
+      console.log('6. Save API call successful');
+      console.log('7. Response:', response);
+      
       setOriginalContent(content);
       setIsEditing(false);
       toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Guidelines updated successfully' });
+      console.log('8. === handleSave completed successfully ===');
     } catch (error: any) {
-      console.error('Error saving content:', error);
-      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to save content' });
+      console.error('=== ERROR in handleSave ===', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          data: error.config?.data
+        }
+      });
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to save content';
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: `Save failed: ${errorMessage}. Check console for details.` 
+      });
     } finally {
       setSaving(false);
     }
@@ -101,6 +139,13 @@ export default function GuidelinesPage() {
           )}
           <h1 className="text-2xl font-bold text-slate-800 mb-2">Journal Guidelines</h1>
           <p className="text-slate-600">Edit your journal guidelines content</p>
+          {/* Debug indicator */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-2 text-xs text-gray-500">
+              Debug: journalId = {journalId !== null ? journalId : 'NULL'} | 
+              Username: {typeof window !== 'undefined' ? localStorage.getItem('journalAdminUser') || 'N/A' : 'N/A'}
+            </div>
+          )}
         </div>
         {!isEditing && (
           <button

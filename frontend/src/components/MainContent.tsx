@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
+import JournalCovers from './JournalCovers';
+import LatestNewsSection from './LatestNewsSection';
 
 export default function MainContent() {
   const features = [
@@ -65,45 +67,11 @@ export default function MainContent() {
 
   return (
     <>
-      {/* What We Offer Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-800 mb-4">
-              What We Offer
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Discover our extensive collection of academic journals and research articles published to the highest standards.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card 
-                key={index}
-                className="shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-              >
-                <div className="text-center py-4">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-100 mb-4">
-                    <i className={`${feature.icon} text-4xl text-blue-600`}></i>
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-3">{feature.title}</h3>
-                  <p className="text-sm text-blue-600 font-semibold mb-3">{feature.stats}</p>
-                  <p className="text-gray-600 mb-6">{feature.description}</p>
-                  <Link href={feature.link}>
-                    <Button 
-                      label="Explore" 
-                      className="p-button-outlined" 
-                      icon="pi pi-arrow-right"
-                      iconPos="right"
-                    />
-                  </Link>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Journal Covers Section */}
+      <JournalCovers />
+
+      {/* Latest News Section */}
+      <LatestNewsSection />
 
       {/* For Authors Section */}
       <section className="py-16 bg-white">

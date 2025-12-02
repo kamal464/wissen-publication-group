@@ -6,6 +6,7 @@ import { JournalsModule } from './journals/journals.module';
 import { ArticlesModule } from './articles/articles.module';
 import { AdminModule } from './admin/admin.module';
 import { FilesModule } from './files/files.module';
+import { NewsModule } from './news/news.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { FilesModule } from './files/files.module';
     ArticlesModule,
     AdminModule,
     FilesModule,
+    NewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

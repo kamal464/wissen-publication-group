@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Toast } from 'primereact/toast';
 import { Dialog } from 'primereact/dialog';
 import { adminAPI } from '@/lib/api';
+import { loadJournalData } from '@/lib/journalAdminUtils';
 
 interface Article {
   id: number;
@@ -40,28 +41,29 @@ export default function ArchivePage() {
   const loadJournalAndArticles = async () => {
     try {
       setLoading(true);
-      const username = localStorage.getItem('journalAdminUser');
-      if (!username) return;
-
-      const usersResponse = await adminAPI.getUsers();
-      const users = (usersResponse.data as any[]) || [];
-      const user = users.find((u: any) => u.userName === username || u.journalShort === username);
+      const journalData = await loadJournalData();
       
-      if (user && user.journalName) {
-        const journalsResponse = await adminAPI.getJournals();
-        const journals = (journalsResponse.data as any[]) || [];
-        const journal = journals.find((j: any) => j.title === user.journalName);
-        if (journal) {
-          setJournalId(journal.id);
-          setJournalTitle(journal.title || '');
-          
-          // Fetch all published articles
-          const articlesResponse = await adminAPI.getArticles({ 
-            journalId: journal.id, 
-            status: 'PUBLISHED' 
-          });
-              const allArticles = (articlesResponse.data as any[]) || [];
-          setArticles(allArticles);
+      if (!journalData) {
+        toast.current?.show({ 
+          severity: 'error', 
+          summary: 'Error', 
+          detail: 'Failed to load journal data. Please check console for details.' 
+        });
+        return;
+      }
+
+      setJournalId(journalData.journalId);
+      setJournalTitle(journalData.journalTitle);
+      
+      console.log('Loading articles for journal:', journalData.journalId);
+      // Fetch all published articles
+      const articlesResponse = await adminAPI.getArticles({ 
+        journalId: journalData.journalId, 
+        status: 'PUBLISHED' 
+      });
+      console.log('Articles response:', articlesResponse);
+      const allArticles = (articlesResponse.data as any[]) || [];
+      setArticles(allArticles);
           
           // Organize articles by year and volume/issue
           const issuesByYear = new Map<number, ArchiveIssue[]>();
@@ -118,8 +120,14 @@ export default function ArchivePage() {
         }
       }
     } catch (error: any) {
-      console.error('Error loading articles:', error);
-      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to load archive' });
+      console.error('=== ERROR loading archive ===', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to load archive';
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: errorMessage });
     } finally {
       setLoading(false);
     }

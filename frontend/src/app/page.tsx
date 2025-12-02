@@ -2,7 +2,7 @@
 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import HeroSection from '@/components/HeroSection';
+import JournalSlider from '@/components/JournalSlider';
 import MainContent from '@/components/MainContent';
 
 export default function Home() {
@@ -10,7 +10,7 @@ export default function Home() {
     <>
       <Header />
       <main>
-        <HeroSection />
+        <JournalSlider />
         <MainContent />
       </main>
       <Footer />

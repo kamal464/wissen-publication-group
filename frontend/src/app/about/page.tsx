@@ -116,69 +116,81 @@ export default function AboutPage() {
             </div>
           </section>
 
-          {/* History Timeline */}
-          <section className="history-section">
-            <h2 className="section-title">Our Journey</h2>
-            <div className="timeline">
-              <div className="timeline-item">
-                <div className="timeline-marker"></div>
-                <div className="timeline-content">
-                  <h3>1998</h3>
-                  <h4>Foundation</h4>
-                  <p>
-                    Wissen Publication Group was established with a vision to provide accessible 
-                    academic publishing services to researchers worldwide.
-                  </p>
+          {/* Research Excellence & Editorial Process */}
+          <section className="excellence-section">
+            <h2 className="section-title">Our Commitment to Research Excellence</h2>
+            <div className="excellence-grid">
+              <Card className="excellence-card">
+                <div className="excellence-icon">
+                  <i className="pi pi-check-circle"></i>
                 </div>
-              </div>
+                <h3>Rigorous Peer Review</h3>
+                <p>
+                  Every submission undergoes a comprehensive double-blind peer review process 
+                  conducted by experts in the field. Our editorial board ensures that only 
+                  high-quality, original research that meets international standards reaches publication.
+                </p>
+              </Card>
 
-              <div className="timeline-item">
-                <div className="timeline-marker"></div>
-                <div className="timeline-content">
-                  <h3>2005</h3>
-                  <h4>Digital Transformation</h4>
-                  <p>
-                    Launched our online platform, making research more accessible and 
-                    streamlining the submission and review process.
-                  </p>
+              <Card className="excellence-card">
+                <div className="excellence-icon">
+                  <i className="pi pi-users"></i>
                 </div>
-              </div>
+                <h3>Expert Editorial Board</h3>
+                <p>
+                  Our distinguished editorial board comprises leading researchers and academics 
+                  from prestigious institutions worldwide. They bring decades of experience and 
+                  expertise to ensure the highest quality of published research.
+                </p>
+              </Card>
 
-              <div className="timeline-item">
-                <div className="timeline-marker"></div>
-                <div className="timeline-content">
-                  <h3>2012</h3>
-                  <h4>Open Access Initiative</h4>
-                  <p>
-                    Committed to open access publishing, removing financial barriers to 
-                    research access for the global community.
-                  </p>
+              <Card className="excellence-card">
+                <div className="excellence-icon">
+                  <i className="pi pi-globe"></i>
                 </div>
-              </div>
+                <h3>Global Indexing & Visibility</h3>
+                <p>
+                  Our journals are indexed in major databases and repositories, ensuring maximum 
+                  visibility and impact for your research. We help authors reach a global audience 
+                  and increase citation potential.
+                </p>
+              </Card>
 
-              <div className="timeline-item">
-                <div className="timeline-marker"></div>
-                <div className="timeline-content">
-                  <h3>2018</h3>
-                  <h4>Global Expansion</h4>
-                  <p>
-                    Expanded our editorial board with international experts and established 
-                    partnerships with institutions across 50+ countries.
-                  </p>
+              <Card className="excellence-card">
+                <div className="excellence-icon">
+                  <i className="pi pi-clock"></i>
                 </div>
-              </div>
+                <h3>Efficient Publication Process</h3>
+                <p>
+                  We understand the importance of timely publication. Our streamlined editorial 
+                  process ensures rapid review and publication while maintaining the highest 
+                  quality standards.
+                </p>
+              </Card>
 
-              <div className="timeline-item">
-                <div className="timeline-marker"></div>
-                <div className="timeline-content">
-                  <h3>2025</h3>
-                  <h4>Innovation Hub</h4>
-                  <p>
-                    Launched advanced AI-assisted peer review tools and enhanced platform 
-                    features to support researchers in the digital age.
-                  </p>
+              <Card className="excellence-card">
+                <div className="excellence-icon">
+                  <i className="pi pi-shield"></i>
                 </div>
-              </div>
+                <h3>Ethical Publishing Standards</h3>
+                <p>
+                  We adhere strictly to international ethical guidelines for academic publishing, 
+                  including COPE guidelines. We maintain transparency, prevent plagiarism, and 
+                  ensure research integrity at every stage.
+                </p>
+              </Card>
+
+              <Card className="excellence-card">
+                <div className="excellence-icon">
+                  <i className="pi pi-heart"></i>
+                </div>
+                <h3>Author Support Services</h3>
+                <p>
+                  We provide comprehensive support throughout the publication journey, from 
+                  manuscript preparation to post-publication promotion. Our team assists authors 
+                  with formatting, language editing, and maximizing research impact.
+                </p>
+              </Card>
             </div>
           </section>
 
