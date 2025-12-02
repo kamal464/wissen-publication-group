@@ -23,6 +23,7 @@ interface Journal {
   title: string;
   description: string;
   issn: string;
+  shortcode: string;
   coverImage: string;
   publisher: string;
   accessType: string;
@@ -69,6 +70,7 @@ export default function JournalManagement() {
           title: "Journal of Advanced Research",
           description: "A multidisciplinary journal covering cutting-edge research in various fields",
           issn: "2090-1234",
+          shortcode: "jams",
           coverImage: "/images/journal1.jpg",
           publisher: "Wissen Publication Group",
           accessType: "Open Access",
@@ -91,6 +93,7 @@ export default function JournalManagement() {
           title: "International Journal of Engineering",
           description: "Engineering innovations and technological advances",
           issn: "2090-5678",
+          shortcode: "ije",
           coverImage: "/images/journal2.jpg",
           publisher: "Wissen Publication Group",
           accessType: "Subscription",
@@ -120,6 +123,7 @@ export default function JournalManagement() {
       title: '',
       description: '',
       issn: '',
+      shortcode: '',
       coverImage: '',
       publisher: '',
       accessType: '',
@@ -141,10 +145,42 @@ export default function JournalManagement() {
     setShowDialog(true);
   };
 
-  const handleEditJournal = (journal: Journal) => {
-    setSelectedJournal(journal);
-    setEditing(true);
-    setShowDialog(true);
+  const handleEditJournal = async (journal: Journal) => {
+    try {
+      // Fetch full journal data to ensure all fields are loaded
+      const response = await adminAPI.getJournal(journal.id);
+      const fullJournal = response.data as Journal;
+      setSelectedJournal({
+        ...fullJournal,
+        // Ensure all fields have default values if undefined
+        title: fullJournal.title || '',
+        description: fullJournal.description || '',
+        issn: fullJournal.issn || '',
+        shortcode: fullJournal.shortcode || '',
+        coverImage: fullJournal.coverImage || '',
+        publisher: fullJournal.publisher || '',
+        accessType: fullJournal.accessType || '',
+        subjectArea: fullJournal.subjectArea || '',
+        category: fullJournal.category || '',
+        discipline: fullJournal.discipline || '',
+        impactFactor: fullJournal.impactFactor || '',
+        aimsScope: fullJournal.aimsScope || '',
+        guidelines: fullJournal.guidelines || '',
+        editorialBoard: fullJournal.editorialBoard || '',
+        homePageContent: fullJournal.homePageContent || '',
+        currentIssueContent: fullJournal.currentIssueContent || '',
+        archiveContent: fullJournal.archiveContent || '',
+        articlesInPress: fullJournal.articlesInPress || '',
+      });
+      setEditing(true);
+      setShowDialog(true);
+    } catch (error) {
+      console.error('Error loading journal for edit:', error);
+      // Fallback to the journal data we have
+      setSelectedJournal(journal);
+      setEditing(true);
+      setShowDialog(true);
+    }
   };
 
   const handleViewJournal = (journal: Journal) => {
@@ -153,38 +189,135 @@ export default function JournalManagement() {
   };
 
   const handleSaveJournal = async () => {
-    if (selectedJournal) {
-      try {
-        if (editing && selectedJournal.id === 0) {
-          // Create new journal
-          const response = await adminAPI.createJournal(selectedJournal);
-          setJournals([...journals, response.data as Journal]);
-          toast.current?.show({ 
-            severity: 'success', 
-            summary: 'Success', 
-            detail: 'Journal created successfully' 
-          });
-        } else {
-          // Update existing journal
-          const response = await adminAPI.updateJournal(selectedJournal.id, selectedJournal);
-          setJournals(journals.map(j => 
-            j.id === selectedJournal.id ? response.data as Journal : j
-          ));
-          toast.current?.show({ 
-            severity: 'success', 
-            summary: 'Success', 
-            detail: 'Journal updated successfully' 
+    if (!selectedJournal) return;
+
+    // Validate required fields
+    if (!selectedJournal.title?.trim()) {
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Validation Error', 
+        detail: 'Title is required' 
+      });
+      return;
+    }
+
+    if (!selectedJournal.description?.trim()) {
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Validation Error', 
+        detail: 'Description is required' 
+      });
+      return;
+    }
+
+    // Validate shortcode if provided (should be unique and alphanumeric)
+    if (selectedJournal.shortcode && !/^[a-zA-Z0-9_-]+$/.test(selectedJournal.shortcode)) {
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Validation Error', 
+        detail: 'Shortcode must contain only letters, numbers, hyphens, and underscores' 
+      });
+      return;
+    }
+
+    try {
+      // Prepare data for API (only send fields that exist in the DTO)
+      const journalData: any = {
+        title: selectedJournal.title.trim(),
+        description: selectedJournal.description.trim(),
+        issn: selectedJournal.issn?.trim() || null,
+        shortcode: selectedJournal.shortcode?.trim() || null,
+        coverImage: selectedJournal.coverImage?.trim() || null,
+        publisher: selectedJournal.publisher?.trim() || null,
+        accessType: selectedJournal.accessType || null,
+        subjectArea: selectedJournal.subjectArea || null,
+        category: selectedJournal.category || null,
+        discipline: selectedJournal.discipline || null,
+        impactFactor: selectedJournal.impactFactor?.trim() || null,
+      };
+
+      if (editing && selectedJournal.id === 0) {
+        // Create new journal
+        const response = await adminAPI.createJournal(journalData);
+        const newJournal = response.data as Journal;
+        
+        // After creation, update content fields if provided
+        if (newJournal.id && (
+          selectedJournal.aimsScope || 
+          selectedJournal.guidelines || 
+          selectedJournal.editorialBoard ||
+          selectedJournal.homePageContent ||
+          selectedJournal.currentIssueContent ||
+          selectedJournal.archiveContent ||
+          selectedJournal.articlesInPress
+        )) {
+          try {
+            await journalAPI.updateJournalContent(newJournal.id, 'aims-scope', { content: selectedJournal.aimsScope || '' });
+            await journalAPI.updateJournalContent(newJournal.id, 'guidelines', { content: selectedJournal.guidelines || '' });
+            await journalAPI.updateJournalContent(newJournal.id, 'editorial-board', { content: selectedJournal.editorialBoard || '' });
+            await journalAPI.updateJournalHomePage(newJournal.id, { 
+              homePageContent: selectedJournal.homePageContent || '',
+              currentIssueContent: selectedJournal.currentIssueContent || '',
+              archiveContent: selectedJournal.archiveContent || '',
+              articlesInPress: selectedJournal.articlesInPress || ''
+            });
+          } catch (contentError) {
+            console.error('Error updating journal content:', contentError);
+            // Continue even if content update fails
+          }
+        }
+        
+        setJournals([...journals, newJournal]);
+        toast.current?.show({ 
+          severity: 'success', 
+          summary: 'Success', 
+          detail: 'Journal created successfully' 
+        });
+      } else {
+        // Update existing journal
+        const response = await adminAPI.updateJournal(selectedJournal.id, journalData);
+        const updatedJournal = response.data as Journal;
+        
+        // Update content fields if provided
+        if (selectedJournal.aimsScope !== undefined) {
+          await journalAPI.updateJournalContent(selectedJournal.id, 'aims-scope', { content: selectedJournal.aimsScope });
+        }
+        if (selectedJournal.guidelines !== undefined) {
+          await journalAPI.updateJournalContent(selectedJournal.id, 'guidelines', { content: selectedJournal.guidelines });
+        }
+        if (selectedJournal.editorialBoard !== undefined) {
+          await journalAPI.updateJournalContent(selectedJournal.id, 'editorial-board', { content: selectedJournal.editorialBoard });
+        }
+        if (selectedJournal.homePageContent !== undefined || 
+            selectedJournal.currentIssueContent !== undefined ||
+            selectedJournal.archiveContent !== undefined ||
+            selectedJournal.articlesInPress !== undefined) {
+          await journalAPI.updateJournalHomePage(selectedJournal.id, { 
+            homePageContent: selectedJournal.homePageContent || '',
+            currentIssueContent: selectedJournal.currentIssueContent || '',
+            archiveContent: selectedJournal.archiveContent || '',
+            articlesInPress: selectedJournal.articlesInPress || ''
           });
         }
-        setShowDialog(false);
-      } catch (error) {
-        console.error('Error saving journal:', error);
+        
+        setJournals(journals.map(j => 
+          j.id === selectedJournal.id ? updatedJournal : j
+        ));
         toast.current?.show({ 
-          severity: 'error', 
-          summary: 'Error', 
-          detail: 'Failed to save journal' 
+          severity: 'success', 
+          summary: 'Success', 
+          detail: 'Journal updated successfully' 
         });
       }
+      setShowDialog(false);
+    } catch (error: any) {
+      console.error('Error saving journal:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to save journal';
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: errorMessage 
+      });
     }
   };
 
@@ -338,16 +471,29 @@ export default function JournalManagement() {
                   <div className="form-group">
                     <label className="form-label">ISSN</label>
                     <InputText
-                      value={selectedJournal.issn}
+                      value={selectedJournal.issn || ''}
                       onChange={(e) => setSelectedJournal({...selectedJournal, issn: e.target.value})}
                       className="form-input"
                       placeholder="ISSN number"
                     />
                   </div>
+                  <div className="form-group">
+                    <label className="form-label">Shortcode *</label>
+                    <InputText
+                      value={selectedJournal.shortcode || ''}
+                      onChange={(e) => setSelectedJournal({...selectedJournal, shortcode: e.target.value})}
+                      className="form-input"
+                      placeholder="Unique shortcode (e.g., jams)"
+                      title="Shortcode is used to identify the journal in URLs and must be unique"
+                    />
+                    <small className="text-gray-500 text-xs mt-1 block">
+                      Used for journal URLs and must be unique (letters, numbers, hyphens, underscores only)
+                    </small>
+                  </div>
                   <div className="form-group col-span-2">
-                    <label className="form-label">Description</label>
+                    <label className="form-label">Description *</label>
                     <InputTextarea
-                      value={selectedJournal.description}
+                      value={selectedJournal.description || ''}
                       onChange={(e) => setSelectedJournal({...selectedJournal, description: e.target.value})}
                       className="form-textarea"
                       placeholder="Journal description"
@@ -357,7 +503,7 @@ export default function JournalManagement() {
                   <div className="form-group">
                     <label className="form-label">Publisher</label>
                     <InputText
-                      value={selectedJournal.publisher}
+                      value={selectedJournal.publisher || ''}
                       onChange={(e) => setSelectedJournal({...selectedJournal, publisher: e.target.value})}
                       className="form-input"
                       placeholder="Publisher name"
@@ -366,7 +512,7 @@ export default function JournalManagement() {
                   <div className="form-group">
                     <label className="form-label">Access Type</label>
                     <Dropdown
-                      value={selectedJournal.accessType}
+                      value={selectedJournal.accessType || ''}
                       onChange={(e) => setSelectedJournal({...selectedJournal, accessType: e.value})}
                       options={accessTypes}
                       className="form-input"
@@ -376,7 +522,7 @@ export default function JournalManagement() {
                   <div className="form-group">
                     <label className="form-label">Category</label>
                     <Dropdown
-                      value={selectedJournal.category}
+                      value={selectedJournal.category || ''}
                       onChange={(e) => setSelectedJournal({...selectedJournal, category: e.value})}
                       options={categories}
                       className="form-input"
@@ -386,7 +532,7 @@ export default function JournalManagement() {
                   <div className="form-group">
                     <label className="form-label">Subject Area</label>
                     <Dropdown
-                      value={selectedJournal.subjectArea}
+                      value={selectedJournal.subjectArea || ''}
                       onChange={(e) => setSelectedJournal({...selectedJournal, subjectArea: e.value})}
                       options={subjectAreas}
                       className="form-input"
@@ -394,9 +540,18 @@ export default function JournalManagement() {
                     />
                   </div>
                   <div className="form-group">
+                    <label className="form-label">Discipline</label>
+                    <InputText
+                      value={selectedJournal.discipline || ''}
+                      onChange={(e) => setSelectedJournal({...selectedJournal, discipline: e.target.value})}
+                      className="form-input"
+                      placeholder="Discipline"
+                    />
+                  </div>
+                  <div className="form-group">
                     <label className="form-label">Impact Factor</label>
                     <InputText
-                      value={selectedJournal.impactFactor}
+                      value={selectedJournal.impactFactor || ''}
                       onChange={(e) => setSelectedJournal({...selectedJournal, impactFactor: e.target.value})}
                       className="form-input"
                       placeholder="Impact factor"
@@ -422,7 +577,7 @@ export default function JournalManagement() {
                 <div className="form-group">
                   <label className="form-label">Aims & Scope</label>
                   <InputTextarea
-                    value={selectedJournal.aimsScope}
+                    value={selectedJournal.aimsScope || ''}
                     onChange={(e) => setSelectedJournal({...selectedJournal, aimsScope: e.target.value})}
                     className="form-textarea"
                     placeholder="Journal aims and scope"
@@ -432,7 +587,7 @@ export default function JournalManagement() {
                 <div className="form-group">
                   <label className="form-label">Author Guidelines</label>
                   <InputTextarea
-                    value={selectedJournal.guidelines}
+                    value={selectedJournal.guidelines || ''}
                     onChange={(e) => setSelectedJournal({...selectedJournal, guidelines: e.target.value})}
                     className="form-textarea"
                     placeholder="Author submission guidelines"
@@ -442,7 +597,7 @@ export default function JournalManagement() {
                 <div className="form-group">
                   <label className="form-label">Editorial Board</label>
                   <InputTextarea
-                    value={selectedJournal.editorialBoard}
+                    value={selectedJournal.editorialBoard || ''}
                     onChange={(e) => setSelectedJournal({...selectedJournal, editorialBoard: e.target.value})}
                     className="form-textarea"
                     placeholder="Editorial board members"
@@ -457,7 +612,7 @@ export default function JournalManagement() {
                 <div className="form-group">
                   <label className="form-label">Journal Home Page Content</label>
                   <InputTextarea
-                    value={selectedJournal.homePageContent}
+                    value={selectedJournal.homePageContent || ''}
                     onChange={(e) => setSelectedJournal({...selectedJournal, homePageContent: e.target.value})}
                     className="form-textarea"
                     placeholder="Home page content"
@@ -467,7 +622,7 @@ export default function JournalManagement() {
                 <div className="form-group">
                   <label className="form-label">Current Issue Content</label>
                   <InputTextarea
-                    value={selectedJournal.currentIssueContent}
+                    value={selectedJournal.currentIssueContent || ''}
                     onChange={(e) => setSelectedJournal({...selectedJournal, currentIssueContent: e.target.value})}
                     className="form-textarea"
                     placeholder="Current issue information"
@@ -477,7 +632,7 @@ export default function JournalManagement() {
                 <div className="form-group">
                   <label className="form-label">Archive Page Content</label>
                   <InputTextarea
-                    value={selectedJournal.archiveContent}
+                    value={selectedJournal.archiveContent || ''}
                     onChange={(e) => setSelectedJournal({...selectedJournal, archiveContent: e.target.value})}
                     className="form-textarea"
                     placeholder="Archive page content"
@@ -487,7 +642,7 @@ export default function JournalManagement() {
                 <div className="form-group">
                   <label className="form-label">Articles in Press</label>
                   <InputTextarea
-                    value={selectedJournal.articlesInPress}
+                    value={selectedJournal.articlesInPress || ''}
                     onChange={(e) => setSelectedJournal({...selectedJournal, articlesInPress: e.target.value})}
                     className="form-textarea"
                     placeholder="Articles in press information"

@@ -8,6 +8,7 @@ interface NewsItem {
   id: number;
   title: string;
   link?: string;
+  isPinned?: boolean;
 }
 
 export default function TopNewsBar() {
@@ -20,10 +21,13 @@ export default function TopNewsBar() {
 
   const loadNews = async () => {
     try {
-      const response = await adminAPI.getLatestNews(5);
+      const response = await adminAPI.getLatestNews(10); // Get more to ensure we have pinned items
       const newsData = (response.data as NewsItem[]) || [];
-      const news = Array.isArray(newsData) ? newsData.slice(0, 5) : [];
-      setNewsItems(news);
+      // Filter to show only pinned news items
+      const pinnedNews = Array.isArray(newsData) 
+        ? newsData.filter(item => item.isPinned === true).slice(0, 5)
+        : [];
+      setNewsItems(pinnedNews);
     } catch (error: any) {
       console.error('Error loading news:', error);
       // Silently fail - don't show error to users if news endpoint doesn't exist yet

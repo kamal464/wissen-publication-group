@@ -10,6 +10,7 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+  isClient: boolean;
 }
 
 /**
@@ -19,11 +20,21 @@ interface State {
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { 
+      hasError: false,
+      isClient: typeof window !== 'undefined'
+    };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
+  }
+
+  componentDidMount() {
+    // Ensure we're on the client side
+    if (!this.state.isClient) {
+      this.setState({ isClient: true });
+    }
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -34,6 +45,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   render() {
+    // Don't render on server side
+    if (typeof window === 'undefined') {
+      return this.props.children;
+    }
+
     if (this.state.hasError) {
       // Render fallback UI
       if (this.props.fallback) {

@@ -116,40 +116,63 @@ export default function JournalDetailPage() {
         
         setJournal(foundJournal);
         
-        // Load initial content after journal is loaded
+        // If we have a valid journal ID, fetch full journal details to get all content fields
         if (foundJournal && foundJournal.id > 0) {
+          try {
+            const fullJournalResponse = await adminAPI.getJournal(foundJournal.id);
+            const fullJournal = fullJournalResponse.data as any;
+            // Merge full journal data with found journal
+            const enhancedJournal = { ...foundJournal, ...fullJournal };
+            setJournal(enhancedJournal);
+            
+            // Load initial content after journal is loaded
+            const urlParams = new URLSearchParams(window.location.search);
+            const section = urlParams.get('section') || 'home';
+            setActiveMenu(section);
+            
+            // Load content for the section
+            let contentToShow = '';
+            switch (section) {
+              case 'home':
+                contentToShow = enhancedJournal.homePageContent || enhancedJournal.description || 'Welcome to ' + enhancedJournal.title;
+                break;
+              case 'aims-scope':
+                contentToShow = enhancedJournal.aimsScope || 'Aims and Scope content will be available soon.';
+                break;
+              case 'editorial-board':
+                contentToShow = enhancedJournal.editorialBoard || 'Editorial Board information will be available soon.';
+                break;
+              case 'in-press':
+                contentToShow = enhancedJournal.articlesInPress || 'Articles in Press will be available soon.';
+                break;
+              case 'current-issue':
+                contentToShow = enhancedJournal.currentIssueContent || 'Current Issue content will be available soon.';
+                break;
+              case 'archive':
+                contentToShow = enhancedJournal.archiveContent || 'Archive content will be available soon.';
+                break;
+              case 'guidelines':
+                contentToShow = enhancedJournal.guidelines || 'Journal Guidelines will be available soon.';
+                break;
+              default:
+                contentToShow = enhancedJournal.description || '';
+            }
+            setContent(contentToShow);
+          } catch (err) {
+            console.error('Error fetching full journal details:', err);
+            // Fallback to basic journal data
+            const urlParams = new URLSearchParams(window.location.search);
+            const section = urlParams.get('section') || 'home';
+            setActiveMenu(section);
+            const contentToShow = foundJournal.homePageContent || foundJournal.description || 'Welcome to ' + foundJournal.title;
+            setContent(contentToShow);
+          }
+        } else {
+          // Virtual journal - no content available
           const urlParams = new URLSearchParams(window.location.search);
           const section = urlParams.get('section') || 'home';
           setActiveMenu(section);
-          
-          // Load content for the section
-          let contentToShow = '';
-          switch (section) {
-            case 'home':
-              contentToShow = foundJournal.homePageContent || foundJournal.description || 'Welcome to ' + foundJournal.title;
-              break;
-            case 'aims-scope':
-              contentToShow = foundJournal.aimsScope || 'Aims and Scope content will be available soon.';
-              break;
-            case 'editorial-board':
-              contentToShow = foundJournal.editorialBoard || 'Editorial Board information will be available soon.';
-              break;
-            case 'in-press':
-              contentToShow = foundJournal.articlesInPress || 'Articles in Press will be available soon.';
-              break;
-            case 'current-issue':
-              contentToShow = foundJournal.currentIssueContent || 'Current Issue content will be available soon.';
-              break;
-            case 'archive':
-              contentToShow = foundJournal.archiveContent || 'Archive content will be available soon.';
-              break;
-            case 'guidelines':
-              contentToShow = foundJournal.guidelines || 'Journal Guidelines will be available soon.';
-              break;
-            default:
-              contentToShow = foundJournal.description || '';
-          }
-          setContent(contentToShow);
+          setContent('Content will be available once the journal is fully configured.');
         }
       } catch (err: any) {
         setError(err.response?.data?.message || err.message || 'Failed to load journal');
@@ -168,65 +191,79 @@ export default function JournalDetailPage() {
     }
 
     try {
+      // Fetch full journal details to ensure we have all content fields
+      let journalData = journal;
+      if (journal.id > 0) {
+        try {
+          const fullJournalResponse = await adminAPI.getJournal(journal.id);
+          journalData = { ...journal, ...(fullJournalResponse.data as any) };
+          // Update journal state with full data
+          setJournal(journalData);
+        } catch (err) {
+          console.error('Error fetching journal details:', err);
+          // Use existing journal data
+        }
+      }
+
       let contentToShow = '';
       
       switch (section) {
         case 'home':
-          contentToShow = journal.homePageContent || journal.description || 'Welcome to ' + journal.title;
+          contentToShow = journalData.homePageContent || journalData.description || 'Welcome to ' + journalData.title;
           break;
         case 'aims-scope':
-          contentToShow = journal.aimsScope || 'Aims and Scope content will be available soon.';
+          contentToShow = journalData.aimsScope || 'Aims and Scope content will be available soon.';
           break;
         case 'editorial-board':
           // Load board members for editorial board section
           try {
-            const membersResponse = await adminAPI.getBoardMembers(journal.id);
+            const membersResponse = await adminAPI.getBoardMembers(journalData.id);
             const members = (membersResponse.data as any[]) || [];
             setBoardMembers(members);
-            contentToShow = journal.editorialBoard || '';
+            contentToShow = journalData.editorialBoard || '';
           } catch (err) {
             console.error('Error loading board members:', err);
             setBoardMembers([]);
-            contentToShow = journal.editorialBoard || 'Editorial Board information will be available soon.';
+            contentToShow = journalData.editorialBoard || 'Editorial Board information will be available soon.';
           }
           break;
         case 'in-press':
           // Load articles in press
           try {
             const articlesResponse = await adminAPI.getArticles({ 
-              journalId: journal.id, 
+              journalId: journalData.id, 
               status: 'ACCEPTED' 
             });
             const inPressArticles = (articlesResponse.data as any[]) || [];
             setArticles(inPressArticles);
-            contentToShow = journal.articlesInPress || '';
+            contentToShow = journalData.articlesInPress || '';
           } catch (err) {
             console.error('Error loading articles in press:', err);
             setArticles([]);
-            contentToShow = journal.articlesInPress || 'Articles in Press will be available soon.';
+            contentToShow = journalData.articlesInPress || 'Articles in Press will be available soon.';
           }
           break;
         case 'current-issue':
           // Load current issue articles
           try {
             const articlesResponse = await adminAPI.getArticles({ 
-              journalId: journal.id, 
+              journalId: journalData.id, 
               status: 'PUBLISHED' 
             });
             const currentArticles = (articlesResponse.data as any[]) || [];
             setArticles(currentArticles);
-            contentToShow = journal.currentIssueContent || '';
+            contentToShow = journalData.currentIssueContent || '';
           } catch (err) {
             console.error('Error loading current issue articles:', err);
             setArticles([]);
-            contentToShow = journal.currentIssueContent || 'Current Issue content will be available soon.';
+            contentToShow = journalData.currentIssueContent || 'Current Issue content will be available soon.';
           }
           break;
         case 'archive':
           // Load archive articles and organize by year
           try {
             const articlesResponse = await adminAPI.getArticles({ 
-              journalId: journal.id, 
+              journalId: journalData.id, 
               status: 'PUBLISHED' 
             });
             const allArticles = (articlesResponse.data as any[]) || [];
@@ -281,19 +318,19 @@ export default function JournalDetailPage() {
             });
             
             setArchiveIssues(issuesByYear);
-            contentToShow = journal.archiveContent || '';
+            contentToShow = journalData.archiveContent || '';
           } catch (err) {
             console.error('Error loading archive:', err);
             setArticles([]);
             setArchiveIssues(new Map());
-            contentToShow = journal.archiveContent || 'Archive content will be available soon.';
+            contentToShow = journalData.archiveContent || 'Archive content will be available soon.';
           }
           break;
         case 'guidelines':
-          contentToShow = journal.guidelines || 'Journal Guidelines will be available soon.';
+          contentToShow = journalData.guidelines || 'Journal Guidelines will be available soon.';
           break;
         default:
-          contentToShow = journal.description || '';
+          contentToShow = journalData.description || '';
       }
 
       setContent(contentToShow);
@@ -700,12 +737,20 @@ export default function JournalDetailPage() {
                   )}
 
                   {/* Additional Home Page Content */}
-                  {content && (
+                  {activeMenu === 'home' && (
                     <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 w-full">
-                      <div 
-                        className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br>') }}
-                      />
+                      {content ? (
+                        <div 
+                          className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
+                          dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br>') }}
+                        />
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <i className="pi pi-file-edit text-4xl mb-4"></i>
+                          <p className="text-lg">Home page content will be available soon.</p>
+                          <p className="text-sm mt-2">Journal admin can add content from the journal admin panel.</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

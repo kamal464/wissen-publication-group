@@ -12,7 +12,7 @@ import { TabView, TabPanel } from 'primereact/tabview';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { adminAPI } from '@/lib/api';
 import { loadJournalData } from '@/lib/journalAdminUtils';
-import { getFileUrl } from '@/lib/apiConfig';
+import { getFileUrl, getApiUrl } from '@/lib/apiConfig';
 import 'quill/dist/quill.snow.css';
 
 interface Article {
@@ -68,6 +68,11 @@ export default function ArticlesInPressPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [savingFullText, setSavingFullText] = useState(false);
+  const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null);
+  const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
   const [journalId, setJournalId] = useState<number | null>(null);
   const [journalTitle, setJournalTitle] = useState<string>('');
   const [currentMonth, setCurrentMonth] = useState<string>('');
@@ -121,6 +126,18 @@ export default function ArticlesInPressPage() {
     const now = new Date();
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     setCurrentMonth(`${monthNames[now.getMonth()]} ${now.getFullYear()}`);
+    
+    // Check for URL parameters to open preview with filters
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('preview') === 'true') {
+      const month = urlParams.get('month');
+      const year = urlParams.get('year');
+      if (month && year) {
+        setPreviewMonth(month);
+        setPreviewYear(year);
+        setShowPreviewDialog(true);
+      }
+    }
   }, []);
 
   const loadJournalAndArticles = async () => {
@@ -236,14 +253,15 @@ export default function ArticlesInPressPage() {
   const isFormValid = () => {
     if (!selectedArticle) return false;
 
-    // Required fields
-    if (!selectedArticle.title || !selectedArticle.title.trim()) return false;
-    if (!selectedArticle.volumeNo) return false;
-    if (!selectedArticle.issueNo) return false;
-    if (!selectedArticle.issueMonth) return false;
-    if (!selectedArticle.year) return false;
-    if (!selectedArticle.firstPageNumber) return false;
-    if (!selectedArticle.lastPageNumber) return false;
+    // Required fields - convert to string and trim to handle null/undefined/number values
+    if (!selectedArticle.title || !String(selectedArticle.title).trim()) return false;
+    // Volume is REQUIRED when creating articles (as per user requirement)
+    if (!selectedArticle.volumeNo || !String(selectedArticle.volumeNo).trim()) return false;
+    if (!selectedArticle.issueNo || !String(selectedArticle.issueNo).trim()) return false;
+    if (!selectedArticle.issueMonth || !String(selectedArticle.issueMonth).trim()) return false;
+    if (!selectedArticle.year || !String(selectedArticle.year).trim()) return false;
+    if (!selectedArticle.firstPageNumber || !String(selectedArticle.firstPageNumber).trim()) return false;
+    if (!selectedArticle.lastPageNumber || !String(selectedArticle.lastPageNumber).trim()) return false;
     
     // Authors validation
     if (!selectedArticle.authors || selectedArticle.authors.length === 0) return false;
@@ -254,7 +272,7 @@ export default function ArticlesInPressPage() {
     if (invalidAuthors.length > 0) return false;
 
     // Check if at least one author has a name
-    const hasAuthorNames = selectedArticle.authors.some(a => a.name && a.name.trim());
+    const hasAuthorNames = selectedArticle.authors.some(a => a.name && String(a.name).trim());
     if (!hasAuthorNames) return false;
 
     return true;
@@ -278,6 +296,32 @@ export default function ArticlesInPressPage() {
     // Validate required fields
     if (!selectedArticle.title || !selectedArticle.title.trim()) {
       toast.current?.show({ severity: 'error', summary: 'Validation Error', detail: 'Article title is required' });
+      return;
+    }
+
+    // Volume is REQUIRED when creating articles
+    // Convert to string and check if it's not empty
+    const volumeNo = String(selectedArticle.volumeNo || '').trim();
+    if (!volumeNo) {
+      toast.current?.show({ severity: 'error', summary: 'Validation Error', detail: 'Volume number is required' });
+      return;
+    }
+
+    const issueNo = String(selectedArticle.issueNo || '').trim();
+    if (!issueNo) {
+      toast.current?.show({ severity: 'error', summary: 'Validation Error', detail: 'Issue number is required' });
+      return;
+    }
+
+    const issueMonth = String(selectedArticle.issueMonth || '').trim();
+    if (!issueMonth) {
+      toast.current?.show({ severity: 'error', summary: 'Validation Error', detail: 'Issue month is required' });
+      return;
+    }
+
+    const year = String(selectedArticle.year || '').trim();
+    if (!year) {
+      toast.current?.show({ severity: 'error', summary: 'Validation Error', detail: 'Year is required' });
       return;
     }
 
@@ -322,8 +366,20 @@ export default function ArticlesInPressPage() {
         articleType: selectedArticle.articleType,
         keywords: getPlainText(selectedArticle.keywords),
         doi: selectedArticle.doi,
-        // Only send fields that exist in the backend DTO
-        // Additional fields (volumeNo, issueNo, etc.) can be stored separately or in a JSON field
+        // Volume and Issue Management - convert to strings to handle dropdown values (numbers)
+        volumeNo: selectedArticle.volumeNo ? String(selectedArticle.volumeNo).trim() : '',
+        issueNo: selectedArticle.issueNo ? String(selectedArticle.issueNo).trim() : '',
+        issueMonth: selectedArticle.issueMonth ? String(selectedArticle.issueMonth).trim() : '',
+        year: selectedArticle.year ? String(selectedArticle.year).trim() : '',
+        specialIssue: selectedArticle.specialIssue,
+        firstPageNumber: selectedArticle.firstPageNumber,
+        lastPageNumber: selectedArticle.lastPageNumber,
+        correspondingAuthorDetails: getPlainText(selectedArticle.correspondingAuthorDetails),
+        citeAs: getPlainText(selectedArticle.citeAs),
+        country: selectedArticle.country,
+        receivedAt: selectedArticle.receivedAt ? new Date(selectedArticle.receivedAt).toISOString() : undefined,
+        acceptedAt: selectedArticle.acceptedAt ? new Date(selectedArticle.acceptedAt).toISOString() : undefined,
+        publishedAt: selectedArticle.publishedAt ? new Date(selectedArticle.publishedAt).toISOString() : undefined,
       };
 
       if (selectedArticle.id === 0) {
@@ -1447,26 +1503,57 @@ export default function ArticlesInPressPage() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                toast.current?.show({ severity: 'success', summary: 'Success', detail: 'PDF uploaded successfully' });
-                setShowUploadPdfDialog(false);
-                setSelectedArticleForUpload(null);
+              onClick={async () => {
+                if (!selectedArticleForUpload || !selectedPdfFile) {
+                  toast.current?.show({ severity: 'warn', summary: 'Warning', detail: 'Please select a PDF file to upload' });
+                  return;
+                }
+
+                try {
+                  setUploadingPdf(true);
+                  const formData = new FormData();
+                  formData.append('pdf', selectedPdfFile);
+
+                  const response = await fetch(getApiUrl(`/articles/${selectedArticleForUpload.id}/upload-pdf`), {
+                    method: 'POST',
+                    body: formData,
+                  });
+
+                  if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: 'Upload failed' }));
+                    throw new Error(errorData.message || 'Failed to upload PDF');
+                  }
+
+                  const result = await response.json();
+                  toast.current?.show({ severity: 'success', summary: 'Success', detail: 'PDF uploaded successfully' });
+                  await loadJournalAndArticles();
+                  setShowUploadPdfDialog(false);
+                  setSelectedArticleForUpload(null);
+                  setSelectedPdfFile(null);
+                } catch (error: any) {
+                  console.error('Error uploading PDF:', error);
+                  toast.current?.show({ severity: 'error', summary: 'Error', detail: error.message || 'Failed to upload PDF' });
+                } finally {
+                  setUploadingPdf(false);
+                }
               }}
+              disabled={uploadingPdf || !selectedPdfFile}
               style={{
-                backgroundColor: '#10b981',
+                backgroundColor: uploadingPdf || !selectedPdfFile ? '#9ca3af' : '#10b981',
                 color: 'white',
                 border: 'none',
                 padding: '0.75rem 1.5rem',
                 borderRadius: '8px',
                 fontWeight: '500',
-                cursor: 'pointer',
+                cursor: uploadingPdf || !selectedPdfFile ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                opacity: uploadingPdf || !selectedPdfFile ? 0.6 : 1
               }}
             >
-              <i className="pi pi-upload"></i>
-              <span>Upload</span>
+              {uploadingPdf ? <i className="pi pi-spin pi-spinner"></i> : <i className="pi pi-upload"></i>}
+              <span>{uploadingPdf ? 'Uploading...' : 'Upload'}</span>
             </button>
           </div>
         }
@@ -1496,7 +1583,20 @@ export default function ArticlesInPressPage() {
                 maxFileSize={10000000}
                 chooseLabel="Choose File"
                 className="w-full"
+                onSelect={(e) => {
+                  if (e.files && e.files.length > 0) {
+                    setSelectedPdfFile(e.files[0]);
+                  }
+                }}
+                onClear={() => {
+                  setSelectedPdfFile(null);
+                }}
               />
+              {selectedPdfFile && (
+                <p className="text-sm text-gray-600 mt-2">
+                  Selected: {selectedPdfFile.name} ({(selectedPdfFile.size / 1024 / 1024).toFixed(2)} MB)
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -1534,26 +1634,59 @@ export default function ArticlesInPressPage() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Images uploaded successfully' });
-                setShowUploadImagesDialog(false);
-                setSelectedArticleForUpload(null);
+              onClick={async () => {
+                if (!selectedArticleForUpload || selectedImageFiles.length === 0) {
+                  toast.current?.show({ severity: 'warn', summary: 'Warning', detail: 'Please select at least one image to upload' });
+                  return;
+                }
+
+                try {
+                  setUploadingImages(true);
+                  const formData = new FormData();
+                  selectedImageFiles.forEach((file) => {
+                    formData.append('files', file);
+                  });
+
+                  const response = await fetch(`${getApiUrl('')}/articles/${selectedArticleForUpload.id}/upload-images`, {
+                    method: 'POST',
+                    body: formData,
+                  });
+
+                  if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: 'Upload failed' }));
+                    throw new Error(errorData.message || 'Failed to upload images');
+                  }
+
+                  const result = await response.json();
+                  toast.current?.show({ severity: 'success', summary: 'Success', detail: `${selectedImageFiles.length} image(s) uploaded successfully` });
+                  await loadJournalAndArticles();
+                  setShowUploadImagesDialog(false);
+                  setSelectedArticleForUpload(null);
+                  setSelectedImageFiles([]);
+                } catch (error: any) {
+                  console.error('Error uploading images:', error);
+                  toast.current?.show({ severity: 'error', summary: 'Error', detail: error.message || 'Failed to upload images' });
+                } finally {
+                  setUploadingImages(false);
+                }
               }}
+              disabled={uploadingImages || selectedImageFiles.length === 0}
               style={{
-                backgroundColor: '#3b82f6',
+                backgroundColor: uploadingImages || selectedImageFiles.length === 0 ? '#9ca3af' : '#3b82f6',
                 color: 'white',
                 border: 'none',
                 padding: '0.75rem 1.5rem',
                 borderRadius: '8px',
                 fontWeight: '500',
-                cursor: 'pointer',
+                cursor: uploadingImages || selectedImageFiles.length === 0 ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                opacity: uploadingImages || selectedImageFiles.length === 0 ? 0.6 : 1
               }}
             >
-              <i className="pi pi-upload"></i>
-              <span>Upload Images</span>
+              {uploadingImages ? <i className="pi pi-spin pi-spinner"></i> : <i className="pi pi-upload"></i>}
+              <span>{uploadingImages ? 'Uploading...' : 'Upload Images'}</span>
             </button>
           </div>
         }
@@ -1568,7 +1701,27 @@ export default function ArticlesInPressPage() {
               maxFileSize={5000000}
               chooseLabel="Choose Files"
               className="w-full"
+              onSelect={(e) => {
+                if (e.files && e.files.length > 0) {
+                  setSelectedImageFiles(Array.from(e.files));
+                }
+              }}
+              onClear={() => {
+                setSelectedImageFiles([]);
+              }}
             />
+            {selectedImageFiles.length > 0 && (
+              <div className="mt-2">
+                <p className="text-sm text-gray-600 mb-2">Selected {selectedImageFiles.length} file(s):</p>
+                <ul className="text-xs text-gray-500 space-y-1">
+                  {selectedImageFiles.map((file, index) => (
+                    <li key={index}>
+                      {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </Dialog>
@@ -1617,7 +1770,7 @@ export default function ArticlesInPressPage() {
                     return tmp.textContent || tmp.innerText || '';
                   };
 
-                  // Only send fields that exist in the backend DTO
+                  // Update article with all heading content
                   const articleData = {
                     title: selectedArticleForUpload.title,
                     abstract: getPlainText(selectedArticleForUpload.abstract) || selectedArticleForUpload.title,
@@ -1627,10 +1780,20 @@ export default function ArticlesInPressPage() {
                     pdfUrl: selectedArticleForUpload.pdfUrl,
                     articleType: selectedArticleForUpload.articleType,
                     doi: selectedArticleForUpload.doi,
-                    // Store heading content in a JSON field or handle separately
-                    // For now, we'll only update valid fields
+                    // Save all heading content
+                    heading1Title: selectedArticleForUpload.heading1Title,
+                    heading1Content: selectedArticleForUpload.heading1Content,
+                    heading2Title: selectedArticleForUpload.heading2Title,
+                    heading2Content: selectedArticleForUpload.heading2Content,
+                    heading3Title: selectedArticleForUpload.heading3Title,
+                    heading3Content: selectedArticleForUpload.heading3Content,
+                    heading4Title: selectedArticleForUpload.heading4Title,
+                    heading4Content: selectedArticleForUpload.heading4Content,
+                    heading5Title: selectedArticleForUpload.heading5Title,
+                    heading5Content: selectedArticleForUpload.heading5Content,
                   };
                   
+                  setSavingFullText(true);
                   await adminAPI.updateArticle(selectedArticleForUpload.id, articleData);
                   toast.current?.show({ 
                     severity: 'success', 
@@ -1648,23 +1811,27 @@ export default function ArticlesInPressPage() {
                     summary: 'Error', 
                     detail: errorMessage
                   });
+                } finally {
+                  setSavingFullText(false);
                 }
               }}
+              disabled={savingFullText}
               style={{
-                backgroundColor: '#3b82f6',
+                backgroundColor: savingFullText ? '#9ca3af' : '#3b82f6',
                 color: 'white',
                 border: 'none',
                 padding: '0.75rem 1.5rem',
                 borderRadius: '8px',
                 fontWeight: '500',
-                cursor: 'pointer',
+                cursor: savingFullText ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                opacity: savingFullText ? 0.6 : 1
               }}
             >
-              <i className="pi pi-check"></i>
-              <span>Save</span>
+              {savingFullText ? <i className="pi pi-spin pi-spinner"></i> : <i className="pi pi-check"></i>}
+              <span>{savingFullText ? 'Saving...' : 'Save'}</span>
             </button>
           </div>
         }
@@ -1695,50 +1862,89 @@ export default function ArticlesInPressPage() {
                   maxFileSize={5000000}
                   chooseLabel="Choose Images"
                   className="w-full"
-                  onUpload={async (e) => {
-                    try {
-                      const files = e.files;
-                      if (!files || files.length === 0) return;
-
-                      // Upload each file
-                      const uploadedPaths: string[] = [];
-                      for (const file of files) {
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        
-                        // You'll need to implement an API endpoint for uploading article images
-                        // For now, we'll use a placeholder
-                        toast.current?.show({ 
-                          severity: 'info', 
-                          summary: 'Upload', 
-                          detail: `Uploading ${file.name}...` 
-                        });
-                      }
-                      
-                      // Reload article to get updated images
-                      await loadJournalAndArticles();
-                      toast.current?.show({ 
-                        severity: 'success', 
-                        summary: 'Success', 
-                        detail: 'Images uploaded successfully' 
-                      });
-                    } catch (error: any) {
-                      toast.current?.show({ 
-                        severity: 'error', 
-                        summary: 'Error', 
-                        detail: 'Failed to upload images' 
-                      });
+                  onSelect={(e) => {
+                    if (e.files && e.files.length > 0) {
+                      setSelectedImageFiles(Array.from(e.files));
                     }
                   }}
-                  auto
+                  onClear={() => {
+                    setSelectedImageFiles([]);
+                  }}
                 />
                 <p className="text-xs text-gray-500 mt-2">Select multiple images to upload (Max 5MB per image)</p>
+                {selectedImageFiles.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600 mb-2">Selected {selectedImageFiles.length} file(s):</p>
+                    <ul className="text-xs text-gray-500 space-y-1">
+                      {selectedImageFiles.map((file, index) => (
+                        <li key={index}>
+                          {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!selectedArticleForUpload || selectedImageFiles.length === 0) {
+                          toast.current?.show({ severity: 'warn', summary: 'Warning', detail: 'Please select at least one image to upload' });
+                          return;
+                        }
+
+                        try {
+                          setUploadingImages(true);
+                          const formData = new FormData();
+                          selectedImageFiles.forEach((file) => {
+                            formData.append('files', file);
+                          });
+
+                          const response = await fetch(getApiUrl(`/articles/${selectedArticleForUpload.id}/upload-images`), {
+                            method: 'POST',
+                            body: formData,
+                          });
+
+                          if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({ message: 'Upload failed' }));
+                            throw new Error(errorData.message || 'Failed to upload images');
+                          }
+
+                          const result = await response.json();
+                          toast.current?.show({ severity: 'success', summary: 'Success', detail: `${selectedImageFiles.length} image(s) uploaded successfully` });
+                          await loadJournalAndArticles();
+                          setSelectedImageFiles([]);
+                          // Reload the article to get updated images
+                          const updatedArticle = await adminAPI.getArticle(selectedArticleForUpload.id);
+                          setSelectedArticleForUpload(updatedArticle.data as Article);
+                        } catch (error: any) {
+                          console.error('Error uploading images:', error);
+                          toast.current?.show({ severity: 'error', summary: 'Error', detail: error.message || 'Failed to upload images' });
+                        } finally {
+                          setUploadingImages(false);
+                        }
+                      }}
+                      disabled={uploadingImages || selectedImageFiles.length === 0}
+                      className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {uploadingImages ? 'Uploading...' : 'Upload Selected Images'}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Uploaded Images Display */}
-              {selectedArticleForUpload.fulltextImages && selectedArticleForUpload.fulltextImages.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {selectedArticleForUpload.fulltextImages.map((imagePath, index) => {
+              {(() => {
+                try {
+                  let images: string[] = [];
+                  if (selectedArticleForUpload.fulltextImages) {
+                    if (typeof selectedArticleForUpload.fulltextImages === 'string') {
+                      images = JSON.parse(selectedArticleForUpload.fulltextImages);
+                    } else if (Array.isArray(selectedArticleForUpload.fulltextImages)) {
+                      images = selectedArticleForUpload.fulltextImages;
+                    }
+                  }
+                  
+                  return images.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {images.map((imagePath, index) => {
                     const imageUrl = getFileUrl(imagePath);
                     
                     return (
@@ -1753,14 +1959,10 @@ export default function ArticlesInPressPage() {
                             target.style.display = 'none';
                             const parent = target.parentElement;
                             if (parent) {
-                              parent.innerHTML = `
-                                <div class="w-full h-64 bg-gray-100 flex items-center justify-center">
-                                  <div class="text-center text-gray-500">
-                                    <i class="pi pi-image text-4xl mb-2"></i>
-                                    <p class="text-sm">Image not found</p>
-                                  </div>
-                                </div>
-                              `;
+                              const errorDiv = document.createElement('div');
+                              errorDiv.className = 'w-full h-64 bg-gray-100 flex items-center justify-center';
+                              errorDiv.innerHTML = '<div class="text-center text-gray-500"><i class="pi pi-image text-4xl mb-2"></i><p class="text-sm">Image not found</p></div>';
+                              parent.appendChild(errorDiv);
                             }
                           }}
                         />
@@ -1771,13 +1973,23 @@ export default function ArticlesInPressPage() {
                     );
                   })}
                 </div>
-              ) : (
-                <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-                  <i className="pi pi-image text-4xl text-gray-400 mb-3"></i>
-                  <p className="text-gray-600 mb-2">No images uploaded yet</p>
-                  <p className="text-sm text-gray-500">Use the file upload above to add fulltext images</p>
-                </div>
-              )}
+                  ) : (
+                    <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                      <i className="pi pi-image text-4xl text-gray-400 mb-3"></i>
+                      <p className="text-gray-600 mb-2">No images uploaded yet</p>
+                      <p className="text-sm text-gray-500">Use the file upload above to add fulltext images</p>
+                    </div>
+                  );
+                } catch (error) {
+                  return (
+                    <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                      <i className="pi pi-image text-4xl text-gray-400 mb-3"></i>
+                      <p className="text-gray-600 mb-2">No images uploaded yet</p>
+                      <p className="text-sm text-gray-500">Use the file upload above to add fulltext images</p>
+                    </div>
+                  );
+                }
+              })()}
             </div>
 
             {/* Article Content - Headings 1-5 with Editable Fields */}

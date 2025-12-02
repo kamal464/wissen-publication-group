@@ -68,7 +68,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: 'pi pi-code',
       href: '/admin/journal-shortcode'
     },
-
+    {
+      id: 'latest-news',
+      label: 'Latest News',
+      icon: 'pi pi-bell',
+      href: '/admin/latest-news'
+    },
   ];
 
   useEffect(() => {
@@ -180,6 +185,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           break;
         case 'journal-shortcode':
           breadcrumbs.push('Create Journal Shortcode');
+          break;
+        case 'latest-news':
+          breadcrumbs.push('Latest News');
           break;
         case 'pending-fulltexts':
           breadcrumbs.push('Pending Fulltexts');

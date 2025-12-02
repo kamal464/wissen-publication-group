@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { InputText } from 'primereact/inputtext';
 import { Password } from 'primereact/password';
@@ -14,7 +14,12 @@ export default function JournalAdminLogin() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,54 +58,72 @@ export default function JournalAdminLogin() {
             <p className="mt-1 text-sm text-gray-500">Wissen Publication Group · Manage journals and articles</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-8">
-            {error && <Message severity="error" text={error} className="w-full" />}
+          {mounted ? (
+            <form onSubmit={handleLogin} className="space-y-8" suppressHydrationWarning>
+              {error && <Message severity="error" text={error} className="w-full" />}
 
-            <div className="space-y-3">
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username
-              </label>
-              <InputText
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-200 placeholder:text-gray-400"
-                required
+              <div className="space-y-3">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                  Username
+                </label>
+                <InputText
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your username"
+                  className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-200 placeholder:text-gray-400"
+                  required
+                />
+              </div>
+
+              <div className="space-y-3">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <Password
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="w-full block"
+                  inputClassName="w-full py-3 px-4 border border-gray-300 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-200 placeholder:text-gray-400"
+                  toggleMask
+                  feedback={false}
+                  required
+                />
+              </div>
+
+              <Button
+                type="submit"
+                label="Sign In"
+                icon="pi pi-sign-in"
+                className="w-full py-3 rounded-xl font-semibold text-base text-white shadow-md hover:shadow-lg transition-all mt-2"
+                style={{
+                  backgroundImage: 'linear-gradient(to right, rgb(37,99,235), rgb(126,34,206))',
+                  border: '0',
+                  color: '#fff'
+                }}
+                loading={loading}
+                disabled={!username || !password}
               />
+            </form>
+          ) : (
+            <div className="space-y-8">
+              <div className="space-y-3">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                  Username
+                </label>
+                <div className="w-full py-3 px-4 border border-gray-300 rounded-xl bg-gray-100 animate-pulse h-12"></div>
+              </div>
+              <div className="space-y-3">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <div className="w-full py-3 px-4 border border-gray-300 rounded-xl bg-gray-100 animate-pulse h-12"></div>
+              </div>
+              <div className="w-full py-3 rounded-xl bg-gray-200 animate-pulse h-12"></div>
             </div>
-
-            <div className="space-y-3">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <Password
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className="w-full block"
-                inputClassName="w-full py-3 px-4 border border-gray-300 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-200 placeholder:text-gray-400"
-                toggleMask
-                feedback={false}
-                required
-              />
-            </div>
-
-            <Button
-              type="submit"
-              label="Sign In"
-              icon="pi pi-sign-in"
-              className="w-full py-3 rounded-xl font-semibold text-base text-white shadow-md hover:shadow-lg transition-all mt-2"
-              style={{
-                backgroundImage: 'linear-gradient(to right, rgb(37,99,235), rgb(126,34,206))',
-                border: '0',
-                color: '#fff'
-              }}
-              loading={loading}
-              disabled={!username || !password}
-            />
-          </form>
+          )}
 
           <Divider className="my-8" />
 

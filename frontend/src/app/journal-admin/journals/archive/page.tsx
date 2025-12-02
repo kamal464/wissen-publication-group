@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Toast } from 'primereact/toast';
 import { Dialog } from 'primereact/dialog';
 import { adminAPI } from '@/lib/api';
@@ -12,6 +13,7 @@ interface Article {
   publishedAt?: string;
   volumeNo?: string;
   issueNo?: string;
+  issueMonth?: string;
   year?: string;
 }
 
@@ -24,6 +26,7 @@ interface ArchiveIssue {
 }
 
 export default function ArchivePage() {
+  const router = useRouter();
   const [articles, setArticles] = useState<Article[]>([]);
   const [archiveIssues, setArchiveIssues] = useState<Map<number, ArchiveIssue[]>>(new Map());
   const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
@@ -57,10 +60,10 @@ export default function ArchivePage() {
       setJournalTitle(journalData.journalTitle);
       
       console.log('Loading articles for journal:', journalData.journalId);
-      // Fetch all published articles
+      // Fetch all articles (ACCEPTED and PUBLISHED) - show in archive immediately after creation
       const articlesResponse = await adminAPI.getArticles({ 
-        journalId: journalData.journalId, 
-        status: 'PUBLISHED' 
+        journalId: journalData.journalId
+        // No status filter - get all articles with volume/issue info
       });
       console.log('Articles response:', articlesResponse);
       const allArticles = (articlesResponse.data as any[]) || [];
@@ -70,19 +73,30 @@ export default function ArchivePage() {
       const issuesByYear = new Map<number, ArchiveIssue[]>();
       
       allArticles.forEach((article: any) => {
-        // Use year from article, or derive from publishedAt
+        // Use year from article, or derive from publishedAt or acceptedAt
         let year: number;
         if (article.year) {
-          year = parseInt(article.year);
+          year = parseInt(String(article.year));
         } else if (article.publishedAt) {
           const publishedDate = new Date(article.publishedAt);
           year = publishedDate.getFullYear();
+        } else if (article.acceptedAt) {
+          const acceptedDate = new Date(article.acceptedAt);
+          year = acceptedDate.getFullYear();
         } else {
           return; // Skip articles without year info
         }
         
-        const volume = article.volumeNo || '1';
-        const issue = article.issueNo || '1';
+        // Volume and Issue are now required fields, but provide fallback for existing articles
+        // Ensure they are strings (handle numbers from dropdowns)
+        const volume = article.volumeNo ? String(article.volumeNo) : '1';
+        const issue = article.issueNo ? String(article.issueNo) : '1';
+        
+        // Skip if volume or issue is missing (shouldn't happen for new articles)
+        if (!volume || !issue || volume === 'undefined' || issue === 'undefined') {
+          console.warn('Article missing volume or issue:', article.id, article.title);
+          return;
+        }
         
         if (!issuesByYear.has(year)) {
           issuesByYear.set(year, []);
@@ -108,12 +122,18 @@ export default function ArchivePage() {
         }
       });
       
-      // Sort issues within each year
+      // Sort issues within each year (descending - newest first)
       issuesByYear.forEach((issues, year) => {
         issues.sort((a, b) => {
-          const volCompare = parseInt(b.volume) - parseInt(a.volume);
+          // Ensure volumes and issues are strings, then convert to numbers for comparison
+          const volA = parseInt(String(a.volume || '0'));
+          const volB = parseInt(String(b.volume || '0'));
+          const volCompare = volB - volA;
           if (volCompare !== 0) return volCompare;
-          return parseInt(b.issue) - parseInt(a.issue);
+          
+          const issueA = parseInt(String(a.issue || '0'));
+          const issueB = parseInt(String(b.issue || '0'));
+          return issueB - issueA;
         });
       });
       
@@ -200,27 +220,41 @@ export default function ArchivePage() {
                     Year: {year}
                   </div>
                   
-                  {/* Issues Buttons */}
+                  {/* Issues Buttons - Display in 3 columns like the image */}
                   {isExpanded && (
                     <div className="p-4 bg-white">
-                      <div className="flex flex-wrap gap-2">
-                        {issues.map((issue, index) => (
-                          <button
-                            key={`${issue.volume}-${issue.issue}-${index}`}
-                            type="button"
-                            onClick={() => {
-                              setSelectedIssue(issue);
-                              setShowArticlesDialog(true);
-                            }}
-                            className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                              selectedIssue?.volume === issue.volume && selectedIssue?.issue === issue.issue
-                                ? 'bg-gray-700 text-white border-gray-700'
-                                : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
-                            }`}
-                          >
-                            Volume {issue.volume}, Issue {issue.issue}
-                          </button>
-                        ))}
+                      <div className="grid grid-cols-3 gap-2">
+                        {issues.map((issue, index) => {
+                          // Ensure volume and issue are strings to avoid [object Object]
+                          const volumeStr = String(issue.volume || '');
+                          const issueStr = String(issue.issue || '');
+                          // Get month from first article in this issue
+                          const firstArticle = issue.articles && issue.articles.length > 0 ? issue.articles[0] : null;
+                          const issueMonth = firstArticle?.issueMonth || '';
+                          
+                          return (
+                            <button
+                              key={`${volumeStr}-${issueStr}-${index}`}
+                              type="button"
+                              onClick={() => {
+                                // Navigate to articles in press preview with filters
+                                const params = new URLSearchParams();
+                                if (issueMonth) params.set('month', issueMonth);
+                                if (issue.year) params.set('year', String(issue.year));
+                                params.set('preview', 'true');
+                                // Navigate to articles in press page with preview dialog
+                                router.push(`/journal-admin/journals/articles-press?${params.toString()}`);
+                              }}
+                              className={`px-4 py-2 rounded-lg border-2 transition-all text-sm ${
+                                selectedIssue?.volume === volumeStr && selectedIssue?.issue === issueStr
+                                  ? 'bg-gray-700 text-white border-gray-700'
+                                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                              }`}
+                            >
+                              Volume {volumeStr}, Issue {issueStr}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

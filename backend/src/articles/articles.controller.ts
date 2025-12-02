@@ -10,8 +10,9 @@ import {
   ParseIntPipe,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ArticlesService } from './articles.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
@@ -73,11 +74,6 @@ export class ArticlesController {
     return this.articlesService.update(id, updateArticleDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.articlesService.remove(id);
-  }
-
   @Post('manuscripts')
   @UseInterceptors(FileInterceptor('pdf'))
   async submitManuscript(
@@ -116,5 +112,37 @@ export class ArticlesController {
       console.error('❌ Error submitting manuscript:', error);
       throw error;
     }
+  }
+
+  @Post(':id/upload-pdf')
+  @UseInterceptors(FileInterceptor('pdf'))
+  async uploadPdf(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
+    const pdfUrl = `/uploads/${file.filename}`;
+    return this.articlesService.update(id, { pdfUrl });
+  }
+
+  @Post(':id/upload-images')
+  @UseInterceptors(FilesInterceptor('files', 10))
+  async uploadImages(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    if (!files || files.length === 0) {
+      throw new Error('No files uploaded');
+    }
+    const imagePaths = files.map(file => `/uploads/${file.filename}`);
+    const fulltextImages = JSON.stringify(imagePaths);
+    return this.articlesService.update(id, { fulltextImages });
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.articlesService.remove(id);
   }
 }

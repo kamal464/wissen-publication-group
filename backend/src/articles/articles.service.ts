@@ -131,7 +131,15 @@ export class ArticlesService {
     const { authors, journalId, ...articleData } = createArticleDto;
 
     // Only include fields that exist in the Article model
-    const validFields = ['title', 'abstract', 'keywords', 'status', 'pdfUrl', 'wordUrl', 'articleType', 'submittedAt', 'publishedAt', 'submitterName', 'submitterEmail', 'submitterAddress', 'submitterCountry'];
+    const validFields = [
+      'title', 'abstract', 'keywords', 'status', 'pdfUrl', 'wordUrl', 'articleType',
+      'submittedAt', 'publishedAt', 'submitterName', 'submitterEmail', 'submitterAddress',
+      'submitterCountry', 'volumeNo', 'issueNo', 'issueMonth', 'year', 'specialIssue',
+      'firstPageNumber', 'lastPageNumber', 'doi', 'correspondingAuthorDetails', 'citeAs',
+      'country', 'receivedAt', 'acceptedAt', 'fulltextImages', 'heading1Title', 'heading1Content',
+      'heading2Title', 'heading2Content', 'heading3Title', 'heading3Content', 'heading4Title',
+      'heading4Content', 'heading5Title', 'heading5Content'
+    ];
     const filteredData: any = {};
     
     for (const key of validFields) {

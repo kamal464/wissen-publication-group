@@ -25,6 +25,7 @@ interface User {
 interface Journal {
   id: number;
   title: string;
+  shortcode?: string;
 }
 
 interface JournalShortcode {
@@ -44,6 +45,7 @@ export default function UsersPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [editingUser, setEditingUser] = useState({
     firstName: '',
     lastName: '',
@@ -57,14 +59,27 @@ export default function UsersPage() {
     category: '',
     isActive: true
   });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [dialogReady, setDialogReady] = useState(false);
   const toast = useRef<Toast>(null);
 
   useEffect(() => {
-    loadUsers();
-    loadJournals();
-    loadCategories();
-    loadShortcodes();
-  }, [searchQuery]);
+    setMounted(true);
+    // Ensure dialog is ready after a small delay to allow DOM to fully initialize
+    const timer = setTimeout(() => {
+      setDialogReady(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      loadUsers();
+      loadJournals();
+      loadCategories();
+      loadShortcodes();
+    }
+  }, [searchQuery, mounted]);
 
   const loadUsers = async () => {
     try {
@@ -188,6 +203,15 @@ export default function UsersPage() {
   };
 
   const handleAddUser = () => {
+    // Ensure component is mounted and DOM is ready
+    if (!mounted || typeof document === 'undefined' || !document.body) {
+      // Wait for next tick to ensure DOM is ready
+      setTimeout(() => {
+        handleAddUser();
+      }, 100);
+      return;
+    }
+    
     setEditingUser({
       firstName: '',
       lastName: '',
@@ -201,60 +225,96 @@ export default function UsersPage() {
       category: '',
       isActive: true
     });
+    setValidationErrors({});
     setSelectedUser(null);
     setShowDialog(true);
   };
 
   const handleEditUser = async (user: User) => {
+    // Ensure component is mounted and DOM is ready
+    if (!mounted || !dialogReady || typeof document === 'undefined' || !document.body) {
+      // Wait for next tick to ensure DOM is ready
+      setTimeout(() => {
+        handleEditUser(user);
+      }, 100);
+      return;
+    }
+    
     try {
       // Fetch full user details from database
       const response = await adminAPI.getUser(user.id);
       const userData = response.data as any;
       
-      // Populate form with database data
-      setEditingUser({
-        firstName: '', // These fields might not be in the User model yet
-        lastName: '', // These fields might not be in the User model yet
-        userName: userData?.userName || user.userName,
+      // Determine journalShort - prioritize userData, then user.journalShort, then userName (since they should match)
+      const journalShort = userData?.journalShort || user.journalShort || user.userName || '';
+      
+      // Find matching shortcode to get journal name
+      const matchingShortcode = shortcodes.find(s => s.shortcode === journalShort);
+      const journalName = userData?.journalName || user.journalName || matchingShortcode?.journalName || '';
+      
+      // Populate form with database data - bind ALL fields including shortcode
+      const initialUser = {
+        firstName: userData?.firstName || '',
+        lastName: userData?.lastName || '',
+        userName: userData?.userName || user.userName || journalShort, // userName should match shortcode
         password: '', // Don't populate password for security
-        managingJournalName: userData?.journalName || '',
-        journalDomainName: userData?.journalName || '',
-        journalUrl: '', // This field might not be in the User model yet
-        journalId: null, // Try to find matching journal by name
-        journalShort: userData.journalShort || user.journalShort || '',
-        category: userData.category || user.category || '',
-        isActive: userData.isActive !== undefined ? userData.isActive : user.isActive
-      });
+        managingJournalName: journalName,
+        journalDomainName: journalName,
+        journalUrl: userData?.journalUrl || userData?.journalDomainName || '',
+        journalId: null as number | null,
+        journalShort: journalShort, // Properly bind shortcode
+        category: userData?.category || user.category || '',
+        isActive: userData?.isActive !== undefined ? userData.isActive : (user.isActive !== undefined ? user.isActive : true)
+      };
       
       // If we have a journal name, try to find matching journal ID
-      if (userData.journalName) {
-        const matchingJournal = journals.find(j => 
-          j.title.toLowerCase().includes(userData.journalName.toLowerCase()) ||
-          userData.journalName.toLowerCase().includes(j.title.toLowerCase())
-        );
+      if (journalName) {
+        const matchingJournal = journals.find(j => {
+          const jTitle = (j.title || '').trim().toLowerCase();
+          const uName = journalName.trim().toLowerCase();
+          return jTitle === uName || jTitle.includes(uName) || uName.includes(jTitle);
+        });
         if (matchingJournal) {
-          setEditingUser(prev => ({ ...prev, journalId: matchingJournal.id }));
+          initialUser.journalId = matchingJournal.id;
         }
       }
       
+      // Also try to match by shortcode if we have a journal with matching shortcode
+      if (journalShort) {
+        const matchingJournalByShortcode = journals.find(j => {
+          const jShortcode = (j.shortcode || '').trim().toLowerCase();
+          return jShortcode === journalShort.trim().toLowerCase();
+        });
+        if (matchingJournalByShortcode && !initialUser.journalId) {
+          initialUser.journalId = matchingJournalByShortcode.id;
+        }
+      }
+      
+      setEditingUser(initialUser);
+      setValidationErrors({});
       setSelectedUser(user);
       setShowDialog(true);
     } catch (error: any) {
       console.error('Error loading user details:', error);
-      // Fallback to basic user data if API fails
+      // Fallback to basic user data if API fails - still bind all available data
+      const journalShort = user.journalShort || user.userName || '';
+      const matchingShortcode = shortcodes.find(s => s.shortcode === journalShort);
+      const journalName = user.journalName || matchingShortcode?.journalName || '';
+      
       setEditingUser({
         firstName: '',
         lastName: '',
-        userName: user.userName,
-        password: '',
-        managingJournalName: user.journalName || '',
-        journalDomainName: user.journalName || '',
+        userName: user.userName || journalShort,
+        password: '', // Don't populate password
+        managingJournalName: journalName,
+        journalDomainName: journalName,
         journalUrl: '',
         journalId: null,
-        journalShort: user.journalShort || '',
+        journalShort: journalShort, // Properly bind shortcode
         category: user.category || '',
-        isActive: user.isActive
+        isActive: user.isActive !== undefined ? user.isActive : true
       });
+      setValidationErrors({});
       setSelectedUser(user);
       setShowDialog(true);
       toast.current?.show({
@@ -271,17 +331,79 @@ export default function UsersPage() {
     setShowViewDialog(true);
   };
 
-  const handleSaveUser = async () => {
-    try {
-      if (!editingUser.userName || !editingUser.userName.trim()) {
-        toast.current?.show({ severity: 'warn', summary: 'Validation', detail: 'Username is required' });
-        return;
-      }
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
 
-      if (!selectedUser && (!editingUser.password || !editingUser.password.trim())) {
-        toast.current?.show({ severity: 'warn', summary: 'Validation', detail: 'Password is required for new users' });
-        return;
-      }
+    // First Name is required
+    if (!editingUser.firstName || !editingUser.firstName.trim()) {
+      errors.firstName = 'First name is required';
+    }
+
+    // Last Name is required
+    if (!editingUser.lastName || !editingUser.lastName.trim()) {
+      errors.lastName = 'Last name is required';
+    }
+
+    // Username is required
+    if (!editingUser.userName || !editingUser.userName.trim()) {
+      errors.userName = 'Username is required';
+    }
+
+    // Password is required for new users
+    if (!selectedUser && (!editingUser.password || !editingUser.password.trim())) {
+      errors.password = 'Password is required for new users';
+    }
+
+    // Managing Journal Name is required
+    if (!editingUser.managingJournalName || !editingUser.managingJournalName.trim()) {
+      errors.managingJournalName = 'Managing journal name is required';
+    }
+
+    // Journal Domain Name is required
+    if (!editingUser.journalDomainName || !editingUser.journalDomainName.trim()) {
+      errors.journalDomainName = 'Journal domain name is required';
+    }
+
+    // Journal URL is required
+    if (!editingUser.journalUrl || !editingUser.journalUrl.trim()) {
+      errors.journalUrl = 'Journal URL is required';
+    }
+
+    // Category is required
+    if (!editingUser.category || !editingUser.category.trim()) {
+      errors.category = 'Category is required';
+    }
+
+    // Journal ID is required
+    if (!editingUser.journalId) {
+      errors.journalId = 'Journal selection is required';
+    }
+
+    // Journal Short is required (should match userName)
+    if (!editingUser.journalShort || !editingUser.journalShort.trim()) {
+      errors.journalShort = 'Journal shortcode is required';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSaveUser = async () => {
+    // Clear previous errors
+    setValidationErrors({});
+
+    // Validate form
+    if (!validateForm()) {
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Validation Error', 
+        detail: 'Please fix the errors in the form before submitting.',
+        life: 5000
+      });
+      return;
+    }
+
+    try {
 
       // Prepare user data for API - include password
       const userData: any = {
@@ -315,6 +437,7 @@ export default function UsersPage() {
       
       setShowDialog(false);
       setSelectedUser(null);
+      setValidationErrors({});
       setEditingUser({
         firstName: '',
         lastName: '',
@@ -432,7 +555,14 @@ export default function UsersPage() {
 
   const journalOptions = journals.map(j => ({ label: j.title, value: j.id }));
   const usedShortcodes = new Set((users || []).map(u => (u.journalShort || u.userName || '').trim().toLowerCase()).filter(Boolean));
-  const availableShortcodes = (shortcodes || []).filter(s => !usedShortcodes.has((s.shortcode || '').toLowerCase()));
+  
+  // When editing, include the current user's shortcode even if it's "used"
+  const currentUserShortcode = selectedUser ? (selectedUser.journalShort || selectedUser.userName || '').trim().toLowerCase() : '';
+  const availableShortcodes = (shortcodes || []).filter(s => {
+    const sc = (s.shortcode || '').toLowerCase();
+    // Include if not used, OR if it's the current user's shortcode (when editing)
+    return !usedShortcodes.has(sc) || (selectedUser && sc === currentUserShortcode);
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 p-8">
@@ -525,13 +655,17 @@ export default function UsersPage() {
       </div>
 
       {/* New User Registration Dialog */}
-      <Dialog
-        header={selectedUser ? 'Edit User' : 'New User Registration'}
-        visible={showDialog}
-        className="w-full sm:w-[800px]"
-        onHide={() => {
+      {mounted && dialogReady && showDialog && typeof document !== 'undefined' && document.body && (
+        <Dialog
+          header={selectedUser ? 'Edit User' : 'New User Registration'}
+          visible={showDialog}
+          className="w-full sm:w-[800px]"
+          appendTo={document.body}
+          modal
+          onHide={() => {
           setShowDialog(false);
           setSelectedUser(null);
+          setValidationErrors({});
           setEditingUser({
             firstName: '',
             lastName: '',
@@ -554,6 +688,7 @@ export default function UsersPage() {
               onClick={() => {
                 setShowDialog(false);
                 setSelectedUser(null);
+                setValidationErrors({});
                 setEditingUser({
                   firstName: '',
                   lastName: '',
@@ -583,112 +718,257 @@ export default function UsersPage() {
           {/* Left Column */}
           <div className="flex flex-col">
             <label className="block mb-2 font-normal text-slate-700 text-sm">
-              First Name
+              First Name <span className="text-red-500">*</span>
             </label>
             <InputText
               value={editingUser.firstName}
-              onChange={(e) => setEditingUser({ ...editingUser, firstName: e.target.value })}
-              className="w-full py-3"
+              onChange={(e) => {
+                setEditingUser({ ...editingUser, firstName: e.target.value });
+                // Clear error when user types
+                if (validationErrors.firstName) {
+                  setValidationErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.firstName;
+                    return newErrors;
+                  });
+                }
+              }}
+              className={`w-full py-3 ${validationErrors.firstName ? 'p-invalid border-red-500' : ''}`}
               placeholder="Enter first name"
             />
+            {validationErrors.firstName && (
+              <small className="p-error mt-1 block text-red-600 text-sm">
+                {validationErrors.firstName}
+              </small>
+            )}
           </div>
 
           {/* Right Column */}
           <div className="flex flex-col">
             <label className="block mb-2 font-normal text-slate-700 text-sm">
-              Last Name
+              Last Name <span className="text-red-500">*</span>
             </label>
             <InputText
               value={editingUser.lastName}
-              onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })}
-              className="w-full py-3"
+              onChange={(e) => {
+                setEditingUser({ ...editingUser, lastName: e.target.value });
+                // Clear error when user types
+                if (validationErrors.lastName) {
+                  setValidationErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.lastName;
+                    return newErrors;
+                  });
+                }
+              }}
+              className={`w-full py-3 ${validationErrors.lastName ? 'p-invalid border-red-500' : ''}`}
               placeholder="Enter last name"
             />
+            {validationErrors.lastName && (
+              <small className="p-error mt-1 block text-red-600 text-sm">
+                {validationErrors.lastName}
+              </small>
+            )}
           </div>
 
           {/* Left Column */}
           <div className="flex flex-col">
             <label className="block mb-2 font-normal text-slate-700 text-sm">
-              Managing Journal Name
+              Managing Journal Name <span className="text-red-500">*</span>
             </label>
             <InputText
               value={editingUser.managingJournalName}
-              onChange={(e) => setEditingUser({ ...editingUser, managingJournalName: e.target.value })}
-              className="w-full py-3"
-              placeholder="Enter managing journal name"
+              onChange={(e) => {
+                setEditingUser({ 
+                  ...editingUser, 
+                  managingJournalName: e.target.value,
+                  journalDomainName: e.target.value // Keep in sync
+                });
+                // Clear errors when user types
+                if (validationErrors.managingJournalName) {
+                  setValidationErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.managingJournalName;
+                    return newErrors;
+                  });
+                }
+                if (validationErrors.journalDomainName) {
+                  setValidationErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.journalDomainName;
+                    return newErrors;
+                  });
+                }
+              }}
+              className={`w-full py-3 ${validationErrors.managingJournalName ? 'p-invalid border-red-500' : ''}`}
+              placeholder="Enter managing journal name (auto-filled from shortcode)"
             />
+            {validationErrors.managingJournalName && (
+              <small className="p-error mt-1 block text-red-600 text-sm">
+                {validationErrors.managingJournalName}
+              </small>
+            )}
           </div>
 
           {/* Right Column */}
           <div className="flex flex-col">
             <label className="block mb-2 font-normal text-slate-700 text-sm">
-              Journal Domain Name
+              Journal Domain Name <span className="text-red-500">*</span>
             </label>
             <InputText
               value={editingUser.journalDomainName}
-              onChange={(e) => setEditingUser({ ...editingUser, journalDomainName: e.target.value })}
-              className="w-full py-3"
-              placeholder="Enter journal domain name"
+              onChange={(e) => {
+                setEditingUser({ 
+                  ...editingUser, 
+                  journalDomainName: e.target.value,
+                  managingJournalName: e.target.value // Keep in sync
+                });
+                // Clear errors when user types
+                if (validationErrors.journalDomainName) {
+                  setValidationErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.journalDomainName;
+                    return newErrors;
+                  });
+                }
+                if (validationErrors.managingJournalName) {
+                  setValidationErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.managingJournalName;
+                    return newErrors;
+                  });
+                }
+              }}
+              className={`w-full py-3 ${validationErrors.journalDomainName ? 'p-invalid border-red-500' : ''}`}
+              placeholder="Enter journal domain name (auto-filled from shortcode)"
             />
+            {validationErrors.journalDomainName && (
+              <small className="p-error mt-1 block text-red-600 text-sm">
+                {validationErrors.journalDomainName}
+              </small>
+            )}
           </div>
 
           {/* Left Column */}
           <div className="flex flex-col">
             <label className="block mb-2 font-normal text-slate-700 text-sm">
-              Journal URL
+              Journal URL <span className="text-red-500">*</span>
             </label>
             <InputText
               value={editingUser.journalUrl}
-              onChange={(e) => setEditingUser({ ...editingUser, journalUrl: e.target.value })}
-              className="w-full py-3"
+              onChange={(e) => {
+                setEditingUser({ ...editingUser, journalUrl: e.target.value });
+                // Clear error when user types
+                if (validationErrors.journalUrl) {
+                  setValidationErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.journalUrl;
+                    return newErrors;
+                  });
+                }
+              }}
+              className={`w-full py-3 ${validationErrors.journalUrl ? 'p-invalid border-red-500' : ''}`}
               placeholder="Enter journal URL"
             />
+            {validationErrors.journalUrl && (
+              <small className="p-error mt-1 block text-red-600 text-sm">
+                {validationErrors.journalUrl}
+              </small>
+            )}
           </div>
 
           {/* Right Column */}
           <div className="flex flex-col">
             <label className="block mb-2 font-normal text-slate-700 text-sm">
-              Select Category
+              Select Category <span className="text-red-500">*</span>
             </label>
             <Dropdown
-              value={editingUser.category}
+              value={editingUser.category || null}
               options={categories.map(c => ({ label: c, value: c }))}
-              onChange={(e) => setEditingUser({ ...editingUser, category: e.value })}
+              onChange={(e) => {
+                setEditingUser({ ...editingUser, category: e.value || '' });
+                // Clear error when user selects a value
+                if (validationErrors.category) {
+                  setValidationErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.category;
+                    return newErrors;
+                  });
+                }
+              }}
               placeholder="Select Category"
-              className="w-full category-dropdown"
+              className={`w-full category-dropdown ${validationErrors.category ? 'p-invalid' : ''}`}
               panelStyle={{ zIndex: 10000 }}
-              appendTo="self"
+              appendTo={typeof document !== 'undefined' ? document.body : undefined}
               filter
               filterPlaceholder="Search categories..."
               showClear={!!editingUser.category}
             />
+            {validationErrors.category && (
+              <small className="p-error mt-1 block text-red-600 text-sm">
+                {validationErrors.category}
+              </small>
+            )}
           </div>
 
           {/* Left Column - Username (Shortcode) */}
           <div className="flex flex-col">
-            <label className="block text-sm font-medium text-gray-700">
-              Username (Shortcode)
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Username (Shortcode) <span className="text-red-500">*</span>
             </label>
             <Dropdown
-              value={editingUser.userName}
+              value={editingUser.userName || editingUser.journalShort || null}
               onChange={(e) => {
                 const sc = (availableShortcodes || []).find((s) => s.shortcode === e.value);
                 setEditingUser((prev) => ({
                   ...prev,
-                  userName: e.value,
+                  userName: e.value || '',
                   journalShort: e.value || '',
                   managingJournalName: sc?.journalName || prev.managingJournalName,
+                  journalDomainName: sc?.journalName || prev.journalDomainName,
                 }));
+                // Clear error when user selects a value
+                if (validationErrors.userName) {
+                  setValidationErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.userName;
+                    return newErrors;
+                  });
+                }
               }}
-              options={(availableShortcodes || []).map((s) => ({
-                label: `${s.shortcode}${s.journalName ? ` - ${s.journalName}` : ''}`,
-                value: s.shortcode,
-              }))}
+              options={(() => {
+                const options = (availableShortcodes || []).map((s) => ({
+                  label: `${s.shortcode}${s.journalName ? ` - ${s.journalName}` : ''}`,
+                  value: s.shortcode,
+                }));
+                
+                // When editing, if the current shortcode is not in availableShortcodes, add it
+                if (selectedUser && editingUser.journalShort) {
+                  const currentShortcode = editingUser.journalShort.trim();
+                  const exists = options.some(opt => opt.value === currentShortcode);
+                  if (!exists && currentShortcode) {
+                    // Find the shortcode in the full shortcodes list to get journal name
+                    const fullShortcode = shortcodes.find(s => s.shortcode === currentShortcode);
+                    options.unshift({
+                      label: `${currentShortcode}${fullShortcode?.journalName ? ` - ${fullShortcode.journalName}` : ''}`,
+                      value: currentShortcode,
+                    });
+                  }
+                }
+                
+                return options;
+              })()}
               placeholder="Select journal shortcode"
-              className="w-full"
+              className={`w-full ${validationErrors.userName ? 'p-invalid' : ''}`}
               filter
               disabled={!!selectedUser}
+              appendTo={typeof document !== 'undefined' ? document.body : undefined}
             />
+            {validationErrors.userName && (
+              <small className="p-error mt-1 block text-red-600 text-sm">
+                {validationErrors.userName}
+              </small>
+            )}
             <p className="text-xs text-gray-500 mt-1">
               Username must match the journal shortcode. Select from available shortcodes.
             </p>
@@ -697,71 +977,106 @@ export default function UsersPage() {
           {/* Right Column */}
           <div className="flex flex-col">
             <label className="block mb-2 font-normal text-slate-700 text-sm">
-              Password {!selectedUser ? '*' : '(leave blank to keep current)'}
+              Password {!selectedUser ? <span className="text-red-500">*</span> : <span className="text-gray-500">(leave blank to keep current)</span>}
             </label>
             <Password
               value={editingUser.password}
-              onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
-              className="w-full"
-              inputClassName="w-full py-3 border border-slate-300 rounded-lg"
+              onChange={(e) => {
+                setEditingUser({ ...editingUser, password: e.target.value });
+                // Clear error when user types
+                if (validationErrors.password) {
+                  setValidationErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.password;
+                    return newErrors;
+                  });
+                }
+              }}
+              className={`w-full ${validationErrors.password ? 'p-invalid' : ''}`}
+              inputClassName={`w-full py-3 border rounded-lg ${validationErrors.password ? 'border-red-500' : 'border-slate-300'}`}
               feedback={false}
               toggleMask
               panelStyle={{ zIndex: 10000 }}
-              appendTo="self"
+              appendTo={typeof document !== 'undefined' ? document.body : undefined}
               placeholder={selectedUser ? "Enter new password (optional)" : "Enter password"}
             />
+            {validationErrors.password && (
+              <small className="p-error mt-1 block text-red-600 text-sm">
+                {validationErrors.password}
+              </small>
+            )}
           </div>
 
           {/* Left Column - Full Width */}
           <div className="flex flex-col sm:col-span-2">
             <label className="block mb-2 font-normal text-slate-700 text-sm">
-              Select Your Journal
+              Select Your Journal <span className="text-red-500">*</span>
             </label>
             <Dropdown
-              value={editingUser.journalId}
+              value={editingUser.journalId || null}
               options={[{ label: 'Select Journal', value: null }, ...journalOptions]}
-              onChange={(e) => setEditingUser({ ...editingUser, journalId: e.value })}
+              onChange={(e) => {
+                setEditingUser({ ...editingUser, journalId: e.value || null });
+                // Clear error when user selects a value
+                if (validationErrors.journalId) {
+                  setValidationErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.journalId;
+                    return newErrors;
+                  });
+                }
+              }}
               placeholder="Select Journal"
-              className="w-full journal-dropdown"
+              className={`w-full journal-dropdown ${validationErrors.journalId ? 'p-invalid' : ''}`}
               panelStyle={{ zIndex: 10000 }}
-              appendTo="self"
+              appendTo={typeof document !== 'undefined' ? document.body : undefined}
               loading={loadingJournals}
               filter
               filterPlaceholder="Search journals..."
               showClear={!!editingUser.journalId}
             />
+            {validationErrors.journalId && (
+              <small className="p-error mt-1 block text-red-600 text-sm">
+                {validationErrors.journalId}
+              </small>
+            )}
           </div>
         </div>
-      </Dialog>
+        </Dialog>
+      )}
 
       {/* View Dialog */}
-      <Dialog
-        header="User Details"
-        visible={showViewDialog}
-        className="w-full sm:w-[500px]"
-        onHide={() => setShowViewDialog(false)}
-        footer={<Button label="Close" onClick={() => setShowViewDialog(false)} />}
-      >
-        {selectedUser && (
-          <div className="flex flex-col gap-4">
-            <div>
-              <strong>Username:</strong> {selectedUser.userName}
+      {mounted && dialogReady && showViewDialog && typeof document !== 'undefined' && document.body && (
+        <Dialog
+          header="User Details"
+          visible={showViewDialog}
+          className="w-full sm:w-[500px]"
+          appendTo={document.body}
+          modal
+          onHide={() => setShowViewDialog(false)}
+          footer={<Button label="Close" onClick={() => setShowViewDialog(false)} />}
+        >
+          {selectedUser && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <strong>Username:</strong> {selectedUser.userName}
+              </div>
+              <div>
+                <strong>Journal Short:</strong> {selectedUser.journalShort || '-'}
+              </div>
+              <div>
+                <strong>Journal Name:</strong> {selectedUser.journalName || '-'}
+              </div>
+              <div>
+                <strong>Category:</strong> {selectedUser.category || '-'}
+              </div>
+              <div>
+                <strong>Status:</strong> {selectedUser.isActive ? 'Active' : 'Inactive'}
+              </div>
             </div>
-            <div>
-              <strong>Journal Short:</strong> {selectedUser.journalShort || '-'}
-            </div>
-            <div>
-              <strong>Journal Name:</strong> {selectedUser.journalName || '-'}
-            </div>
-            <div>
-              <strong>Category:</strong> {selectedUser.category || '-'}
-            </div>
-            <div>
-              <strong>Status:</strong> {selectedUser.isActive ? 'Active' : 'Inactive'}
-            </div>
-          </div>
-        )}
-      </Dialog>
+          )}
+        </Dialog>
+      )}
     </div>
   );
 }

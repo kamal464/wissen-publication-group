@@ -285,19 +285,33 @@ export class AdminService {
   }
 
   async updateJournal(journalId: number, journalData: any) {
-    const updateData: any = {
-      title: journalData.title,
-      description: journalData.description || journalData.title,
-      issn: journalData.issn,
-      shortcode: journalData.shortcode,
-      publisher: journalData.publisher,
-      accessType: journalData.accessType,
-      subjectArea: journalData.subjectArea,
-      category: journalData.category,
-      discipline: journalData.discipline,
-      impactFactor: journalData.impactFactor || journalData.journalImpactFactor,
-      coverImage: journalData.coverImage
-    };
+    const updateData: any = {};
+    
+    // Only update fields that are explicitly provided (not undefined/null)
+    // This allows partial updates for journal-admin content management
+    // This prevents overwriting existing required fields with undefined values
+    if (journalData.title !== undefined && journalData.title !== null) {
+      updateData.title = journalData.title;
+    }
+    if (journalData.description !== undefined && journalData.description !== null) {
+      updateData.description = journalData.description;
+    } else if (journalData.title !== undefined && journalData.title !== null) {
+      // If title is provided but description is not, use title as fallback
+      updateData.description = journalData.title;
+    }
+    if (journalData.issn !== undefined) updateData.issn = journalData.issn;
+    if (journalData.shortcode !== undefined) updateData.shortcode = journalData.shortcode;
+    if (journalData.publisher !== undefined) updateData.publisher = journalData.publisher;
+    if (journalData.accessType !== undefined) updateData.accessType = journalData.accessType;
+    if (journalData.subjectArea !== undefined) updateData.subjectArea = journalData.subjectArea;
+    if (journalData.category !== undefined) updateData.category = journalData.category;
+    if (journalData.discipline !== undefined) updateData.discipline = journalData.discipline;
+    if (journalData.impactFactor !== undefined) {
+      updateData.impactFactor = journalData.impactFactor;
+    } else if (journalData.journalImpactFactor !== undefined) {
+      updateData.impactFactor = journalData.journalImpactFactor;
+    }
+    if (journalData.coverImage !== undefined) updateData.coverImage = journalData.coverImage;
 
     // Add image fields if provided
     if (journalData.bannerImage !== undefined) updateData.bannerImage = journalData.bannerImage;
@@ -342,6 +356,15 @@ export class AdminService {
     if (journalData.articlesInPress !== undefined) updateData.articlesInPress = journalData.articlesInPress;
     if (journalData.indexing !== undefined) updateData.indexing = journalData.indexing;
     if (journalData.indexingAbstracting !== undefined && !journalData.indexing) updateData.indexing = journalData.indexingAbstracting;
+
+    // Only perform update if there are fields to update
+    // This prevents errors when journal-admin pages only update content fields
+    if (Object.keys(updateData).length === 0) {
+      // If no fields to update, just return the existing journal
+      return await this.prisma.journal.findUnique({
+        where: { id: journalId }
+      });
+    }
 
     const updated = await this.prisma.journal.update({
       where: { id: journalId },

@@ -9,24 +9,25 @@ export declare class ArticlesService {
         data: ({
             journal: {
                 id: number;
-                issn: string | null;
                 title: string;
+                issn: string | null;
             };
             authors: {
                 id: number;
-                email: string;
                 createdAt: Date;
                 name: string;
+                email: string;
                 affiliation: string | null;
             }[];
         } & {
             id: number;
             title: string;
+            publishedAt: Date | null;
+            doi: string | null;
             abstract: string;
             journalId: number;
             status: string;
             pdfUrl: string | null;
-            publishedAt: Date | null;
             keywords: string | null;
             wordUrl: string | null;
             articleType: string | null;
@@ -35,6 +36,29 @@ export declare class ArticlesService {
             submitterEmail: string | null;
             submitterAddress: string | null;
             submitterCountry: string | null;
+            volumeNo: string | null;
+            issueNo: string | null;
+            issueMonth: string | null;
+            year: string | null;
+            specialIssue: string | null;
+            firstPageNumber: string | null;
+            lastPageNumber: string | null;
+            correspondingAuthorDetails: string | null;
+            citeAs: string | null;
+            country: string | null;
+            receivedAt: Date | null;
+            acceptedAt: Date | null;
+            fulltextImages: string | null;
+            heading1Title: string | null;
+            heading1Content: string | null;
+            heading2Title: string | null;
+            heading2Content: string | null;
+            heading3Title: string | null;
+            heading3Content: string | null;
+            heading4Title: string | null;
+            heading4Content: string | null;
+            heading5Title: string | null;
+            heading5Content: string | null;
         })[];
         meta: {
             total: number;
@@ -46,25 +70,26 @@ export declare class ArticlesService {
     findOne(id: number): Promise<{
         journal: {
             id: number;
-            issn: string | null;
             title: string;
+            issn: string | null;
             publisher: string | null;
         };
         authors: {
             id: number;
-            email: string;
             createdAt: Date;
             name: string;
+            email: string;
             affiliation: string | null;
         }[];
     } & {
         id: number;
         title: string;
+        publishedAt: Date | null;
+        doi: string | null;
         abstract: string;
         journalId: number;
         status: string;
         pdfUrl: string | null;
-        publishedAt: Date | null;
         keywords: string | null;
         wordUrl: string | null;
         articleType: string | null;
@@ -73,6 +98,29 @@ export declare class ArticlesService {
         submitterEmail: string | null;
         submitterAddress: string | null;
         submitterCountry: string | null;
+        volumeNo: string | null;
+        issueNo: string | null;
+        issueMonth: string | null;
+        year: string | null;
+        specialIssue: string | null;
+        firstPageNumber: string | null;
+        lastPageNumber: string | null;
+        correspondingAuthorDetails: string | null;
+        citeAs: string | null;
+        country: string | null;
+        receivedAt: Date | null;
+        acceptedAt: Date | null;
+        fulltextImages: string | null;
+        heading1Title: string | null;
+        heading1Content: string | null;
+        heading2Title: string | null;
+        heading2Content: string | null;
+        heading3Title: string | null;
+        heading3Content: string | null;
+        heading4Title: string | null;
+        heading4Content: string | null;
+        heading5Title: string | null;
+        heading5Content: string | null;
     }>;
     findRelated(id: number, limit?: number): Promise<({
         journal: {
@@ -81,19 +129,20 @@ export declare class ArticlesService {
         };
         authors: {
             id: number;
-            email: string;
             createdAt: Date;
             name: string;
+            email: string;
             affiliation: string | null;
         }[];
     } & {
         id: number;
         title: string;
+        publishedAt: Date | null;
+        doi: string | null;
         abstract: string;
         journalId: number;
         status: string;
         pdfUrl: string | null;
-        publishedAt: Date | null;
         keywords: string | null;
         wordUrl: string | null;
         articleType: string | null;
@@ -102,13 +151,38 @@ export declare class ArticlesService {
         submitterEmail: string | null;
         submitterAddress: string | null;
         submitterCountry: string | null;
+        volumeNo: string | null;
+        issueNo: string | null;
+        issueMonth: string | null;
+        year: string | null;
+        specialIssue: string | null;
+        firstPageNumber: string | null;
+        lastPageNumber: string | null;
+        correspondingAuthorDetails: string | null;
+        citeAs: string | null;
+        country: string | null;
+        receivedAt: Date | null;
+        acceptedAt: Date | null;
+        fulltextImages: string | null;
+        heading1Title: string | null;
+        heading1Content: string | null;
+        heading2Title: string | null;
+        heading2Content: string | null;
+        heading3Title: string | null;
+        heading3Content: string | null;
+        heading4Title: string | null;
+        heading4Content: string | null;
+        heading5Title: string | null;
+        heading5Content: string | null;
     })[]>;
     create(createArticleDto: CreateArticleDto): Promise<{
         journal: {
             id: number;
+            title: string;
+            createdAt: Date;
+            updatedAt: Date;
             issn: string | null;
             shortcode: string | null;
-            title: string;
             description: string;
             coverImage: string | null;
             publisher: string | null;
@@ -155,24 +229,23 @@ export declare class ArticlesService {
             articleFormats: string | null;
             journalDescription: string | null;
             pubmedArticles: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         };
         authors: {
             id: number;
-            email: string;
             createdAt: Date;
             name: string;
+            email: string;
             affiliation: string | null;
         }[];
     } & {
         id: number;
         title: string;
+        publishedAt: Date | null;
+        doi: string | null;
         abstract: string;
         journalId: number;
         status: string;
         pdfUrl: string | null;
-        publishedAt: Date | null;
         keywords: string | null;
         wordUrl: string | null;
         articleType: string | null;
@@ -181,13 +254,38 @@ export declare class ArticlesService {
         submitterEmail: string | null;
         submitterAddress: string | null;
         submitterCountry: string | null;
+        volumeNo: string | null;
+        issueNo: string | null;
+        issueMonth: string | null;
+        year: string | null;
+        specialIssue: string | null;
+        firstPageNumber: string | null;
+        lastPageNumber: string | null;
+        correspondingAuthorDetails: string | null;
+        citeAs: string | null;
+        country: string | null;
+        receivedAt: Date | null;
+        acceptedAt: Date | null;
+        fulltextImages: string | null;
+        heading1Title: string | null;
+        heading1Content: string | null;
+        heading2Title: string | null;
+        heading2Content: string | null;
+        heading3Title: string | null;
+        heading3Content: string | null;
+        heading4Title: string | null;
+        heading4Content: string | null;
+        heading5Title: string | null;
+        heading5Content: string | null;
     }>;
     update(id: number, updateArticleDto: UpdateArticleDto): Promise<{
         journal: {
             id: number;
+            title: string;
+            createdAt: Date;
+            updatedAt: Date;
             issn: string | null;
             shortcode: string | null;
-            title: string;
             description: string;
             coverImage: string | null;
             publisher: string | null;
@@ -234,24 +332,23 @@ export declare class ArticlesService {
             articleFormats: string | null;
             journalDescription: string | null;
             pubmedArticles: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         };
         authors: {
             id: number;
-            email: string;
             createdAt: Date;
             name: string;
+            email: string;
             affiliation: string | null;
         }[];
     } & {
         id: number;
         title: string;
+        publishedAt: Date | null;
+        doi: string | null;
         abstract: string;
         journalId: number;
         status: string;
         pdfUrl: string | null;
-        publishedAt: Date | null;
         keywords: string | null;
         wordUrl: string | null;
         articleType: string | null;
@@ -260,15 +357,39 @@ export declare class ArticlesService {
         submitterEmail: string | null;
         submitterAddress: string | null;
         submitterCountry: string | null;
+        volumeNo: string | null;
+        issueNo: string | null;
+        issueMonth: string | null;
+        year: string | null;
+        specialIssue: string | null;
+        firstPageNumber: string | null;
+        lastPageNumber: string | null;
+        correspondingAuthorDetails: string | null;
+        citeAs: string | null;
+        country: string | null;
+        receivedAt: Date | null;
+        acceptedAt: Date | null;
+        fulltextImages: string | null;
+        heading1Title: string | null;
+        heading1Content: string | null;
+        heading2Title: string | null;
+        heading2Content: string | null;
+        heading3Title: string | null;
+        heading3Content: string | null;
+        heading4Title: string | null;
+        heading4Content: string | null;
+        heading5Title: string | null;
+        heading5Content: string | null;
     }>;
     remove(id: number): Promise<{
         id: number;
         title: string;
+        publishedAt: Date | null;
+        doi: string | null;
         abstract: string;
         journalId: number;
         status: string;
         pdfUrl: string | null;
-        publishedAt: Date | null;
         keywords: string | null;
         wordUrl: string | null;
         articleType: string | null;
@@ -277,6 +398,29 @@ export declare class ArticlesService {
         submitterEmail: string | null;
         submitterAddress: string | null;
         submitterCountry: string | null;
+        volumeNo: string | null;
+        issueNo: string | null;
+        issueMonth: string | null;
+        year: string | null;
+        specialIssue: string | null;
+        firstPageNumber: string | null;
+        lastPageNumber: string | null;
+        correspondingAuthorDetails: string | null;
+        citeAs: string | null;
+        country: string | null;
+        receivedAt: Date | null;
+        acceptedAt: Date | null;
+        fulltextImages: string | null;
+        heading1Title: string | null;
+        heading1Content: string | null;
+        heading2Title: string | null;
+        heading2Content: string | null;
+        heading3Title: string | null;
+        heading3Content: string | null;
+        heading4Title: string | null;
+        heading4Content: string | null;
+        heading5Title: string | null;
+        heading5Content: string | null;
     }>;
     submitManuscript(manuscriptDto: SubmitManuscriptDto, file?: any): Promise<{
         success: boolean;
@@ -284,25 +428,26 @@ export declare class ArticlesService {
         article: {
             journal: {
                 id: number;
-                issn: string | null;
                 title: string;
+                issn: string | null;
                 publisher: string | null;
             };
             authors: {
                 id: number;
-                email: string;
                 createdAt: Date;
                 name: string;
+                email: string;
                 affiliation: string | null;
             }[];
         } & {
             id: number;
             title: string;
+            publishedAt: Date | null;
+            doi: string | null;
             abstract: string;
             journalId: number;
             status: string;
             pdfUrl: string | null;
-            publishedAt: Date | null;
             keywords: string | null;
             wordUrl: string | null;
             articleType: string | null;
@@ -311,6 +456,29 @@ export declare class ArticlesService {
             submitterEmail: string | null;
             submitterAddress: string | null;
             submitterCountry: string | null;
+            volumeNo: string | null;
+            issueNo: string | null;
+            issueMonth: string | null;
+            year: string | null;
+            specialIssue: string | null;
+            firstPageNumber: string | null;
+            lastPageNumber: string | null;
+            correspondingAuthorDetails: string | null;
+            citeAs: string | null;
+            country: string | null;
+            receivedAt: Date | null;
+            acceptedAt: Date | null;
+            fulltextImages: string | null;
+            heading1Title: string | null;
+            heading1Content: string | null;
+            heading2Title: string | null;
+            heading2Content: string | null;
+            heading3Title: string | null;
+            heading3Content: string | null;
+            heading4Title: string | null;
+            heading4Content: string | null;
+            heading5Title: string | null;
+            heading5Content: string | null;
         };
         manuscriptId: number;
     }>;

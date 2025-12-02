@@ -259,19 +259,38 @@ let AdminService = class AdminService {
         return created;
     }
     async updateJournal(journalId, journalData) {
-        const updateData = {
-            title: journalData.title,
-            description: journalData.description || journalData.title,
-            issn: journalData.issn,
-            shortcode: journalData.shortcode,
-            publisher: journalData.publisher,
-            accessType: journalData.accessType,
-            subjectArea: journalData.subjectArea,
-            category: journalData.category,
-            discipline: journalData.discipline,
-            impactFactor: journalData.impactFactor || journalData.journalImpactFactor,
-            coverImage: journalData.coverImage
-        };
+        const updateData = {};
+        if (journalData.title !== undefined && journalData.title !== null) {
+            updateData.title = journalData.title;
+        }
+        if (journalData.description !== undefined && journalData.description !== null) {
+            updateData.description = journalData.description;
+        }
+        else if (journalData.title !== undefined && journalData.title !== null) {
+            updateData.description = journalData.title;
+        }
+        if (journalData.issn !== undefined)
+            updateData.issn = journalData.issn;
+        if (journalData.shortcode !== undefined)
+            updateData.shortcode = journalData.shortcode;
+        if (journalData.publisher !== undefined)
+            updateData.publisher = journalData.publisher;
+        if (journalData.accessType !== undefined)
+            updateData.accessType = journalData.accessType;
+        if (journalData.subjectArea !== undefined)
+            updateData.subjectArea = journalData.subjectArea;
+        if (journalData.category !== undefined)
+            updateData.category = journalData.category;
+        if (journalData.discipline !== undefined)
+            updateData.discipline = journalData.discipline;
+        if (journalData.impactFactor !== undefined) {
+            updateData.impactFactor = journalData.impactFactor;
+        }
+        else if (journalData.journalImpactFactor !== undefined) {
+            updateData.impactFactor = journalData.journalImpactFactor;
+        }
+        if (journalData.coverImage !== undefined)
+            updateData.coverImage = journalData.coverImage;
         if (journalData.bannerImage !== undefined)
             updateData.bannerImage = journalData.bannerImage;
         if (journalData.flyerImage !== undefined)
@@ -344,6 +363,11 @@ let AdminService = class AdminService {
             updateData.indexing = journalData.indexing;
         if (journalData.indexingAbstracting !== undefined && !journalData.indexing)
             updateData.indexing = journalData.indexingAbstracting;
+        if (Object.keys(updateData).length === 0) {
+            return await this.prisma.journal.findUnique({
+                where: { id: journalId }
+            });
+        }
         const updated = await this.prisma.journal.update({
             where: { id: journalId },
             data: updateData

@@ -8,6 +8,7 @@ import "primeicons/primeicons.css";
 import { ReduxProvider } from "@/store/Provider";
 import { InjectApiUrl } from "@/components/InjectApiUrl";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorFallback } from "@/components/ErrorFallback";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -42,7 +43,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <body className={`${inter.variable} antialiased min-h-screen`} suppressHydrationWarning>
         {/* Inject API URL - client-side only, no rendering */}
         <InjectApiUrl />
-        <ErrorBoundary>
+        <ErrorBoundary fallback={<ErrorFallback />}>
           <ReduxProvider>
             {children}
           </ReduxProvider>
@@ -50,7 +51,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Mark as hydrated after client-side JS loads */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.documentElement.classList.add('hydrated');`,
+            __html: `
+              if (typeof document !== 'undefined') {
+                document.documentElement.classList.add('hydrated');
+              }
+            `,
           }}
         />
       </body>

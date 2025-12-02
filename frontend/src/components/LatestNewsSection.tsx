@@ -27,7 +27,11 @@ export default function LatestNewsSection() {
     try {
       const response = await adminAPI.getLatestNews(5);
       const newsData = (response.data as NewsItem[]) || [];
-      setNews(Array.isArray(newsData) ? newsData : []);
+      // Filter to show only pinned news items
+      const pinnedNews = Array.isArray(newsData) 
+        ? newsData.filter(item => item.isPinned === true)
+        : [];
+      setNews(pinnedNews);
     } catch (error: any) {
       console.error('Error loading news:', error);
       // Silently fail - don't show error to users if news endpoint doesn't exist yet
@@ -120,7 +124,7 @@ export default function LatestNewsSection() {
 
         <div className="text-center mt-8">
           <Link
-            href="/journal-admin/latest-news"
+            href="/admin/latest-news"
             className="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors"
           >
             View All News

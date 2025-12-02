@@ -106,7 +106,7 @@ export default function JournalAdminLayout({ children }: JournalAdminLayoutProps
         {
           id: 'archive',
           label: 'Archive Page',
-          icon: 'pi pi-archive',
+          icon: 'pi pi-folder',
           href: '/journal-admin/journals/archive'
         }
       ]
@@ -218,12 +218,6 @@ export default function JournalAdminLayout({ children }: JournalAdminLayoutProps
                 break;
             }
           }
-          break;
-        case 'latest-news':
-          breadcrumbs.push('Latest News');
-          break;
-        case 'latest-news':
-          breadcrumbs.push('Latest News');
           break;
         case 'analytics':
           breadcrumbs.push('Analytics');

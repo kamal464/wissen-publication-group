@@ -5,6 +5,7 @@ class CreateJournalDto {
     title;
     description;
     issn;
+    shortcode;
     coverImage;
     publisher;
     accessType;

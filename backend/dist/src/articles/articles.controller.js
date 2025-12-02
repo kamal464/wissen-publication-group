@@ -42,9 +42,6 @@ let ArticlesController = class ArticlesController {
     update(id, updateArticleDto) {
         return this.articlesService.update(id, updateArticleDto);
     }
-    remove(id) {
-        return this.articlesService.remove(id);
-    }
     async submitManuscript(title, journalId, abstract, keywords, authorsJson, file) {
         try {
             console.log('📝 Manuscript submission request received');
@@ -70,6 +67,24 @@ let ArticlesController = class ArticlesController {
             console.error('❌ Error submitting manuscript:', error);
             throw error;
         }
+    }
+    async uploadPdf(id, file) {
+        if (!file) {
+            throw new Error('No file uploaded');
+        }
+        const pdfUrl = `/uploads/${file.filename}`;
+        return this.articlesService.update(id, { pdfUrl });
+    }
+    async uploadImages(id, files) {
+        if (!files || files.length === 0) {
+            throw new Error('No files uploaded');
+        }
+        const imagePaths = files.map(file => `/uploads/${file.filename}`);
+        const fulltextImages = JSON.stringify(imagePaths);
+        return this.articlesService.update(id, { fulltextImages });
+    }
+    remove(id) {
+        return this.articlesService.remove(id);
     }
 };
 exports.ArticlesController = ArticlesController;
@@ -117,13 +132,6 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ArticlesController.prototype, "update", null);
 __decorate([
-    (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", void 0)
-], ArticlesController.prototype, "remove", null);
-__decorate([
     (0, common_1.Post)('manuscripts'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('pdf')),
     __param(0, (0, common_1.Body)('title')),
@@ -136,6 +144,31 @@ __decorate([
     __metadata("design:paramtypes", [String, String, String, String, String, Object]),
     __metadata("design:returntype", Promise)
 ], ArticlesController.prototype, "submitManuscript", null);
+__decorate([
+    (0, common_1.Post)(':id/upload-pdf'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('pdf')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], ArticlesController.prototype, "uploadPdf", null);
+__decorate([
+    (0, common_1.Post)(':id/upload-images'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('files', 10)),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.UploadedFiles)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Array]),
+    __metadata("design:returntype", Promise)
+], ArticlesController.prototype, "uploadImages", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], ArticlesController.prototype, "remove", null);
 exports.ArticlesController = ArticlesController = __decorate([
     (0, common_1.Controller)('articles'),
     __metadata("design:paramtypes", [articles_service_1.ArticlesService])

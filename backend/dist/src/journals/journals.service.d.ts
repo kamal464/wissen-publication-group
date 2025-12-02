@@ -6,9 +6,11 @@ export declare class JournalsService {
     constructor(prisma: PrismaService);
     create(createJournalDto: CreateJournalDto): import("@prisma/client").Prisma.Prisma__JournalClient<{
         id: number;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         issn: string | null;
         shortcode: string | null;
-        title: string;
         description: string;
         coverImage: string | null;
         publisher: string | null;
@@ -55,8 +57,6 @@ export declare class JournalsService {
         articleFormats: string | null;
         journalDescription: string | null;
         pubmedArticles: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     findAll(): Promise<({
         _count: {
@@ -64,9 +64,11 @@ export declare class JournalsService {
         };
     } & {
         id: number;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         issn: string | null;
         shortcode: string | null;
-        title: string;
         description: string;
         coverImage: string | null;
         publisher: string | null;
@@ -113,8 +115,6 @@ export declare class JournalsService {
         articleFormats: string | null;
         journalDescription: string | null;
         pubmedArticles: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     })[]>;
     findOne(id: number): import("@prisma/client").Prisma.Prisma__JournalClient<({
         _count: {
@@ -122,9 +122,11 @@ export declare class JournalsService {
         };
     } & {
         id: number;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         issn: string | null;
         shortcode: string | null;
-        title: string;
         description: string;
         coverImage: string | null;
         publisher: string | null;
@@ -171,25 +173,24 @@ export declare class JournalsService {
         articleFormats: string | null;
         journalDescription: string | null;
         pubmedArticles: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }) | null, null, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     findArticles(id: number): import("@prisma/client").Prisma.PrismaPromise<({
         authors: {
             id: number;
-            email: string;
             createdAt: Date;
             name: string;
+            email: string;
             affiliation: string | null;
         }[];
     } & {
         id: number;
         title: string;
+        publishedAt: Date | null;
+        doi: string | null;
         abstract: string;
         journalId: number;
         status: string;
         pdfUrl: string | null;
-        publishedAt: Date | null;
         keywords: string | null;
         wordUrl: string | null;
         articleType: string | null;
@@ -198,5 +199,28 @@ export declare class JournalsService {
         submitterEmail: string | null;
         submitterAddress: string | null;
         submitterCountry: string | null;
+        volumeNo: string | null;
+        issueNo: string | null;
+        issueMonth: string | null;
+        year: string | null;
+        specialIssue: string | null;
+        firstPageNumber: string | null;
+        lastPageNumber: string | null;
+        correspondingAuthorDetails: string | null;
+        citeAs: string | null;
+        country: string | null;
+        receivedAt: Date | null;
+        acceptedAt: Date | null;
+        fulltextImages: string | null;
+        heading1Title: string | null;
+        heading1Content: string | null;
+        heading2Title: string | null;
+        heading2Content: string | null;
+        heading3Title: string | null;
+        heading3Content: string | null;
+        heading4Title: string | null;
+        heading4Content: string | null;
+        heading5Title: string | null;
+        heading5Content: string | null;
     })[]>;
 }

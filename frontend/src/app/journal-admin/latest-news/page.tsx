@@ -51,11 +51,26 @@ export default function LatestNewsPage() {
       const journalData = await loadJournalData();
       
       if (!journalData) {
-        toast.current?.show({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to load journal data. Please refresh the page.',
-        });
+        // Try to get available journals to show in error message
+        try {
+          const journalsResponse = await adminAPI.getJournals();
+          const availableJournals = Array.isArray(journalsResponse.data) ? journalsResponse.data : [];
+          const journalTitles = availableJournals.map((j: any) => j.title).join(', ');
+          
+          toast.current?.show({
+            severity: 'error',
+            summary: 'Journal Not Found',
+            detail: `Your user account is not linked to a journal. Available journals: ${journalTitles || 'None'}. Please contact the system administrator to update your journal assignment. Check the browser console for detailed information.`,
+            life: 15000
+          });
+        } catch (err) {
+          toast.current?.show({
+            severity: 'error',
+            summary: 'Journal Not Found',
+            detail: 'Your user account is not linked to a journal. Please contact the system administrator to update your journal assignment. Check the browser console for details.',
+            life: 10000
+          });
+        }
         return;
       }
       

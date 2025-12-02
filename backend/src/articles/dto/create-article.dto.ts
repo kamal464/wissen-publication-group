@@ -35,4 +35,79 @@ export class CreateArticleDto {
   @IsOptional()
   @IsString()
   pdfUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  wordUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  articleType?: string;
+
+  @IsOptional()
+  @IsString()
+  keywords?: string;
+
+  @IsOptional()
+  @IsString()
+  volumeNo?: string;
+
+  @IsOptional()
+  @IsString()
+  issueNo?: string;
+
+  @IsOptional()
+  @IsString()
+  issueMonth?: string;
+
+  @IsOptional()
+  @IsString()
+  year?: string;
+
+  @IsOptional()
+  @IsString()
+  specialIssue?: string;
+
+  @IsOptional()
+  @IsString()
+  firstPageNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  lastPageNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  doi?: string;
+
+  @IsOptional()
+  @IsString()
+  correspondingAuthorDetails?: string;
+
+  @IsOptional()
+  @IsString()
+  citeAs?: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @IsOptional()
+  publishedAt?: Date;
+
+  @IsOptional()
+  @IsString()
+  submitterName?: string;
+
+  @IsOptional()
+  @IsString()
+  submitterEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  submitterAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  submitterCountry?: string;
 }

@@ -102,6 +102,33 @@ model Article {
   submitterEmail   String?
   submitterAddress String?
   submitterCountry String?
+  // Volume and Issue Management
+  volumeNo     String?   // Volume number (e.g., "7", "6")
+  issueNo      String?   // Issue number (e.g., "9", "1")
+  issueMonth   String?   // Issue month (e.g., "January", "February")
+  year         String?   // Publication year (e.g., "2025", "2024")
+  specialIssue String?   // Special issue or conference title
+  // Additional publication details
+  firstPageNumber String?
+  lastPageNumber  String?
+  doi             String?
+  correspondingAuthorDetails String? @db.Text
+  citeAs          String? @db.Text
+  country         String?
+  receivedAt      DateTime?
+  acceptedAt      DateTime?
+  // Fulltext content
+  fulltextImages  String? @db.Text // JSON array of image paths
+  heading1Title   String?
+  heading1Content String? @db.Text
+  heading2Title   String?
+  heading2Content String? @db.Text
+  heading3Title   String?
+  heading3Content String? @db.Text
+  heading4Title   String?
+  heading4Content String? @db.Text
+  heading5Title   String?
+  heading5Content String? @db.Text
 }
 
 model Author {
