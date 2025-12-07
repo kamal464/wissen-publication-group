@@ -74,8 +74,8 @@ export default function JournalDetailPage() {
             
             // Fetch full details to ensure we have all content
             try {
-              const fullJournalResponse = await adminAPI.getJournal(journalToUse.id);
-              const fullJournal = fullJournalResponse.data as any;
+              const fullJournalResponse = await adminAPI.getJournal(journalToUse.id) as any;
+              const fullJournal = fullJournalResponse?.data as any;
               setJournal({ ...journalToUse, ...fullJournal, shortcode });
             } catch (err) {
               // If full fetch fails, use what we have
@@ -157,21 +157,21 @@ export default function JournalDetailPage() {
         if (journalIdForFetch) {
           try {
             console.log(`Fetching full journal details for ID: ${journalIdForFetch}`);
-            const fullJournalResponse = await adminAPI.getJournal(journalIdForFetch);
+            const fullJournalResponse = await adminAPI.getJournal(journalIdForFetch) as any;
             
             // Log the full response to debug
             console.log('Full API response:', {
-              status: fullJournalResponse.status,
-              dataType: typeof fullJournalResponse.data,
-              dataKeys: fullJournalResponse.data ? Object.keys(fullJournalResponse.data) : null,
+              status: fullJournalResponse?.status,
+              dataType: typeof fullJournalResponse?.data,
+              dataKeys: fullJournalResponse?.data ? Object.keys(fullJournalResponse.data) : null,
             });
             
             // Handle different response structures
             let fullJournal: any;
-            if (fullJournalResponse.data) {
+            if (fullJournalResponse?.data) {
               // Check if data is nested
-              if (fullJournalResponse.data.data) {
-                fullJournal = fullJournalResponse.data.data;
+              if ((fullJournalResponse.data as any)?.data) {
+                fullJournal = (fullJournalResponse.data as any).data;
               } else {
                 fullJournal = fullJournalResponse.data;
               }
@@ -215,15 +215,15 @@ export default function JournalDetailPage() {
           console.warn('Journal not found by ID, trying to fetch by shortcode directly from database...', shortcode);
           try {
             // Use the same getJournal endpoint - it handles both IDs and shortcodes
-            const shortcodeResponse = await adminAPI.getJournal(shortcode);
+            const shortcodeResponse = await adminAPI.getJournal(shortcode) as any;
             console.log('Shortcode response:', {
-              status: shortcodeResponse.status,
-              hasData: !!shortcodeResponse.data,
+              status: shortcodeResponse?.status,
+              hasData: !!shortcodeResponse?.data,
             });
             
             let journalByShortcode: any;
-            if (shortcodeResponse.data) {
-              if (shortcodeResponse.data.data) {
+            if (shortcodeResponse?.data) {
+              if (shortcodeResponse.data?.data) {
                 journalByShortcode = shortcodeResponse.data.data;
               } else {
                 journalByShortcode = shortcodeResponse.data;
@@ -334,13 +334,13 @@ export default function JournalDetailPage() {
       if (journal.id > 0) {
         try {
           console.log(`Loading section content for journal ID: ${journal.id}, section: ${section}`);
-          const fullJournalResponse = await adminAPI.getJournal(journal.id);
+          const fullJournalResponse = await adminAPI.getJournal(journal.id) as any;
           
           // Handle different response structures
           let fullJournalData: any;
-          if (fullJournalResponse.data) {
-            if (fullJournalResponse.data.data) {
-              fullJournalData = fullJournalResponse.data.data;
+          if (fullJournalResponse?.data) {
+            if ((fullJournalResponse.data as any)?.data) {
+              fullJournalData = (fullJournalResponse.data as any).data;
             } else {
               fullJournalData = fullJournalResponse.data;
             }
