@@ -27,8 +27,17 @@ let JournalsController = class JournalsController {
     findAll() {
         return this.journalsService.findAll();
     }
+    findByShortcode(shortcode) {
+        return this.journalsService.findByShortcode(shortcode);
+    }
     findOne(id) {
-        return this.journalsService.findOne(+id);
+        const numId = +id;
+        if (!isNaN(numId) && numId > 0) {
+            return this.journalsService.findOne(numId);
+        }
+        else {
+            return this.journalsService.findByShortcode(id);
+        }
     }
     findArticles(id) {
         return this.journalsService.findArticles(+id);
@@ -48,6 +57,13 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], JournalsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('shortcode/:shortcode'),
+    __param(0, (0, common_1.Param)('shortcode')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], JournalsController.prototype, "findByShortcode", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

@@ -9,6 +9,7 @@ import { Tag } from 'primereact/tag';
 import Link from 'next/link';
 import '@/styles/admin-global.scss';
 import { adminAPI } from '@/lib/api';
+import { loadJournalData } from '@/lib/journalAdminUtils';
 
 interface Journal {
   id: number;
@@ -50,38 +51,43 @@ export default function JournalAdminDashboard() {
         const users = (usersResponse.data as any[]) || [];
         const user = users.find((u: any) => u.userName === username || u.journalShort === username);
         
-        if (user && user.journalName) {
-          const journalsResponse = await adminAPI.getJournals();
-          const journals = (journalsResponse.data as any[]) || [];
-          const journal = journals.find((j: any) => j.title === user.journalName);
+        if (user) {
+          // Use loadJournalData() which correctly finds journal via JournalShortcode table
+          // This ensures we get the correct journal linked to the user's shortcode, not by title
+          const journalData = await loadJournalData();
           
-          if (journal) {
-            // Get articles count
-            const articlesResponse = await adminAPI.getArticles({ journalId: journal.id });
-            setArticlesCount(Array.isArray(articlesResponse.data) ? articlesResponse.data.length : 0);
+          if (journalData) {
+            const journalResponse = await adminAPI.getJournal(journalData.journalId);
+            const journal = journalResponse.data as any;
             
-            // Load board members count
-            try {
-              const boardMembersResponse = await adminAPI.getBoardMembers(journal.id);
-              setEditorsCount(Array.isArray(boardMembersResponse.data) ? boardMembersResponse.data.length : 0);
-            } catch (err) {
-              setEditorsCount(0);
-            }
-            
-            // Load published articles count for issues
-            try {
-              const publishedResponse = await adminAPI.getArticles({ journalId: journal.id, status: 'PUBLISHED' });
-              const publishedArticles = Array.isArray(publishedResponse.data) ? publishedResponse.data : [];
-              // Count unique volume/issue combinations
-              const uniqueIssues = new Set<string>();
-              publishedArticles.forEach((article: any) => {
-                if (article.volumeNo && article.issueNo) {
-                  uniqueIssues.add(`${article.volumeNo}-${article.issueNo}`);
-                }
-              });
-              setIssuesCount(uniqueIssues.size);
-            } catch (err) {
-              setIssuesCount(0);
+            if (journal) {
+              // Get articles count
+              const articlesResponse = await adminAPI.getArticles({ journalId: journal.id });
+              setArticlesCount(Array.isArray(articlesResponse.data) ? articlesResponse.data.length : 0);
+              
+              // Load board members count
+              try {
+                const boardMembersResponse = await adminAPI.getBoardMembers(journal.id);
+                setEditorsCount(Array.isArray(boardMembersResponse.data) ? boardMembersResponse.data.length : 0);
+              } catch (err) {
+                setEditorsCount(0);
+              }
+              
+              // Load published articles count for issues
+              try {
+                const publishedResponse = await adminAPI.getArticles({ journalId: journal.id, status: 'PUBLISHED' });
+                const publishedArticles = Array.isArray(publishedResponse.data) ? publishedResponse.data : [];
+                // Count unique volume/issue combinations
+                const uniqueIssues = new Set<string>();
+                publishedArticles.forEach((article: any) => {
+                  if (article.volumeNo && article.issueNo) {
+                    uniqueIssues.add(`${article.volumeNo}-${article.issueNo}`);
+                  }
+                });
+                setIssuesCount(uniqueIssues.size);
+              } catch (err) {
+                setIssuesCount(0);
+              }
             }
           }
         }

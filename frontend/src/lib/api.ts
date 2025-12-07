@@ -64,8 +64,21 @@ export const adminAPI = {
   getDashboardStats: () => api.get('/admin/dashboard/stats'),
   
   // Journals
-  getJournals: () => api.get('/journals'),
-  getJournal: (id: number) => api.get(`/journals/${id}`),
+  getJournals: () => {
+    // Add cache-busting to ensure fresh data
+    const cacheBuster = Date.now();
+    return api.get(`/journals?_t=${cacheBuster}`);
+  },
+  getJournal: (id: number | string) => {
+    // Add cache-busting to ensure fresh data
+    const cacheBuster = Date.now();
+    return api.get(`/journals/${id}?_t=${cacheBuster}`);
+  },
+  getJournalByShortcode: (shortcode: string) => {
+    // Add cache-busting to ensure fresh data
+    const cacheBuster = Date.now();
+    return api.get(`/journals/shortcode/${shortcode}?_t=${cacheBuster}`);
+  },
   createJournal: (data: any) => api.post('/admin/journals', data),
   updateJournal: (id: number, data: any) => api.put(`/admin/journals/${id}`, data),
   deleteJournal: (id: number) => api.delete(`/admin/journals/${id}`),

@@ -62,3 +62,4 @@ The frontend components (`LatestNewsSection` and `TopNewsBar`) have been updated
 
 Once the backend is restarted, the news will automatically start loading.
 
+

@@ -30,84 +30,102 @@ export async function loadJournalData(): Promise<JournalData | null> {
       return null;
     }
 
-    // Check if user has either journalName or journalShort
-    if (!user.journalName && !user.journalShort) {
-      console.error('[Journal Admin] User has no journal assignment. Please update the user record in /admin/users');
+    // Check if user has journalShort (required for journal-admin login)
+    if (!user.journalShort) {
+      console.error('[Journal Admin] User has no journalShort assignment. Please update the user record in /admin/users');
       return null;
     }
 
-    const journalsResponse = await adminAPI.getJournals();
-    const journals = (journalsResponse.data as any[]) || [];
-    
-    // Try multiple matching strategies (in order of reliability):
-    // 1. Shortcode match (most reliable)
-    // 2. Exact title match (case-insensitive, trimmed)
-    // 3. Fuzzy title match (contains)
-    // 4. Partial word match
-    
-    const normalizedJournalName = (user.journalName || '').trim().toLowerCase();
-    const userShortcode = (user.journalShort || '').trim().toLowerCase();
-    
-    let journal: any = null;
-    
-    // Strategy 1: Try shortcode match first (most reliable)
-    if (userShortcode) {
-      journal = journals.find((j: any) => {
-        const journalShortcode = (j.shortcode || '').trim().toLowerCase();
+    // CRITICAL: Check Journal table FIRST for journals with matching shortcode
+    // This takes priority because a journal with the shortcode directly is more authoritative
+    // Then fall back to JournalShortcode table if no direct match is found
+    try {
+      const userShortcode = (user.journalShort || '').trim();
+      
+      // STEP 1: Check Journal table for journal with matching shortcode (HIGHEST PRIORITY)
+      // This is the most direct match - the journal has the shortcode directly
+      const journalsResponse = await adminAPI.getJournals();
+      const journals = (journalsResponse.data as any[]) || [];
+      
+      const journalWithMatchingShortcode = journals.find((j: any) => {
+        const journalShortcode = (j.shortcode || '').trim();
         return journalShortcode === userShortcode;
       });
-    }
-    
-    // Strategy 2: Exact title match (case-insensitive, trimmed)
-    if (!journal && normalizedJournalName) {
-      journal = journals.find((j: any) => {
-        const normalizedTitle = (j.title || '').trim().toLowerCase();
-        return normalizedTitle === normalizedJournalName;
-      });
-    }
-    
-    // Strategy 3: Fuzzy match (title contains journalName or vice versa)
-    if (!journal && normalizedJournalName) {
-      journal = journals.find((j: any) => {
-        const normalizedTitle = (j.title || '').trim().toLowerCase();
-        return normalizedTitle.includes(normalizedJournalName) || normalizedJournalName.includes(normalizedTitle);
-      });
-    }
-    
-    // Strategy 4: Partial word match (check if any word in journalName matches)
-    if (!journal && normalizedJournalName) {
-      const journalNameWords = normalizedJournalName.split(/\s+/).filter((w: string) => w.length > 2);
-      journal = journals.find((j: any) => {
-        const normalizedTitle = (j.title || '').trim().toLowerCase();
-        const titleWords = normalizedTitle.split(/\s+/);
-        return journalNameWords.some((word: string) => 
-          titleWords.some((tWord: string) => tWord.includes(word) || word.includes(tWord))
-        );
-      });
-    }
-    
-    if (!journal) {
-      const availableTitles = journals.map((j: any) => j.title).filter(Boolean);
-      const availableShortcodes = journals.map((j: any) => j.shortcode).filter(Boolean);
       
+      if (journalWithMatchingShortcode) {
+        console.log('[Journal Admin] ✅ Found journal with matching shortcode (HIGHEST PRIORITY):', {
+          shortcode: userShortcode,
+          journalId: journalWithMatchingShortcode.id,
+          journalTitle: journalWithMatchingShortcode.title,
+          journalShortcode: journalWithMatchingShortcode.shortcode
+        });
+        
+        // Check if JournalShortcode entry exists and points to a different journal
+        const shortcodesResponse = await adminAPI.getJournalShortcodes();
+        const shortcodes = (shortcodesResponse.data as any[]) || [];
+        const shortcodeEntry = shortcodes.find((sc: any) => {
+          return (sc.shortcode || '').trim() === userShortcode;
+        });
+        
+        if (shortcodeEntry && shortcodeEntry.journalId !== journalWithMatchingShortcode.id) {
+          console.warn(`[Journal Admin] ⚠️ WARNING: JournalShortcode entry points to journal ID ${shortcodeEntry.journalId}, but journal with matching shortcode is ID ${journalWithMatchingShortcode.id}`);
+          console.warn(`[Journal Admin] Using journal ID ${journalWithMatchingShortcode.id} (the one with matching shortcode "${userShortcode}")`);
+          console.warn(`[Journal Admin] The JournalShortcode entry should be updated to point to journal ID ${journalWithMatchingShortcode.id}`);
+        }
+        
+        // Return the journal with matching shortcode - this is the correct one
+        return {
+          journalId: journalWithMatchingShortcode.id,
+          journalTitle: journalWithMatchingShortcode.title || ''
+        };
+      }
+      
+      // STEP 2: Fallback to JournalShortcode table if no direct match found
+      const shortcodesResponse = await adminAPI.getJournalShortcodes();
+      const shortcodes = (shortcodesResponse.data as any[]) || [];
+      
+      const shortcodeEntry = shortcodes.find((sc: any) => {
+        return (sc.shortcode || '').trim() === userShortcode;
+      });
+      
+      if (shortcodeEntry && shortcodeEntry.journalId) {
+        // Found the journal via JournalShortcode table
+        const journalResponse = await adminAPI.getJournal(shortcodeEntry.journalId);
+        const journal = journalResponse.data as any;
+        
+        if (journal) {
+          console.log('[Journal Admin] ✅ Found journal via JournalShortcode table (FALLBACK):', {
+            shortcode: userShortcode,
+            journalId: shortcodeEntry.journalId,
+            journalTitle: journal.title,
+            journalShortcode: journal.shortcode
+          });
+          
+          return {
+            journalId: journal.id,
+            journalTitle: journal.title || ''
+          };
+        }
+      }
+      
+      // If still not found, log error with details
       console.error('[Journal Admin] Journal not found for user:', {
         username: user.userName,
-        journalName: user.journalName || '(not set)',
-        journalShort: user.journalShort || '(not set)'
+        journalShort: user.journalShort || '(not set)',
+        shortcodeEntryFound: !!shortcodeEntry,
+        shortcodeEntryJournalId: shortcodeEntry?.journalId || 'N/A'
       });
-      console.error('[Journal Admin] Available journals:', {
-        titles: availableTitles,
-        shortcodes: availableShortcodes
-      });
-      console.error('[Journal Admin] To fix: Update the user record in /admin/users to link to an existing journal');
+      console.error('[Journal Admin] Available shortcodes:', shortcodes.map((sc: any) => ({
+        shortcode: sc.shortcode,
+        journalId: sc.journalId,
+        journalName: sc.journalName
+      })));
       
       return null;
+    } catch (error: any) {
+      console.error('[Journal Admin] Error finding journal via shortcode:', error);
+      return null;
     }
-    
-    return {
-      journalId: journal.id,
-      journalTitle: journal.title || ''
-    };
   } catch (error: any) {
     console.error('[Journal Admin] Error loading journal data:', error.message);
     return null;

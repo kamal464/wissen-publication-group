@@ -316,6 +316,12 @@
     margin-top: get-spacing(4);
     @include flex-between;
     align-items: flex-end;
+    flex-wrap: wrap;
+    gap: get-spacing(3);
+    
+    @include respond-to(sm) {
+      flex-wrap: nowrap;
+    }
   }
   
   &__stats {
@@ -333,6 +339,200 @@
   &__actions {
     @include flex-end;
     gap: get-spacing(2);
+  }
+
+  &__expand-btn {
+    @include flex-center;
+    gap: get-spacing(2);
+    padding: get-spacing(2) get-spacing(4);
+    background: neutral(gray-100);
+    border: 1px solid neutral(gray-300);
+    border-radius: map.get($border-radius, base);
+    color: neutral(gray-700);
+    font-size: get-font-size(sm);
+    font-weight: map.get($font-weight, medium);
+    cursor: pointer;
+    transition: all map.get($transitions, fast);
+    
+    &:hover {
+      background: $primary-blue;
+      color: white;
+      border-color: $primary-blue;
+    }
+    
+    i {
+      font-size: get-font-size(sm);
+    }
+  }
+
+  &__expanded-content {
+    margin-top: get-spacing(4);
+    padding-top: get-spacing(4);
+    border-top: 2px solid neutral(gray-200);
+    background: neutral(gray-50);
+    border-radius: map.get($border-radius, md);
+    overflow: hidden;
+  }
+
+  &__tabs {
+    @include flex-start;
+    gap: get-spacing(2);
+    padding: get-spacing(3) get-spacing(4);
+    background: white;
+    border-bottom: 1px solid neutral(gray-200);
+    overflow-x: auto;
+    
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: neutral(gray-300);
+      border-radius: 2px;
+    }
+  }
+
+  &__tab {
+    @include flex-center;
+    gap: get-spacing(2);
+    padding: get-spacing(2) get-spacing(4);
+    background: transparent;
+    border: 1px solid neutral(gray-300);
+    border-radius: map.get($border-radius, base);
+    color: neutral(gray-600);
+    font-size: get-font-size(sm);
+    font-weight: map.get($font-weight, medium);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all map.get($transitions, fast);
+    
+    &:hover {
+      background: neutral(gray-100);
+      border-color: neutral(gray-400);
+    }
+    
+    &--active {
+      background: $primary-blue;
+      color: white;
+      border-color: $primary-blue;
+      
+      &:hover {
+        background: darken($primary-blue, 5%);
+        border-color: darken($primary-blue, 5%);
+      }
+    }
+    
+    i {
+      font-size: get-font-size(sm);
+    }
+  }
+
+  &__tab-content {
+    padding: get-spacing(4) get-spacing(6);
+    min-height: 150px;
+    max-height: 400px;
+    overflow-y: auto;
+    
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: neutral(gray-300);
+      border-radius: 3px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: neutral(gray-100);
+    }
+  }
+
+  &__content-text {
+    @include body-text(sm);
+    color: neutral(gray-700);
+    line-height: map.get($line-height, relaxed);
+    
+    // Style HTML content
+    p {
+      margin-bottom: get-spacing(3);
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+    
+    ul, ol {
+      margin: get-spacing(3) 0;
+      padding-left: get-spacing(6);
+    }
+    
+    li {
+      margin-bottom: get-spacing(2);
+    }
+    
+    h1, h2, h3, h4 {
+      margin-top: get-spacing(4);
+      margin-bottom: get-spacing(2);
+      color: neutral(gray-900);
+      font-weight: map.get($font-weight, semibold);
+    }
+    
+    h1 {
+      @include heading(lg, semibold);
+    }
+    
+    h2 {
+      @include heading(base, semibold);
+    }
+    
+    h3 {
+      @include heading(sm, semibold);
+    }
+    
+    a {
+      color: $primary-blue;
+      text-decoration: underline;
+      
+      &:hover {
+        color: darken($primary-blue, 10%);
+      }
+    }
+    
+    strong, b {
+      font-weight: map.get($font-weight, semibold);
+      color: neutral(gray-900);
+    }
+  }
+
+  &__view-full {
+    padding: get-spacing(3) get-spacing(4);
+    background: white;
+    border-top: 1px solid neutral(gray-200);
+    text-align: center;
+  }
+
+  &__view-full-link {
+    @include flex-center;
+    gap: get-spacing(2);
+    display: inline-flex;
+    padding: get-spacing(2) get-spacing(4);
+    background: $primary-blue;
+    color: white;
+    border-radius: map.get($border-radius, base);
+    font-size: get-font-size(sm);
+    font-weight: map.get($font-weight, medium);
+    text-decoration: none;
+    transition: all map.get($transitions, fast);
+    
+    &:hover {
+      background: darken($primary-blue, 5%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba($primary-blue, 0.3);
+    }
+    
+    i {
+      font-size: get-font-size(sm);
+    }
   }
   
   // Hover effects
@@ -356,6 +556,18 @@
   
   .journal-card__content {
     flex: none;
+  }
+
+  .journal-card__expanded-content {
+    margin-top: get-spacing(4);
+  }
+
+  .journal-card__tabs {
+    flex-wrap: wrap;
+  }
+
+  .journal-card__tab-content {
+    max-height: 300px;
   }
 }
 

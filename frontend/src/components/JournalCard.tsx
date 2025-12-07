@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import Link from 'next/link';
 import { Journal } from '@/types';
 import { getFileUrl } from '@/lib/apiConfig';
@@ -16,6 +16,7 @@ const JournalCard = memo(function JournalCard({
   subjectLabel,
   subjectClass,
 }: JournalCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const shortcode = journal.shortcode || '';
   const journalUrl = shortcode ? `/journals/${shortcode}` : '#';
 
@@ -27,8 +28,30 @@ const JournalCard = memo(function JournalCard({
   // For list/grid view: use coverImage or flyerImage (not bannerImage - that's for detail page hero)
   // Priority: coverImage > flyerImage > placeholder
   const imageUrl = viewMode === 'grid' 
-    ? (getImageUrl((journal as any).bannerImage) || getImageUrl(journal.coverImage) || getImageUrl((journal as any).flyerImage))
-    : (getImageUrl(journal.coverImage) || getImageUrl((journal as any).flyerImage));
+    ? (getImageUrl(journal.bannerImage) || getImageUrl(journal.coverImage) || getImageUrl(journal.flyerImage))
+    : (getImageUrl(journal.coverImage) || getImageUrl(journal.flyerImage));
+
+  const hasContent = !!(journal.homePageContent || journal.aimsScope || journal.guidelines);
+
+  // Determine initial active tab based on available content
+  const getInitialTab = (): 'home' | 'aims' | 'guidelines' => {
+    if (journal.homePageContent) return 'home';
+    if (journal.aimsScope) return 'aims';
+    if (journal.guidelines) return 'guidelines';
+    return 'home';
+  };
+
+  const [activeTab, setActiveTab] = useState<'home' | 'aims' | 'guidelines'>(getInitialTab());
+
+  const handleExpandClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsExpanded(!isExpanded);
+    // Reset to initial tab when expanding
+    if (!isExpanded) {
+      setActiveTab(getInitialTab());
+    }
+  };
 
   return (
     <article
@@ -81,6 +104,20 @@ const JournalCard = memo(function JournalCard({
             <h2 className="journal-card__title">
               {journal.title}
             </h2>
+            
+            {/* Display journal name alongside title */}
+            {(journal as any).journalName && (
+              <h3 className="journal-card__name" style={{ 
+                fontSize: '0.95em', 
+                fontWeight: '400', 
+                color: '#555', 
+                marginTop: '0.25rem',
+                marginBottom: '0.5rem',
+                fontStyle: 'italic'
+              }}>
+                {(journal as any).journalName}
+              </h3>
+            )}
 
             <p className="journal-card__meta">
               {journal.publisher && <span>{journal.publisher}</span>}
@@ -118,9 +155,102 @@ const JournalCard = memo(function JournalCard({
                 </span>
               )}
             </div>
+            {hasContent && (
+              <button
+                onClick={handleExpandClick}
+                className="journal-card__expand-btn"
+                aria-label={isExpanded ? 'Collapse content' : 'Expand content'}
+                title={isExpanded ? 'Collapse content' : 'View homepage, aims & scope, and guidelines'}
+              >
+                <i className={`pi ${isExpanded ? 'pi-chevron-up' : 'pi-chevron-down'}`}></i>
+                <span>{isExpanded ? 'Less' : 'More Info'}</span>
+              </button>
+            )}
           </footer>
         </div>
       </Link>
+
+      {/* Expandable Content Section */}
+      {isExpanded && hasContent && (
+        <div className="journal-card__expanded-content" onClick={(e) => e.stopPropagation()}>
+          {/* Tabs */}
+          <div className="journal-card__tabs">
+            {journal.homePageContent && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setActiveTab('home');
+                }}
+                className={`journal-card__tab ${activeTab === 'home' ? 'journal-card__tab--active' : ''}`}
+              >
+                <i className="pi pi-home"></i>
+                <span>Homepage</span>
+              </button>
+            )}
+            {journal.aimsScope && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setActiveTab('aims');
+                }}
+                className={`journal-card__tab ${activeTab === 'aims' ? 'journal-card__tab--active' : ''}`}
+              >
+                <i className="pi pi-compass"></i>
+                <span>Aims & Scope</span>
+              </button>
+            )}
+            {journal.guidelines && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setActiveTab('guidelines');
+                }}
+                className={`journal-card__tab ${activeTab === 'guidelines' ? 'journal-card__tab--active' : ''}`}
+              >
+                <i className="pi pi-info-circle"></i>
+                <span>Guidelines</span>
+              </button>
+            )}
+          </div>
+
+          {/* Tab Content */}
+          <div className="journal-card__tab-content">
+            {activeTab === 'home' && journal.homePageContent && (
+              <div 
+                className="journal-card__content-text"
+                dangerouslySetInnerHTML={{ __html: journal.homePageContent }}
+              />
+            )}
+            {activeTab === 'aims' && journal.aimsScope && (
+              <div 
+                className="journal-card__content-text"
+                dangerouslySetInnerHTML={{ __html: journal.aimsScope }}
+              />
+            )}
+            {activeTab === 'guidelines' && journal.guidelines && (
+              <div 
+                className="journal-card__content-text"
+                dangerouslySetInnerHTML={{ __html: journal.guidelines }}
+              />
+            )}
+          </div>
+
+          {/* View Full Journal Link */}
+          <div className="journal-card__view-full">
+            <Link 
+              href={journalUrl}
+              className="journal-card__view-full-link"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <i className="pi pi-external-link"></i>
+              <span>View Full Journal Page</span>
+            </Link>
+          </div>
+        </div>
+      )}
     </article>
   );
 });

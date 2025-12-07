@@ -221,20 +221,42 @@ export default function JournalManagement() {
     }
 
     try {
-      // Prepare data for API (only send fields that exist in the DTO)
+      // Prepare data for API (only send fields that have actual values)
       const journalData: any = {
-        title: selectedJournal.title.trim(),
-        description: selectedJournal.description.trim(),
-        issn: selectedJournal.issn?.trim() || null,
-        shortcode: selectedJournal.shortcode?.trim() || null,
-        coverImage: selectedJournal.coverImage?.trim() || null,
-        publisher: selectedJournal.publisher?.trim() || null,
-        accessType: selectedJournal.accessType || null,
-        subjectArea: selectedJournal.subjectArea || null,
-        category: selectedJournal.category || null,
-        discipline: selectedJournal.discipline || null,
-        impactFactor: selectedJournal.impactFactor?.trim() || null,
+        title: selectedJournal.title?.trim() || '',
+        description: selectedJournal.description?.trim() || '',
       };
+      
+      // Only include optional fields if they have values
+      if (selectedJournal.issn?.trim()) {
+        journalData.issn = selectedJournal.issn.trim();
+      }
+      if (selectedJournal.shortcode?.trim()) {
+        journalData.shortcode = selectedJournal.shortcode.trim();
+      }
+      if (selectedJournal.coverImage?.trim()) {
+        journalData.coverImage = selectedJournal.coverImage.trim();
+      }
+      if (selectedJournal.publisher?.trim()) {
+        journalData.publisher = selectedJournal.publisher.trim();
+      }
+      if (selectedJournal.accessType) {
+        journalData.accessType = selectedJournal.accessType;
+      }
+      if (selectedJournal.subjectArea?.trim()) {
+        journalData.subjectArea = selectedJournal.subjectArea.trim();
+      }
+      if (selectedJournal.category) {
+        journalData.category = selectedJournal.category;
+      }
+      if (selectedJournal.discipline?.trim()) {
+        journalData.discipline = selectedJournal.discipline.trim();
+      }
+      if (selectedJournal.impactFactor?.trim()) {
+        journalData.impactFactor = selectedJournal.impactFactor.trim();
+      }
+      
+      console.log('🔵 Frontend - Sending journal data:', JSON.stringify(journalData, null, 2));
 
       if (editing && selectedJournal.id === 0) {
         // Create new journal
@@ -267,7 +289,8 @@ export default function JournalManagement() {
           }
         }
         
-        setJournals([...journals, newJournal]);
+        // Reload journals list to ensure we have the latest data from the database
+        await loadJournals();
         toast.current?.show({ 
           severity: 'success', 
           summary: 'Success', 
@@ -300,9 +323,8 @@ export default function JournalManagement() {
           });
         }
         
-        setJournals(journals.map(j => 
-          j.id === selectedJournal.id ? updatedJournal : j
-        ));
+        // Reload journals list to ensure we have the latest data from the database
+        await loadJournals();
         toast.current?.show({ 
           severity: 'success', 
           summary: 'Success', 

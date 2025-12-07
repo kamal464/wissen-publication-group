@@ -10,6 +10,7 @@ import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
 import { adminAPI } from '@/lib/api';
+import { loadJournalData } from '@/lib/journalAdminUtils';
 
 interface MetaPage {
   id: number;
@@ -39,23 +40,17 @@ export default function ManageMetaInformation() {
       const username = localStorage.getItem('journalAdminUser');
       if (!username) return;
 
-      const usersResponse = await adminAPI.getUsers();
-      const users = (usersResponse.data as any[]) || [];
-      const user = users.find((u: any) => u.userName === username || u.journalShort === username);
+      // Use loadJournalData() which correctly finds journal via JournalShortcode table
+      const journalData = await loadJournalData();
       
-      if (user && user.journalName) {
-        const journalsResponse = await adminAPI.getJournals();
-        const journals = (journalsResponse.data as any[]) || [];
-        const journal = journals.find((j: any) => j.title === user.journalName);
-        if (journal) {
-          setJournalId(journal.id);
-          // Load meta pages for this journal
-          // For now, using mock data - replace with actual API call
-          setMetaPages([
-            { id: 1, pageType: 'Home', pageTitle: 'Journal Home Page', metaKeywords: 'journal, research', metaDescription: 'Home page description' },
-            { id: 2, pageType: 'About', pageTitle: 'About Us', metaKeywords: 'about, journal', metaDescription: 'About page description' },
-          ]);
-        }
+      if (journalData) {
+        setJournalId(journalData.journalId);
+        // Load meta pages for this journal
+        // For now, using mock data - replace with actual API call
+        setMetaPages([
+          { id: 1, pageType: 'Home', pageTitle: 'Journal Home Page', metaKeywords: 'journal, research', metaDescription: 'Home page description' },
+          { id: 2, pageType: 'About', pageTitle: 'About Us', metaKeywords: 'about, journal', metaDescription: 'About page description' },
+        ]);
       }
     } catch (error: any) {
       console.error('Error loading meta:', error);

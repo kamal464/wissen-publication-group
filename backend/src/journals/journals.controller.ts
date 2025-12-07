@@ -16,9 +16,21 @@ export class JournalsController {
     return this.journalsService.findAll();
   }
 
+  @Get('shortcode/:shortcode')
+  findByShortcode(@Param('shortcode') shortcode: string) {
+    return this.journalsService.findByShortcode(shortcode);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.journalsService.findOne(+id);
+    // Check if it's a number (ID) or shortcode
+    const numId = +id;
+    if (!isNaN(numId) && numId > 0) {
+      return this.journalsService.findOne(numId);
+    } else {
+      // Try as shortcode
+      return this.journalsService.findByShortcode(id);
+    }
   }
 
   @Get(':id/articles')

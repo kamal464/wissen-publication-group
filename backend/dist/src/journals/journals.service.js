@@ -49,6 +49,32 @@ let JournalsService = JournalsService_1 = class JournalsService {
             },
         });
     }
+    async findByShortcode(shortcode) {
+        let journal = await this.prisma.journal.findUnique({
+            where: { shortcode },
+            include: {
+                _count: {
+                    select: { articles: true },
+                },
+            },
+        });
+        if (!journal) {
+            const shortcodeEntry = await this.prisma.journalShortcode.findUnique({
+                where: { shortcode },
+            });
+            if (shortcodeEntry && shortcodeEntry.journalId) {
+                journal = await this.prisma.journal.findUnique({
+                    where: { id: shortcodeEntry.journalId },
+                    include: {
+                        _count: {
+                            select: { articles: true },
+                        },
+                    },
+                });
+            }
+        }
+        return journal;
+    }
     findArticles(id) {
         return this.prisma.article.findMany({
             where: { journalId: id },

@@ -58,7 +58,39 @@ export default function JournalDetailPage() {
         setLoading(true);
         setError(null);
         
-        // Fetch all journals and shortcodes to find the matching journal
+        // Use the backend API endpoint that properly handles shortcode lookup
+        // This endpoint checks both Journal table and JournalShortcode table
+        try {
+          // Try the shortcode-specific endpoint first: /journals/shortcode/:shortcode
+          const shortcodeResponse = await (journalService as any).getByShortcode(shortcode);
+          const journalToUse = (shortcodeResponse?.data || shortcodeResponse) as any;
+          
+          if (journalToUse && journalToUse.id) {
+            console.log('✅ Journal found via shortcode API:', {
+              id: journalToUse.id,
+              title: journalToUse.title,
+              shortcode: journalToUse.shortcode
+            });
+            
+            // Fetch full details to ensure we have all content
+            try {
+              const fullJournalResponse = await adminAPI.getJournal(journalToUse.id);
+              const fullJournal = fullJournalResponse.data as any;
+              setJournal({ ...journalToUse, ...fullJournal, shortcode });
+            } catch (err) {
+              // If full fetch fails, use what we have
+              setJournal({ ...journalToUse, shortcode });
+            }
+            
+            setLoading(false);
+            return; // Successfully found journal, exit early
+          }
+        } catch (apiError: any) {
+          console.log('Shortcode API call failed, trying fallback method:', apiError.message);
+          // Continue to fallback method below
+        }
+        
+        // Fallback: Try to find via JournalShortcode table if API endpoint doesn't work
         const [journalsRes, shortcodesRes] = await Promise.all([
           adminAPI.getJournals(),
           adminAPI.getJournalShortcodes()
@@ -79,27 +111,187 @@ export default function JournalDetailPage() {
         
         if (!shortcodeEntry) {
           setError('Journal shortcode not found');
+          setLoading(false);
           return;
         }
         
-        // Try to find journal by shortcode field first
-        let foundJournal = journals.find((j: any) => j.shortcode === shortcode);
-        
-        // If not found, try to match by journal ID from shortcode entry
-        if (!foundJournal && shortcodeEntry.journalId) {
+        // Try to find journal by journal ID from shortcode entry (MOST RELIABLE)
+        let foundJournal = null;
+        if (shortcodeEntry.journalId) {
           foundJournal = journals.find((j: any) => j.id === shortcodeEntry.journalId);
         }
         
-        // If not found, try to match by journal name from shortcode entry
+        // If not found by ID, try to find by shortcode field in Journal table
         if (!foundJournal) {
-          foundJournal = journals.find((j: any) => 
-            j.title?.toLowerCase() === shortcodeEntry.journalName.toLowerCase()
-          );
+          foundJournal = journals.find((j: any) => j.shortcode === shortcode);
         }
         
-        // If still not found, create a virtual journal from shortcode
+        // If still not found, try to match by journal name (last resort)
         if (!foundJournal) {
-          foundJournal = {
+          const normalizedJournalName = shortcodeEntry.journalName.toLowerCase().trim();
+          foundJournal = journals.find((j: any) => {
+            const normalizedTitle = j.title?.toLowerCase().trim();
+            return normalizedTitle === normalizedJournalName || 
+                   (normalizedTitle && normalizedJournalName && 
+                    (normalizedTitle.includes(normalizedJournalName) || normalizedJournalName.includes(normalizedTitle)));
+          });
+        }
+        
+        // Determine the journal ID to use for fetching full details
+        const journalIdToFetch = foundJournal?.id || shortcodeEntry.journalId || null;
+        
+        let journalToUse: any = null;
+        let journalIdForFetch: number | null = null;
+        
+        if (foundJournal && foundJournal.id > 0) {
+          // We found a journal in the list - use its ID
+          journalIdForFetch = foundJournal.id;
+          console.log('Found journal in list with ID, fetching full details...', foundJournal.id);
+        } else if (journalIdToFetch && journalIdToFetch > 0) {
+          // We have a journal ID from shortcode entry - use it
+          journalIdForFetch = journalIdToFetch;
+          console.log('Using journalId from shortcode entry, fetching full details...', journalIdToFetch);
+        }
+        
+        // Try to fetch by ID if we have one
+        if (journalIdForFetch) {
+          try {
+            console.log(`Fetching full journal details for ID: ${journalIdForFetch}`);
+            const fullJournalResponse = await adminAPI.getJournal(journalIdForFetch);
+            
+            // Log the full response to debug
+            console.log('Full API response:', {
+              status: fullJournalResponse.status,
+              dataType: typeof fullJournalResponse.data,
+              dataKeys: fullJournalResponse.data ? Object.keys(fullJournalResponse.data) : null,
+            });
+            
+            // Handle different response structures
+            let fullJournal: any;
+            if (fullJournalResponse.data) {
+              // Check if data is nested
+              if (fullJournalResponse.data.data) {
+                fullJournal = fullJournalResponse.data.data;
+              } else {
+                fullJournal = fullJournalResponse.data;
+              }
+            } else {
+              fullJournal = fullJournalResponse;
+            }
+            
+            console.log('Parsed journal data:', {
+              id: fullJournal?.id,
+              title: fullJournal?.title,
+              homePageContent: fullJournal?.homePageContent ? fullJournal.homePageContent.substring(0, 50) + '...' : null,
+              aimsScope: fullJournal?.aimsScope ? fullJournal.aimsScope.substring(0, 50) + '...' : null,
+              guidelines: fullJournal?.guidelines ? fullJournal.guidelines.substring(0, 50) + '...' : null,
+              allKeys: Object.keys(fullJournal || {}),
+            });
+            
+            // If we found a journal in the list, merge with full details
+            // Otherwise, use the full journal data directly
+            journalToUse = foundJournal 
+              ? { ...foundJournal, ...fullJournal, shortcode }
+              : { ...fullJournal, shortcode };
+            
+            console.log('Enhanced journal data:', {
+              id: journalToUse.id,
+              title: journalToUse.title,
+              hasHomePageContent: !!journalToUse.homePageContent,
+              hasAimsScope: !!journalToUse.aimsScope,
+              hasGuidelines: !!journalToUse.guidelines,
+              homePageContentLength: journalToUse.homePageContent?.length || 0,
+              aimsScopeLength: journalToUse.aimsScope?.length || 0,
+              guidelinesLength: journalToUse.guidelines?.length || 0,
+            });
+          } catch (err) {
+            console.error('Error fetching full journal details by ID:', err);
+            // Continue to try shortcode fallback
+          }
+        }
+        
+        // If we still don't have a journal, try fetching by shortcode directly from database
+        if (!journalToUse) {
+          console.warn('Journal not found by ID, trying to fetch by shortcode directly from database...', shortcode);
+          try {
+            // Use the same getJournal endpoint - it handles both IDs and shortcodes
+            const shortcodeResponse = await adminAPI.getJournal(shortcode);
+            console.log('Shortcode response:', {
+              status: shortcodeResponse.status,
+              hasData: !!shortcodeResponse.data,
+            });
+            
+            let journalByShortcode: any;
+            if (shortcodeResponse.data) {
+              if (shortcodeResponse.data.data) {
+                journalByShortcode = shortcodeResponse.data.data;
+              } else {
+                journalByShortcode = shortcodeResponse.data;
+              }
+            } else {
+              journalByShortcode = shortcodeResponse;
+            }
+            
+            if (journalByShortcode && journalByShortcode.id) {
+              console.log('✓ Found journal by shortcode from database:', journalByShortcode.title, 'ID:', journalByShortcode.id);
+              
+              // Update shortcode entry with journal ID if it's missing (we can't do this from frontend, but log it)
+              if (!shortcodeEntry.journalId) {
+                console.warn('⚠️ Shortcode entry should be updated with journalId:', journalByShortcode.id);
+              }
+              
+              journalToUse = { ...journalByShortcode, shortcode };
+            } else {
+              console.warn('Journal fetched by shortcode but no ID found:', journalByShortcode);
+            }
+          } catch (shortcodeErr: any) {
+            console.error('Error fetching journal by shortcode:', {
+              message: shortcodeErr.message,
+              response: shortcodeErr.response?.data,
+              status: shortcodeErr.response?.status,
+            });
+          }
+        }
+        
+        // If we have a journal, set it and load content
+        if (journalToUse && journalToUse.id) {
+          setJournal(journalToUse);
+          
+          const urlParams = new URLSearchParams(window.location.search);
+          const section = urlParams.get('section') || 'home';
+          setActiveMenu(section);
+          
+          let contentToShow = '';
+          switch (section) {
+            case 'home':
+              contentToShow = journalToUse.homePageContent || journalToUse.journalDescription || journalToUse.description || 'Welcome to ' + journalToUse.title;
+              break;
+            case 'aims-scope':
+              contentToShow = journalToUse.aimsScope || 'Aims and Scope content will be available soon.';
+              break;
+            case 'editorial-board':
+              contentToShow = journalToUse.editorialBoard || 'Editorial Board information will be available soon.';
+              break;
+            case 'in-press':
+              contentToShow = journalToUse.articlesInPress || 'Articles in Press will be available soon.';
+              break;
+            case 'current-issue':
+              contentToShow = journalToUse.currentIssueContent || 'Current Issue content will be available soon.';
+              break;
+            case 'archive':
+              contentToShow = journalToUse.archiveContent || 'Archive content will be available soon.';
+              break;
+            case 'guidelines':
+              contentToShow = journalToUse.guidelines || 'Journal Guidelines will be available soon.';
+              break;
+            default:
+              contentToShow = journalToUse.description || journalToUse.journalDescription || '';
+          }
+          setContent(contentToShow);
+        } else {
+          // If all else fails, create virtual journal
+          console.error('Cannot fetch journal: No journal found and no journalId in shortcode entry');
+          const virtualJournal = {
             id: -1,
             title: shortcodeEntry.journalName,
             description: 'Journal details will be available after journal admin completes setup.',
@@ -107,68 +299,8 @@ export default function JournalDetailPage() {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
-        } else {
-          // Enhance journal with shortcode if not already set
-          if (!foundJournal.shortcode) {
-            foundJournal = { ...foundJournal, shortcode };
-          }
-        }
-        
-        setJournal(foundJournal);
-        
-        // If we have a valid journal ID, fetch full journal details to get all content fields
-        if (foundJournal && foundJournal.id > 0) {
-          try {
-            const fullJournalResponse = await adminAPI.getJournal(foundJournal.id);
-            const fullJournal = fullJournalResponse.data as any;
-            // Merge full journal data with found journal
-            const enhancedJournal = { ...foundJournal, ...fullJournal };
-            setJournal(enhancedJournal);
-            
-            // Load initial content after journal is loaded
-            const urlParams = new URLSearchParams(window.location.search);
-            const section = urlParams.get('section') || 'home';
-            setActiveMenu(section);
-            
-            // Load content for the section
-            let contentToShow = '';
-            switch (section) {
-              case 'home':
-                contentToShow = enhancedJournal.homePageContent || enhancedJournal.description || 'Welcome to ' + enhancedJournal.title;
-                break;
-              case 'aims-scope':
-                contentToShow = enhancedJournal.aimsScope || 'Aims and Scope content will be available soon.';
-                break;
-              case 'editorial-board':
-                contentToShow = enhancedJournal.editorialBoard || 'Editorial Board information will be available soon.';
-                break;
-              case 'in-press':
-                contentToShow = enhancedJournal.articlesInPress || 'Articles in Press will be available soon.';
-                break;
-              case 'current-issue':
-                contentToShow = enhancedJournal.currentIssueContent || 'Current Issue content will be available soon.';
-                break;
-              case 'archive':
-                contentToShow = enhancedJournal.archiveContent || 'Archive content will be available soon.';
-                break;
-              case 'guidelines':
-                contentToShow = enhancedJournal.guidelines || 'Journal Guidelines will be available soon.';
-                break;
-              default:
-                contentToShow = enhancedJournal.description || '';
-            }
-            setContent(contentToShow);
-          } catch (err) {
-            console.error('Error fetching full journal details:', err);
-            // Fallback to basic journal data
-            const urlParams = new URLSearchParams(window.location.search);
-            const section = urlParams.get('section') || 'home';
-            setActiveMenu(section);
-            const contentToShow = foundJournal.homePageContent || foundJournal.description || 'Welcome to ' + foundJournal.title;
-            setContent(contentToShow);
-          }
-        } else {
-          // Virtual journal - no content available
+          setJournal(virtualJournal);
+          
           const urlParams = new URLSearchParams(window.location.search);
           const section = urlParams.get('section') || 'home';
           setActiveMenu(section);
@@ -185,7 +317,13 @@ export default function JournalDetailPage() {
   }, [shortcode]);
 
   const loadSectionContent = useCallback(async (section: string) => {
-    if (!journal || journal.id <= 0) {
+    if (!journal) {
+      setContent('Content will be available once the journal is fully configured.');
+      return;
+    }
+
+    // If journal has ID <= 0, it's a virtual journal with no content
+    if (journal.id <= 0) {
       setContent('Content will be available once the journal is fully configured.');
       return;
     }
@@ -195,12 +333,42 @@ export default function JournalDetailPage() {
       let journalData = journal;
       if (journal.id > 0) {
         try {
+          console.log(`Loading section content for journal ID: ${journal.id}, section: ${section}`);
           const fullJournalResponse = await adminAPI.getJournal(journal.id);
-          journalData = { ...journal, ...(fullJournalResponse.data as any) };
+          
+          // Handle different response structures
+          let fullJournalData: any;
+          if (fullJournalResponse.data) {
+            if (fullJournalResponse.data.data) {
+              fullJournalData = fullJournalResponse.data.data;
+            } else {
+              fullJournalData = fullJournalResponse.data;
+            }
+          } else {
+            fullJournalData = fullJournalResponse;
+          }
+          
+          journalData = { ...journal, ...fullJournalData };
+          
+          console.log(`Journal data for section ${section}:`, {
+            hasHomePageContent: !!journalData.homePageContent,
+            hasAimsScope: !!journalData.aimsScope,
+            hasGuidelines: !!journalData.guidelines,
+            hasJournalDescription: !!journalData.journalDescription,
+            homePageContentPreview: journalData.homePageContent?.substring(0, 100),
+            aimsScopePreview: journalData.aimsScope?.substring(0, 100),
+            guidelinesPreview: journalData.guidelines?.substring(0, 100),
+          });
+          
           // Update journal state with full data
           setJournal(journalData);
         } catch (err) {
           console.error('Error fetching journal details:', err);
+          console.error('Error details:', {
+            message: (err as any)?.message,
+            response: (err as any)?.response?.data,
+            status: (err as any)?.response?.status,
+          });
           // Use existing journal data
         }
       }
@@ -209,7 +377,7 @@ export default function JournalDetailPage() {
       
       switch (section) {
         case 'home':
-          contentToShow = journalData.homePageContent || journalData.description || 'Welcome to ' + journalData.title;
+          contentToShow = journalData.homePageContent || journalData.journalDescription || journalData.description || 'Welcome to ' + journalData.title;
           break;
         case 'aims-scope':
           contentToShow = journalData.aimsScope || 'Aims and Scope content will be available soon.';

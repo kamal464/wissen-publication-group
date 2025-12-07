@@ -7,6 +7,7 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Toast } from 'primereact/toast';
 import { adminAPI } from '@/lib/api';
+import { loadJournalData } from '@/lib/journalAdminUtils';
 
 interface Author {
   id: number;
@@ -68,18 +69,17 @@ export default function SearchArticlesPage() {
       const username = localStorage.getItem('journalAdminUser');
       if (!username) return;
 
-      const usersResponse = await adminAPI.getUsers();
-      const users = (usersResponse.data as any[]) || [];
-      const user = users.find((u: any) => u.userName === username || u.journalShort === username);
+      // Use loadJournalData() which correctly finds journal via JournalShortcode table
+      const journalData = await loadJournalData();
       
-      if (user && user.journalName) {
-        const journalsResponse = await adminAPI.getJournals();
-        const journals = (journalsResponse.data as any[]) || [];
-        const journal = journals.find((j: any) => j.title === user.journalName);
+      if (journalData) {
+        setJournalId(journalData.journalId);
+        const journalResponse = await adminAPI.getJournal(journalData.journalId);
+        const journal = journalResponse.data as any;
+        
         if (journal) {
-          setJournalId(journal.id);
           // Load articles for this journal
-          const articlesResponse = await adminAPI.getArticles({ journalId: journal.id });
+          const articlesResponse = await adminAPI.getArticles({ journalId: journalData.journalId });
           const articlesData = (articlesResponse.data as any[]) || [];
           
           // Transform articles to handle authors properly

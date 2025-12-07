@@ -40,6 +40,39 @@ export class JournalsService {
     });
   }
 
+  async findByShortcode(shortcode: string) {
+    // First try to find by shortcode field in Journal table
+    let journal = await this.prisma.journal.findUnique({
+      where: { shortcode },
+      include: {
+        _count: {
+          select: { articles: true },
+        },
+      },
+    });
+    
+    // If not found, try to find by matching with JournalShortcode table
+    if (!journal) {
+      const shortcodeEntry = await this.prisma.journalShortcode.findUnique({
+        where: { shortcode },
+      });
+      
+      if (shortcodeEntry && shortcodeEntry.journalId) {
+        // Only fetch by journalId - no title-based matching to prevent linking to wrong journal
+        journal = await this.prisma.journal.findUnique({
+          where: { id: shortcodeEntry.journalId },
+          include: {
+            _count: {
+              select: { articles: true },
+            },
+          },
+        });
+      }
+    }
+    
+    return journal;
+  }
+
   findArticles(id: number) {
     return this.prisma.article.findMany({
       where: { journalId: id },

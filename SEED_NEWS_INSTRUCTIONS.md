@@ -55,3 +55,4 @@ News items are displayed in:
 2. **Latest News Section** - Card grid on the homepage
 3. **Journal Admin Panel** - Management interface at `/journal-admin/latest-news`
 
+

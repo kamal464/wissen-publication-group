@@ -58,3 +58,4 @@ npx ts-node prisma/seed-news.ts
 
 This will add 5 sample news items to the database.
 
+

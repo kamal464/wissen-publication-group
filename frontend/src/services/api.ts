@@ -27,8 +27,19 @@ api.interceptors.request.use((config) => {
 });
 
 export const journalService = {
-  getAll: () => api.get('/journals'),
-  getById: (id: number) => api.get(`/journals/${id}`),
+  getAll: () => {
+    // Add cache-busting to ensure fresh data
+    const cacheBuster = Date.now();
+    return api.get(`/journals?_t=${cacheBuster}`);
+  },
+  getById: (id: number) => {
+    const cacheBuster = Date.now();
+    return api.get(`/journals/${id}?_t=${cacheBuster}`);
+  },
+  getByShortcode: (shortcode: string) => {
+    const cacheBuster = Date.now();
+    return api.get(`/journals/shortcode/${shortcode}?_t=${cacheBuster}`);
+  },
   create: (data: any) => api.post('/journals', data),
   update: (id: number, data: any) => api.put(`/journals/${id}`, data),
   delete: (id: number) => api.delete(`/journals/${id}`),

@@ -177,6 +177,9 @@ export default function JournalsPage() {
     dispatch(setLoading(true));
 
     try {
+      // Add cache-busting timestamp to ensure fresh data
+      const cacheBuster = `_t=${Date.now()}`;
+      
       // Fetch both journals and shortcodes in parallel
       const [journalsRes, shortcodesRes, usersRes] = await Promise.all([
         journalService.getAll(),
@@ -240,8 +243,63 @@ export default function JournalsPage() {
       });
       
       // Combine real and virtual journals
-      const allJournals = [...normalized, ...virtualJournals];
-      dispatch(setJournals(allJournals));
+      let allJournals = [...normalized, ...virtualJournals];
+      
+      // Fetch full journal details for all journals with valid IDs to get all content fields
+      // Use journal ID (most reliable) or try shortcode as fallback
+      const journalsWithDetails = await Promise.all(
+        allJournals.map(async (journal) => {
+          // Only fetch details for journals with valid IDs (not virtual journals)
+          if (journal.id > 0) {
+            try {
+              // Always use journal ID for fetching (most reliable)
+              // Add cache-busting to ensure we get the latest data
+              const fullJournalResponse = await adminAPI.getJournal(journal.id);
+              const responseData = fullJournalResponse.data as any;
+              let fullJournal: any;
+              if (responseData) {
+                if (responseData.data) {
+                  fullJournal = responseData.data;
+                } else {
+                  fullJournal = responseData;
+                }
+              } else {
+                fullJournal = fullJournalResponse;
+              }
+              // Merge full journal data with existing journal data
+              return { ...journal, ...fullJournal };
+            } catch (err) {
+              console.error(`Error fetching full details for journal ${journal.id}:`, err);
+              // If ID fetch fails, try by shortcode as fallback
+              if (journal.shortcode) {
+                try {
+                  const shortcodeResponse = await adminAPI.getJournal(journal.shortcode);
+                  const shortcodeData = shortcodeResponse.data as any;
+                  let fullJournal: any;
+                  if (shortcodeData) {
+                    if (shortcodeData.data) {
+                      fullJournal = shortcodeData.data;
+                    } else {
+                      fullJournal = shortcodeData;
+                    }
+                  } else {
+                    fullJournal = shortcodeResponse;
+                  }
+                  return { ...journal, ...fullJournal };
+                } catch (shortcodeErr) {
+                  console.error(`Error fetching by shortcode ${journal.shortcode}:`, shortcodeErr);
+                }
+              }
+              // Return original journal if all fetches fail
+              return journal;
+            }
+          }
+          // Return virtual journals as-is
+          return journal;
+        })
+      );
+      
+      dispatch(setJournals(journalsWithDetails));
     } catch (fetchError) {
       dispatch(setError(getErrorMessage(fetchError)));
     } finally {
@@ -251,6 +309,29 @@ export default function JournalsPage() {
 
   useEffect(() => {
     fetchJournals();
+  }, [fetchJournals]);
+
+  // Refresh data when user returns to the page (e.g., after making changes in admin panel)
+  useEffect(() => {
+    const handleFocus = () => {
+      // Refresh journals when window regains focus (user might have made changes in another tab)
+      fetchJournals();
+    };
+
+    const handleVisibilityChange = () => {
+      // Refresh when tab becomes visible
+      if (!document.hidden) {
+        fetchJournals();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchJournals]);
 
   const subjectOptions = useMemo(() => {
@@ -411,20 +492,27 @@ export default function JournalsPage() {
     
     // Find shortcode for this journal
     let journalShortcode = journal.shortcode || '';
+    let journalName = '';
+    
     if (!journalShortcode) {
       // Try to find by journal name
-      for (const [shortcode, journalName] of shortcodeToJournalName.entries()) {
-        if (journal.title?.toLowerCase() === journalName.toLowerCase()) {
+      for (const [shortcode, name] of shortcodeToJournalName.entries()) {
+        if (journal.title?.toLowerCase() === name.toLowerCase()) {
           journalShortcode = shortcode;
+          journalName = name;
           break;
         }
       }
+    } else {
+      // Get journal name from shortcode map
+      journalName = shortcodeToJournalName.get(journalShortcode) || '';
     }
     
-    // Enhance journal with shortcode if found
+    // Enhance journal with shortcode and name if found
+    // Always include journalName - use from shortcode map if available, otherwise use title
     const journalWithShortcode = journalShortcode 
-      ? { ...journal, shortcode: journalShortcode }
-      : journal;
+      ? { ...journal, shortcode: journalShortcode, journalName: journalName || journal.title || '' }
+      : { ...journal, journalName: journal.title || '' };
 
     return (
       <JournalCard

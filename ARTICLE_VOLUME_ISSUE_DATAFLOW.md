@@ -133,3 +133,4 @@ This will create the migration file and apply it to your database.
 - The Archive page displays issues in descending order (newest first)
 - Issues within each year are sorted by volume (descending), then by issue (descending)
 
+

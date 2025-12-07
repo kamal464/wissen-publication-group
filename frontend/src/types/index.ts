@@ -5,6 +5,8 @@ export type Journal = {
   issn?: string;
   shortcode?: string;
   coverImage?: string;
+  bannerImage?: string;
+  flyerImage?: string;
   publisher?: string;
   accessType?: string;
   subjectArea?: string;
@@ -13,6 +15,28 @@ export type Journal = {
   impactFactor?: string;
   updatedAt?: string;
   createdAt?: string;
+  // Content Management Fields
+  aimsScope?: string;
+  guidelines?: string;
+  editorialBoard?: string;
+  homePageContent?: string;
+  currentIssueContent?: string;
+  archiveContent?: string;
+  articlesInPress?: string;
+  // Additional Journal Information
+  journalDescription?: string;
+  articleFormats?: string;
+  pubmedArticles?: string;
+  editorName?: string;
+  editorAffiliation?: string;
+  editorImage?: string;
+  impactFactorValue?: string;
+  citationsPercentage?: string;
+  acceptancePercentage?: string;
+  googleAnalyticsTitle?: string;
+  googleAnalyticsValue?: string;
+  googleAnalyticsUrl?: string;
+  googleIndexingImage?: string;
   _count?: {
     articles: number;
   };

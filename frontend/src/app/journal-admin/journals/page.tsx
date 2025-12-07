@@ -10,6 +10,7 @@ import { TabView, TabPanel } from 'primereact/tabview';
 import { FileUpload } from 'primereact/fileupload';
 import { adminAPI } from '@/lib/api';
 import { getFileUrl } from '@/lib/apiConfig';
+import { loadJournalData } from '@/lib/journalAdminUtils';
 
 interface Journal {
   id: number;
@@ -46,30 +47,35 @@ export default function ManageJournalInformation() {
   const loadJournal = async () => {
     try {
       setLoading(true);
-      const username = localStorage.getItem('journalAdminUser');
-      if (!username) {
-        toast.current?.show({ severity: 'error', summary: 'Error', detail: 'User not found' });
-        return;
-      }
-
-      // Get user's journal info
-      const usersResponse = await adminAPI.getUsers();
-      const users = (usersResponse.data as any[]) || [];
-      const user = users.find((u: any) => u.userName === username || u.journalShort === username);
       
-      if (!user || !user.journalName) {
-        toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Journal not found for this user' });
+      // Use loadJournalData() which correctly finds journal via JournalShortcode table
+      // This ensures we get the correct journal linked to the user's shortcode, not by title
+      const journalData = await loadJournalData();
+      
+      if (!journalData) {
+        toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Journal not found for this user. Please check console for details.' });
         return;
       }
 
-      // Get journal by name
-      const journalsResponse = await adminAPI.getJournals();
-      const journals = (journalsResponse.data as any[]) || [];
-      const foundJournal = journals.find((j: any) => j.title === user.journalName);
+      // Fetch the full journal details using the correct journalId
+      const journalResponse = await adminAPI.getJournal(journalData.journalId);
+      const foundJournal = journalResponse.data as any;
       
       if (foundJournal) {
+        // Verify the journal ID matches what we expect
+        console.log('📋 Loading journal:', {
+          journalId: foundJournal.id,
+          title: foundJournal.title,
+          shortcode: foundJournal.shortcode,
+          expectedJournalId: journalData.journalId,
+          match: foundJournal.id === journalData.journalId
+        });
+        
+        // Ensure we're using the correct journal ID from loadJournalData()
+        const correctJournalId = journalData.journalId;
+        
         setJournal({
-          id: foundJournal.id,
+          id: correctJournalId, // Always use the ID from loadJournalData(), not from API response
           title: foundJournal.title || '',
           issn: foundJournal.issn || '',
           journalImpactFactor: foundJournal.journalImpactFactor || '',
@@ -88,26 +94,7 @@ export default function ManageJournalInformation() {
           googleIndexingImage: foundJournal.googleIndexingImage || '',
         });
       } else {
-        // Create placeholder if journal doesn't exist
-        setJournal({
-          id: 0,
-          title: user.journalName,
-          issn: '',
-          journalImpactFactor: '',
-          articleProcessingCharge: '',
-          icv: '',
-          pubmedId: '',
-          indexingAbstracting: '',
-          email: '',
-          classification: '',
-          citationsValue: '',
-          acceptanceRate: '',
-          conferenceUrl: '',
-          bannerImage: '',
-          flyerImage: '',
-          flyerPdf: '',
-          googleIndexingImage: '',
-        });
+        toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Journal not found. Please check console for details.' });
       }
     } catch (error: any) {
       console.error('Error loading journal:', error);
@@ -154,49 +141,101 @@ export default function ManageJournalInformation() {
     try {
       setSaving(true);
       
-      // Get user's shortcode
+      // CRITICAL: Always get the correct journal ID from loadJournalData()
+      // This ensures we update the journal linked to the user's shortcode, not by title
+      const journalDataFromShortcode = await loadJournalData();
+      
+      if (!journalDataFromShortcode) {
+        toast.current?.show({ 
+          severity: 'error', 
+          summary: 'Error', 
+          detail: 'Could not find journal linked to your account. Please check console for details.' 
+        });
+        return;
+      }
+      
+      // Use the journal ID from loadJournalData() - this is the correct journal linked to the user's shortcode
+      const correctJournalId = journalDataFromShortcode.journalId;
+      
+      console.log('💾 Saving journal:', {
+        journalIdFromState: journal.id,
+        correctJournalId: correctJournalId,
+        title: journal.title,
+        userShortcode: localStorage.getItem('journalAdminUser')
+      });
+      
+      // Get user's shortcode - CRITICAL for finding the correct journal
       const username = localStorage.getItem('journalAdminUser');
       const usersResponse = await adminAPI.getUsers();
       const users = (usersResponse.data as any[]) || [];
       const user = users.find((u: any) => u.userName === username || u.journalShort === username);
       const userShortcode = user?.journalShort || user?.userName;
       
+      if (!userShortcode) {
+        toast.current?.show({ 
+          severity: 'error', 
+          summary: 'Error', 
+          detail: 'Could not determine user shortcode. Please contact administrator.' 
+        });
+        return;
+      }
+      
+      console.log('📤 Preparing journal data with shortcode:', {
+        userShortcode,
+        username,
+        correctJournalId,
+        journalIdFromState: journal.id
+      });
+      
       const journalData = {
         ...journal,
         title: journal.title,
         description: journal.title, // Use title as description if not provided
         issn: journal.issn,
-        shortcode: userShortcode, // Set shortcode from user
+        shortcode: userShortcode, // CRITICAL: Always include shortcode so backend can find existing journal
         impactFactor: journal.journalImpactFactor,
         // Map other fields as needed
       };
+      
+      console.log('📤 Journal data to send:', {
+        ...journalData,
+        shortcode: userShortcode // Log shortcode explicitly
+      });
 
-      if (journal.id > 0) {
-        await adminAPI.updateJournal(journal.id, journalData);
+      // CRITICAL: Always update the existing journal linked to the user's shortcode
+      // Never create a new journal - the journal should already exist from user creation
+      if (correctJournalId > 0) {
+        console.log(`✅ Updating journal with ID ${correctJournalId} (linked to shortcode "${userShortcode}")`);
+        await adminAPI.updateJournal(correctJournalId, journalData);
         toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Journal information updated successfully' });
       } else {
-        const response = await adminAPI.createJournal(journalData);
-        const responseData = response.data as { id?: number };
-        setJournal({ ...journal, id: responseData.id || 0 });
-        toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Journal information created successfully' });
-        
-        // Update the JournalShortcode to link to the created journal
-        if (userShortcode) {
-          try {
-            const shortcodesResponse = await adminAPI.getJournalShortcodes();
-            const shortcodes = (shortcodesResponse.data as any[]) || [];
-            const shortcodeEntry = shortcodes.find((sc: any) => sc.shortcode === userShortcode);
-            if (shortcodeEntry && !shortcodeEntry.journalId) {
-              // The backend should handle this, but we can trigger a refresh
-              await loadJournal();
-            }
-          } catch (e) {
-            console.error('Error updating shortcode link:', e);
-          }
+        // This should not happen - journal should exist from user creation
+        // But if it doesn't, the backend createJournal will check and update existing journal if found
+        console.warn(`⚠️ No journal found for shortcode "${userShortcode}", attempting to create/update`);
+        try {
+          // The backend createJournal method now checks if a journal exists for this shortcode
+          // and updates it instead of creating a new one
+          const response = await adminAPI.createJournal(journalData);
+          const responseData = response.data as { id?: number };
+          const newJournalId = responseData.id || 0;
+          setJournal({ ...journal, id: newJournalId });
+          toast.current?.show({ 
+            severity: 'success', 
+            summary: 'Success', 
+            detail: 'Journal information saved successfully' 
+          });
+        } catch (createError: any) {
+          console.error('Error creating/updating journal:', createError);
+          toast.current?.show({ 
+            severity: 'error', 
+            summary: 'Error', 
+            detail: createError.response?.data?.message || 'Failed to save journal information' 
+          });
         }
       }
       setShowDialog(false);
-      loadJournal();
+      // Reload journal to get the latest data
+      await loadJournal();
     } catch (error: any) {
       console.error('Error saving journal:', error);
       toast.current?.show({ 
