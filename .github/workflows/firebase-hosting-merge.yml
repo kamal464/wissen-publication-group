@@ -130,42 +130,72 @@ jobs:
         working-directory: ./backend
         run: npx prisma generate
 
-      - name: Verify Database Connection
-        working-directory: ./backend
-        run: |
-          echo "🔍 Verifying database connection..."
-          # Ensure DATABASE_URL has SSL parameters for Supabase
-          DB_URL="${{ secrets.DATABASE_URL }}"
-          if [[ "$DB_URL" != *"sslmode"* ]]; then
-            if [[ "$DB_URL" == *"?"* ]]; then
-              DB_URL="${DB_URL}&sslmode=require"
-            else
-              DB_URL="${DB_URL}?sslmode=require"
-            fi
-          fi
-          DATABASE_URL="$DB_URL" npx prisma db pull --force || echo "⚠️ Database connection check failed, but continuing..."
-
       - name: Deploy Database Migrations
         working-directory: ./backend
         run: |
           echo "🚀 Deploying database migrations to production..."
-          # Ensure DATABASE_URL has SSL parameters for Supabase
           DB_URL="${{ secrets.DATABASE_URL }}"
-          if [[ "$DB_URL" != *"sslmode"* ]]; then
-            if [[ "$DB_URL" == *"?"* ]]; then
-              DB_URL="${DB_URL}&sslmode=require"
-            else
-              DB_URL="${DB_URL}?sslmode=require"
+          
+          # Function to add SSL and configure URL
+          configure_db_url() {
+            local url=$1
+            local port=$2
+            # Replace port in URL
+            url="${url//:5432\//:$port/}"
+            url="${url//:6543\//:$port/}"
+            
+            # Add SSL if not present
+            if [[ "$url" != *"sslmode"* ]]; then
+              if [[ "$url" == *"?"* ]]; then
+                url="${url}&sslmode=require"
+              else
+                url="${url}?sslmode=require"
+              fi
             fi
-            echo "📝 Added SSL mode to DATABASE_URL"
+            
+            # For pooler, add pgbouncer parameter
+            if [[ "$port" == "6543" ]] && [[ "$url" != *"pgbouncer"* ]]; then
+              if [[ "$url" == *"?"* ]]; then
+                url="${url}&pgbouncer=true"
+              else
+                url="${url}?pgbouncer=true"
+              fi
+            fi
+            
+            echo "$url"
+          }
+          
+          # Try direct connection first (port 5432)
+          echo "🔐 Attempting direct connection (port 5432) with SSL..."
+          DB_DIRECT=$(configure_db_url "$DB_URL" "5432")
+          
+          if DATABASE_URL="$DB_DIRECT" timeout 30 npx prisma migrate deploy 2>/dev/null; then
+            echo "✅ Database migrations deployed successfully via direct connection!"
+            exit 0
           fi
-          echo "🔐 Using DATABASE_URL with SSL configuration"
-          if DATABASE_URL="$DB_URL" npx prisma migrate deploy; then
-            echo "✅ Database migrations deployed successfully!"
-          else
-            echo "❌ Migration deployment failed!"
-            exit 1
+          
+          # If direct fails, try connection pooler (port 6543)
+          echo "⚠️ Direct connection failed, trying connection pooler (port 6543)..."
+          DB_POOLER=$(configure_db_url "$DB_URL" "6543")
+          
+          if DATABASE_URL="$DB_POOLER" timeout 30 npx prisma migrate deploy 2>/dev/null; then
+            echo "✅ Database migrations deployed successfully via connection pooler!"
+            exit 0
           fi
+          
+          # Both failed
+          echo "❌ Both direct and pooler connections failed!"
+          echo ""
+          echo "Possible solutions:"
+          echo "1. Update DATABASE_URL secret to use Supabase connection pooler URL:"
+          echo "   Format: postgresql://user:pass@host:6543/db?sslmode=require&pgbouncer=true"
+          echo ""
+          echo "2. Allow GitHub Actions IPs in Supabase dashboard:"
+          echo "   - Go to Supabase Dashboard > Settings > Database"
+          echo "   - Add GitHub Actions IP ranges to allowed IPs"
+          echo ""
+          echo "3. Use Supabase's transaction pooler mode for migrations"
+          exit 1
 
       - name: Build Backend
         working-directory: ./backend
