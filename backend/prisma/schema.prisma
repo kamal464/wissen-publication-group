@@ -129,6 +129,8 @@ model Article {
   heading4Content String? @db.Text
   heading5Title   String?
   heading5Content String? @db.Text
+  // Test column to verify schema sync
+  schemaSyncTest  String? // Test column - can be removed after verification
 }
 
 model Author {
