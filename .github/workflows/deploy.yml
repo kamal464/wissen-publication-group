@@ -29,6 +29,23 @@ jobs:
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker
 
+      - name: Setup Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: ./backend
+        run: npx prisma generate
+
+      - name: Deploy Database Migrations
+        working-directory: ./backend
+        run: |
+          echo "🚀 Deploying database migrations to production..."
+          npx prisma migrate deploy
+          echo "✅ Database migrations deployed successfully!"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Build Backend Docker Image
         working-directory: ./backend
         run: |

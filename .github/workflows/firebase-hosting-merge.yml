@@ -138,6 +138,15 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
+      - name: Deploy Database Migrations
+        working-directory: ./backend
+        run: |
+          echo "🚀 Deploying database migrations to production..."
+          npx prisma migrate deploy
+          echo "✅ Database migrations deployed successfully!"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Build Backend
         working-directory: ./backend
         run: npm run build
