@@ -134,18 +134,38 @@ jobs:
         working-directory: ./backend
         run: |
           echo "🔍 Verifying database connection..."
-          npx prisma db pull --force || echo "⚠️ Database connection check failed, but continuing..."
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Ensure DATABASE_URL has SSL parameters for Supabase
+          DB_URL="${{ secrets.DATABASE_URL }}"
+          if [[ "$DB_URL" != *"sslmode"* ]]; then
+            if [[ "$DB_URL" == *"?"* ]]; then
+              DB_URL="${DB_URL}&sslmode=require"
+            else
+              DB_URL="${DB_URL}?sslmode=require"
+            fi
+          fi
+          DATABASE_URL="$DB_URL" npx prisma db pull --force || echo "⚠️ Database connection check failed, but continuing..."
 
       - name: Deploy Database Migrations
         working-directory: ./backend
         run: |
           echo "🚀 Deploying database migrations to production..."
-          npx prisma migrate deploy
-          echo "✅ Database migrations deployed successfully!"
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Ensure DATABASE_URL has SSL parameters for Supabase
+          DB_URL="${{ secrets.DATABASE_URL }}"
+          if [[ "$DB_URL" != *"sslmode"* ]]; then
+            if [[ "$DB_URL" == *"?"* ]]; then
+              DB_URL="${DB_URL}&sslmode=require"
+            else
+              DB_URL="${DB_URL}?sslmode=require"
+            fi
+            echo "📝 Added SSL mode to DATABASE_URL"
+          fi
+          echo "🔐 Using DATABASE_URL with SSL configuration"
+          if DATABASE_URL="$DB_URL" npx prisma migrate deploy; then
+            echo "✅ Database migrations deployed successfully!"
+          else
+            echo "❌ Migration deployment failed!"
+            exit 1
+          fi
 
       - name: Build Backend
         working-directory: ./backend
