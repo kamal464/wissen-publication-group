@@ -48,17 +48,18 @@ RUN chmod +x scripts/run-migrations.sh
 # Expose port
 EXPOSE 8080
 
-# Create entrypoint script that runs migrations then starts the app
+# Create entrypoint script that starts the app
+# Note: Migrations are now run in the GitHub Actions workflow before deployment
 RUN echo '#!/bin/sh' > /app/entrypoint.sh && \
     echo 'set -e' >> /app/entrypoint.sh && \
-    echo 'echo "🔄 Running database migrations..."' >> /app/entrypoint.sh && \
-    echo 'npx prisma migrate deploy || echo "⚠️ Migration failed or already applied"' >> /app/entrypoint.sh && \
-    echo 'echo "✅ Migrations completed"' >> /app/entrypoint.sh && \
-    echo 'echo "🚀 Starting application..."' >> /app/entrypoint.sh && \
+    echo 'echo "🚀 Starting Wissen Publication Group API..."' >> /app/entrypoint.sh && \
+    echo 'echo "📊 Environment: ${NODE_ENV}"' >> /app/entrypoint.sh && \
+    echo 'echo "🔌 PORT: ${PORT}"' >> /app/entrypoint.sh && \
+    echo 'echo "💾 DATABASE_URL: $([ -n "$DATABASE_URL" ] && echo "Set" || echo "Not set")"' >> /app/entrypoint.sh && \
     echo 'exec node dist/src/main.js' >> /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh
 
-# Start application (runs migrations first, but NOT data migration)
-# Note: Data migration must be done separately using scripts/migrate-data.ts
+# Start application
+# Note: Migrations are handled by GitHub Actions workflow before deployment
 CMD ["/app/entrypoint.sh"]
 
