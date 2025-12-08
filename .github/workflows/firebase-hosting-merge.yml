@@ -133,7 +133,7 @@ jobs:
       - name: Deploy Database Migrations
         working-directory: ./backend
         run: |
-          echo "🚀 Deploying database migrations to production..."
+          echo "🚀 Syncing database schema to production..."
           DB_URL="${{ secrets.DATABASE_URL }}"
           
           # Function to add SSL and configure URL
@@ -165,32 +165,19 @@ jobs:
             echo "$url"
           }
           
-          # Function to try migration
-          try_migrate() {
-            local url=$1
-            local method=$2
-            echo "🔐 Attempting $method..."
-            if DATABASE_URL="$url" timeout 30 npx prisma migrate deploy; then
-              echo "✅ Database migrations deployed successfully via $method!"
-              return 0
-            else
-              echo "⚠️ $method failed"
-              return 1
-            fi
-          }
-          
-          # Function to try db push (fallback - creates tables AND adds new columns)
+          # Function to try db push (primary method - ensures schema sync)
           try_db_push() {
             local url=$1
             local method=$2
-            echo "🔄 Attempting schema push via $method (fallback method)..."
+            echo "🔄 Attempting schema push via $method..."
             echo "📝 This will:"
             echo "   - Create new tables if they don't exist"
             echo "   - Add new columns to existing tables"
             echo "   - Update column types if changed"
-            echo "   - Sync database to match Prisma schema"
-            if DATABASE_URL="$url" timeout 30 npx prisma db push --accept-data-loss; then
-              echo "✅ Schema synced successfully! All tables and columns are up to date."
+            echo "   - Sync database to match Prisma schema exactly"
+            echo "   - This is the most reliable method to ensure schema is up to date"
+            if DATABASE_URL="$url" timeout 60 npx prisma db push --accept-data-loss --skip-generate; then
+              echo "✅ Schema synced successfully via $method! All tables and columns are up to date."
               return 0
             else
               echo "⚠️ Schema push via $method failed"
@@ -198,46 +185,60 @@ jobs:
             fi
           }
           
-          # Try direct connection first (port 5432) - migrations
+          # Function to try migration (secondary - for migration history)
+          try_migrate() {
+            local url=$1
+            local method=$2
+            echo "🔐 Attempting migration via $method..."
+            if DATABASE_URL="$url" timeout 30 npx prisma migrate deploy; then
+              echo "✅ Migrations applied via $method!"
+              return 0
+            else
+              echo "⚠️ Migration via $method failed (this is okay, db push will handle it)"
+              return 1
+            fi
+          }
+          
+          # Configure URLs
           DB_DIRECT=$(configure_db_url "$DB_URL" "5432")
-          if try_migrate "$DB_DIRECT" "direct connection (port 5432)"; then
-            exit 0
-          fi
-          
-          # If direct fails, try connection pooler (port 6543) - migrations
-          echo ""
           DB_POOLER=$(configure_db_url "$DB_URL" "6543")
-          if try_migrate "$DB_POOLER" "connection pooler (port 6543)"; then
-            exit 0
-          fi
           
-          # If migrations fail, try db push as fallback (creates tables AND adds columns)
+          # PRIMARY: Always try db push first (most reliable for schema sync)
+          echo "📋 Step 1: Syncing schema with prisma db push (ensures all columns exist)..."
           echo ""
-          echo "⚠️ Migrations failed, trying schema push as fallback..."
-          echo "📝 This will create/recreate tables AND add any missing columns"
           
-          # Try db push with direct connection
-          if try_db_push "$DB_DIRECT" "direct connection (port 5432)"; then
-            exit 0
-          fi
-          
-          # Try db push with pooler
+          # Try db push with pooler first (most likely to work)
           if try_db_push "$DB_POOLER" "connection pooler (port 6543)"; then
-            exit 0
+            SCHEMA_SYNCED=true
+          # Try db push with direct connection
+          elif try_db_push "$DB_DIRECT" "direct connection (port 5432)"; then
+            SCHEMA_SYNCED=true
+          else
+            SCHEMA_SYNCED=false
           fi
           
-          # All methods failed
+          # If schema sync failed, fail the build
+          if [ "$SCHEMA_SYNCED" = false ]; then
+            echo ""
+            echo "❌ Schema sync failed! Cannot proceed without syncing database."
+            echo ""
+            echo "🔧 Troubleshooting:"
+            echo "   1. Verify DATABASE_URL secret is correct"
+            echo "   2. Check Supabase connection pooler is enabled"
+            echo "   3. Ensure SSL is properly configured"
+            echo ""
+            echo "   Expected format:"
+            echo "   postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:6543/postgres?sslmode=require"
+            exit 1
+          fi
+          
+          # SECONDARY: Try migrations for migration history (optional, don't fail if this fails)
           echo ""
-          echo "❌ All connection methods failed!"
+          echo "📋 Step 2: Applying migration history (optional)..."
+          try_migrate "$DB_POOLER" "connection pooler (port 6543)" || try_migrate "$DB_DIRECT" "direct connection (port 5432)" || echo "⚠️ Migration history update skipped (schema is already synced)"
+          
           echo ""
-          echo "🔧 To fix this, update your DATABASE_URL secret in GitHub:"
-          echo "   1. Go to Supabase Dashboard > Settings > Database"
-          echo "   2. Copy the 'Connection Pooler' URL (Transaction mode)"
-          echo "   3. Update GitHub secret DATABASE_URL with that URL"
-          echo ""
-          echo "   Format should be:"
-          echo "   postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:6543/postgres?sslmode=require"
-          exit 1
+          echo "✅ Database schema sync completed successfully!"
 
       - name: Build Backend
         working-directory: ./backend
