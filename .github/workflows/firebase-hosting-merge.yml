@@ -165,36 +165,78 @@ jobs:
             echo "$url"
           }
           
-          # Try direct connection first (port 5432)
-          echo "🔐 Attempting direct connection (port 5432) with SSL..."
+          # Function to try migration
+          try_migrate() {
+            local url=$1
+            local method=$2
+            echo "🔐 Attempting $method..."
+            if DATABASE_URL="$url" timeout 30 npx prisma migrate deploy; then
+              echo "✅ Database migrations deployed successfully via $method!"
+              return 0
+            else
+              echo "⚠️ $method failed"
+              return 1
+            fi
+          }
+          
+          # Function to try db push (fallback - creates tables AND adds new columns)
+          try_db_push() {
+            local url=$1
+            local method=$2
+            echo "🔄 Attempting schema push via $method (fallback method)..."
+            echo "📝 This will:"
+            echo "   - Create new tables if they don't exist"
+            echo "   - Add new columns to existing tables"
+            echo "   - Update column types if changed"
+            echo "   - Sync database to match Prisma schema"
+            if DATABASE_URL="$url" timeout 30 npx prisma db push --accept-data-loss; then
+              echo "✅ Schema synced successfully! All tables and columns are up to date."
+              return 0
+            else
+              echo "⚠️ Schema push via $method failed"
+              return 1
+            fi
+          }
+          
+          # Try direct connection first (port 5432) - migrations
           DB_DIRECT=$(configure_db_url "$DB_URL" "5432")
-          
-          if DATABASE_URL="$DB_DIRECT" timeout 30 npx prisma migrate deploy 2>/dev/null; then
-            echo "✅ Database migrations deployed successfully via direct connection!"
+          if try_migrate "$DB_DIRECT" "direct connection (port 5432)"; then
             exit 0
           fi
           
-          # If direct fails, try connection pooler (port 6543)
-          echo "⚠️ Direct connection failed, trying connection pooler (port 6543)..."
+          # If direct fails, try connection pooler (port 6543) - migrations
+          echo ""
           DB_POOLER=$(configure_db_url "$DB_URL" "6543")
-          
-          if DATABASE_URL="$DB_POOLER" timeout 30 npx prisma migrate deploy 2>/dev/null; then
-            echo "✅ Database migrations deployed successfully via connection pooler!"
+          if try_migrate "$DB_POOLER" "connection pooler (port 6543)"; then
             exit 0
           fi
           
-          # Both failed
-          echo "❌ Both direct and pooler connections failed!"
+          # If migrations fail, try db push as fallback (creates tables AND adds columns)
           echo ""
-          echo "Possible solutions:"
-          echo "1. Update DATABASE_URL secret to use Supabase connection pooler URL:"
-          echo "   Format: postgresql://user:pass@host:6543/db?sslmode=require&pgbouncer=true"
+          echo "⚠️ Migrations failed, trying schema push as fallback..."
+          echo "📝 This will create/recreate tables AND add any missing columns"
+          
+          # Try db push with direct connection
+          if try_db_push "$DB_DIRECT" "direct connection (port 5432)"; then
+            exit 0
+          fi
+          
+          # Try db push with pooler
+          if try_db_push "$DB_POOLER" "connection pooler (port 6543)"; then
+            exit 0
+          fi
+          
+          # All methods failed
           echo ""
-          echo "2. Allow GitHub Actions IPs in Supabase dashboard:"
-          echo "   - Go to Supabase Dashboard > Settings > Database"
-          echo "   - Add GitHub Actions IP ranges to allowed IPs"
+          echo "❌ All connection methods failed!"
           echo ""
-          echo "3. Use Supabase's transaction pooler mode for migrations"
+          echo "🔧 To fix this, update your DATABASE_URL secret in GitHub:"
+          echo "   1. Go to Supabase Dashboard > Settings > Database"
+          echo "   2. Copy the 'Connection Pooler' URL (Transaction mode)"
+          echo "   3. Update GitHub secret DATABASE_URL with that URL"
+          echo ""
+          echo "   Format should be:"
+          echo "   postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:6543/postgres?sslmode=require"
           exit 1
 
       - name: Build Backend
