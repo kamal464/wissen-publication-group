@@ -279,5 +279,6 @@ export declare class JournalsController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     })[]>;
 }

@@ -101,6 +101,7 @@ export declare class AdminController {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
     }>;
     getSearchAnalytics(): Promise<{
@@ -215,6 +216,7 @@ export declare class AdminController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     createJournal(journalData: any): Promise<any>;
     updateJournal(id: number, journalData: any): Promise<any>;
@@ -390,6 +392,7 @@ export declare class AdminController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     })[]>;
     getSubmission(id: number): Promise<({
         journal: {
@@ -493,6 +496,7 @@ export declare class AdminController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }) | null>;
     getJournalShortcodes(): Promise<{
         id: number;
@@ -611,6 +615,7 @@ export declare class AdminController {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
         journals: {
             id: number;

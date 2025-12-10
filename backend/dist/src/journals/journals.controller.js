@@ -24,8 +24,14 @@ let JournalsController = class JournalsController {
     create(createJournalDto) {
         return this.journalsService.create(createJournalDto);
     }
-    findAll() {
-        return this.journalsService.findAll();
+    async findAll() {
+        try {
+            return await this.journalsService.findAll();
+        }
+        catch (error) {
+            console.error('Error in JournalsController.findAll:', error);
+            throw error;
+        }
     }
     findByShortcode(shortcode) {
         return this.journalsService.findByShortcode(shortcode);
@@ -55,7 +61,7 @@ __decorate([
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], JournalsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)('shortcode/:shortcode'),

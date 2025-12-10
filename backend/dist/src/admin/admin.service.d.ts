@@ -114,6 +114,7 @@ export declare class AdminService {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
     }>;
     getSearchAnalytics(): Promise<{
@@ -228,6 +229,7 @@ export declare class AdminService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     createJournal(journalData: any): Promise<any>;
     updateJournal(journalId: number, journalData: any): Promise<any>;
@@ -310,7 +312,6 @@ export declare class AdminService {
         journalName: string | null;
         isActive: boolean;
     } | null>;
-    private generateUniqueShortcode;
     createUser(userData: any): Promise<{
         id: number;
         createdAt: Date;
@@ -407,6 +408,7 @@ export declare class AdminService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     })[]>;
     getSubmission(id: number): Promise<({
         journal: {
@@ -510,6 +512,7 @@ export declare class AdminService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }) | null>;
     getJournalShortcodes(): Promise<{
         id: number;
@@ -612,6 +615,7 @@ export declare class AdminService {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
         journals: {
             id: number;

@@ -59,6 +59,7 @@ export declare class ArticlesService {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
         meta: {
             total: number;
@@ -121,6 +122,7 @@ export declare class ArticlesService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     findRelated(id: number, limit?: number): Promise<({
         journal: {
@@ -174,6 +176,7 @@ export declare class ArticlesService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     })[]>;
     create(createArticleDto: CreateArticleDto): Promise<{
         journal: {
@@ -277,6 +280,7 @@ export declare class ArticlesService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     update(id: number, updateArticleDto: UpdateArticleDto): Promise<{
         journal: {
@@ -380,6 +384,7 @@ export declare class ArticlesService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     remove(id: number): Promise<{
         id: number;
@@ -421,6 +426,7 @@ export declare class ArticlesService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     submitManuscript(manuscriptDto: SubmitManuscriptDto, file?: any): Promise<{
         success: boolean;
@@ -479,6 +485,7 @@ export declare class ArticlesService {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         };
         manuscriptId: number;
     }>;

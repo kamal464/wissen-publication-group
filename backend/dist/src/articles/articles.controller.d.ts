@@ -106,6 +106,7 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     findAll(journalId?: string, search?: string, status?: string, sortBy?: string, sortOrder?: 'asc' | 'desc', page?: string, limit?: string): Promise<{
         data: ({
@@ -161,6 +162,7 @@ export declare class ArticlesController {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
         meta: {
             total: number;
@@ -223,6 +225,7 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     findRelated(id: number, limit?: string): Promise<({
         journal: {
@@ -276,6 +279,7 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     })[]>;
     update(id: number, updateArticleDto: UpdateArticleDto): Promise<{
         journal: {
@@ -379,6 +383,7 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     submitManuscript(title: string, journalId: string, abstract: string, keywords: string, authorsJson: string, file?: Express.Multer.File): Promise<{
         success: boolean;
@@ -437,6 +442,7 @@ export declare class ArticlesController {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         };
         manuscriptId: number;
     }>;
@@ -542,6 +548,7 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     uploadImages(id: number, files: Express.Multer.File[]): Promise<{
         journal: {
@@ -645,6 +652,7 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     remove(id: number): Promise<{
         id: number;
@@ -686,5 +694,6 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
 }

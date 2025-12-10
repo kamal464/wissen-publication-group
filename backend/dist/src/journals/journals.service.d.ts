@@ -280,5 +280,6 @@ export declare class JournalsService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     })[]>;
 }
