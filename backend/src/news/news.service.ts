@@ -6,28 +6,40 @@ export class NewsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(journalId?: number) {
-    return this.prisma.news.findMany({
-      orderBy: [
-        { isPinned: 'desc' },
-        { publishedAt: 'desc' },
-        { createdAt: 'desc' },
-      ],
-    });
+    try {
+      return await this.prisma.news.findMany({
+        orderBy: [
+          { isPinned: 'desc' },
+          { publishedAt: 'desc' },
+          { createdAt: 'desc' },
+        ],
+      });
+    } catch (error) {
+      console.error('Error in NewsService.findAll:', error);
+      throw error;
+    }
   }
 
   async findLatest(limit: number = 5) {
-    return this.prisma.news.findMany({
-      where: {
-        publishedAt: {
-          lte: new Date(),
+    try {
+      return await this.prisma.news.findMany({
+        where: {
+          OR: [
+            { publishedAt: { lte: new Date() } },
+            { publishedAt: null },
+          ],
         },
-      },
-      orderBy: [
-        { isPinned: 'desc' },
-        { publishedAt: 'desc' },
-      ],
-      take: limit,
-    });
+        orderBy: [
+          { isPinned: 'desc' },
+          { publishedAt: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        take: limit,
+      });
+    } catch (error) {
+      console.error('Error in NewsService.findLatest:', error);
+      throw error;
+    }
   }
 
   async findOne(id: number) {

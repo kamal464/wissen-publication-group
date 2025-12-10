@@ -546,7 +546,7 @@
 // Grid view variant
 .journal-card--grid {
   flex-direction: column;
-  max-width: 350px;
+  // Removed max-width to allow cards to stretch in 5-column grid
   
   .journal-card__image-container {
     width: 100%;

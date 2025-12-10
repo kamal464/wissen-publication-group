@@ -12,8 +12,13 @@ export class JournalsController {
   }
 
   @Get()
-  findAll() {
-    return this.journalsService.findAll();
+  async findAll() {
+    try {
+      return await this.journalsService.findAll();
+    } catch (error) {
+      console.error('Error in JournalsController.findAll:', error);
+      throw error;
+    }
   }
 
   @Get('shortcode/:shortcode')

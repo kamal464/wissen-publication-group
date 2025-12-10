@@ -185,6 +185,20 @@
       grid-template-columns: repeat(4, 1fr);
     }
   }
+
+  // Grid view - 5 columns (stretched to fill full width)
+  &--cards-5 {
+    grid-template-columns: 1fr;
+    
+    @media (min-width: 640px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(5, 1fr);
+      grid-auto-flow: row;
+    }
+  }
 }
 
 // Journal Cards

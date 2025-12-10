@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useRouter, usePathname } from 'next/navigation';
+import { useParams, useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Dialog } from 'primereact/dialog';
 import Header from '@/components/layout/Header';
@@ -22,6 +22,7 @@ export default function JournalDetailPage() {
   const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const shortcode = params?.shortcode as string;
   
   const [journal, setJournal] = useState<any | null>(null);
@@ -29,6 +30,7 @@ export default function JournalDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeMenu, setActiveMenu] = useState('home');
   const [content, setContent] = useState<string>('');
+  const [contentLoading, setContentLoading] = useState(false);
   const [boardMembers, setBoardMembers] = useState<any[]>([]);
   const [articles, setArticles] = useState<any[]>([]);
   const [archiveIssues, setArchiveIssues] = useState<Map<number, any[]>>(new Map());
@@ -329,11 +331,16 @@ export default function JournalDetailPage() {
     }
 
     try {
-      // Fetch full journal details to ensure we have all content fields
+      setContentLoading(true);
+      // Clear content immediately to prevent showing stale data
+      setContent('');
+      
+      // Always fetch fresh journal details to ensure we have the latest content
       let journalData = journal;
       if (journal.id > 0) {
         try {
           console.log(`Loading section content for journal ID: ${journal.id}, section: ${section}`);
+          // Add timestamp to prevent caching
           const fullJournalResponse = await adminAPI.getJournal(journal.id) as any;
           
           // Handle different response structures
@@ -348,7 +355,8 @@ export default function JournalDetailPage() {
             fullJournalData = fullJournalResponse;
           }
           
-          journalData = { ...journal, ...fullJournalData };
+          // Merge with existing journal data, preserving shortcode
+          journalData = { ...journal, ...fullJournalData, shortcode: journal.shortcode || shortcode };
           
           console.log(`Journal data for section ${section}:`, {
             hasHomePageContent: !!journalData.homePageContent,
@@ -360,7 +368,7 @@ export default function JournalDetailPage() {
             guidelinesPreview: journalData.guidelines?.substring(0, 100),
           });
           
-          // Update journal state with full data
+          // Update journal state with fresh data
           setJournal(journalData);
         } catch (err) {
           console.error('Error fetching journal details:', err);
@@ -369,7 +377,7 @@ export default function JournalDetailPage() {
             response: (err as any)?.response?.data,
             status: (err as any)?.response?.status,
           });
-          // Use existing journal data
+          // Use existing journal data but still proceed
         }
       }
 
@@ -505,28 +513,33 @@ export default function JournalDetailPage() {
     } catch (err) {
       console.error('Error loading section content:', err);
       setContent('Content not available.');
+    } finally {
+      setContentLoading(false);
     }
-  }, [journal]);
+  }, [journal, shortcode]);
 
   useEffect(() => {
     // Get section from URL query params when pathname or search changes
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const section = urlParams.get('section') || 'home';
+    if (journal) {
+      const section = searchParams.get('section') || 'home';
       
-      // Only update if section actually changed
+      // Always update active menu and load content when URL changes
       if (activeMenu !== section) {
         setActiveMenu(section);
-        
-        // Clear content first to prevent showing old data
+        // Clear previous section data to prevent showing stale content
         setContent('');
+        setBoardMembers([]);
+        setArticles([]);
+        setArchiveIssues(new Map());
         
+        // Load content for the new section
         if (journal && journal.id > 0) {
           loadSectionContent(section);
         }
       }
     }
-  }, [pathname, journal, loadSectionContent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, searchParams, journal?.id]);
 
   if (loading) {
     return (
@@ -701,15 +714,20 @@ export default function JournalDetailPage() {
                             onClick={async (e) => {
                               e.preventDefault();
                               const section = item.id;
-                              setActiveMenu(section);
-                              // Clear content first to prevent showing old data
-                              setContent('');
-                              // Update URL without page refresh
+                              
+                              // Don't reload if clicking the same section
+                              if (activeMenu === section) {
+                                return;
+                              }
+                              
+                              // Update URL first
                               const url = section === 'home' 
                                 ? `/journals/${shortcode}` 
                                 : `/journals/${shortcode}?section=${section}`;
                               router.push(url, { scroll: false });
-                              // Load content immediately
+                              
+                              // Update active menu and load content
+                              setActiveMenu(section);
                               if (journal && journal.id > 0) {
                                 await loadSectionContent(section);
                               }
@@ -907,7 +925,11 @@ export default function JournalDetailPage() {
                   {/* Additional Home Page Content */}
                   {activeMenu === 'home' && (
                     <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 w-full">
-                      {content ? (
+                      {contentLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                          <i className="pi pi-spin pi-spinner text-4xl text-blue-600"></i>
+                        </div>
+                      ) : content ? (
                         <div 
                           className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
                           dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br>') }}
@@ -929,7 +951,11 @@ export default function JournalDetailPage() {
                     Editorial Board
                   </h2>
                   
-                  {boardMembers.length > 0 ? (
+                  {contentLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <i className="pi pi-spin pi-spinner text-4xl text-blue-600"></i>
+                    </div>
+                  ) : boardMembers.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {boardMembers.map((member) => {
                         const imageUrl = member.imageUrl ? getFileUrl(member.imageUrl) : null;
@@ -1027,7 +1053,11 @@ export default function JournalDetailPage() {
                     <span>{activeMenu === 'in-press' ? 'Articles Inpress' : 'Current Issue Articles'}</span>
                   </h2>
                   
-                  {articles.length > 0 ? (
+                  {contentLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <i className="pi pi-spin pi-spinner text-4xl text-blue-600"></i>
+                    </div>
+                  ) : articles.length > 0 ? (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {articles.map((article: any) => {
                         const formatDate = (dateString?: string) => {
@@ -1184,7 +1214,11 @@ export default function JournalDetailPage() {
                     <h2 className="text-2xl font-bold text-gray-900">Archive</h2>
                   </div>
                   
-                  {archiveIssues.size > 0 ? (
+                  {contentLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <i className="pi pi-spin pi-spinner text-4xl text-blue-600"></i>
+                    </div>
+                  ) : archiveIssues.size > 0 ? (
                     <div className="space-y-6">
                       {/* Vertical Timeline Line */}
                       <div className="relative">
@@ -1275,26 +1309,32 @@ export default function JournalDetailPage() {
                     {activeMenu === 'aims-scope' && 'Aims and Scope'}
                     {activeMenu === 'guidelines' && 'Journal Guidelines'}
                   </h2>
-                  <div 
-                    className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-                    style={{ 
-                      lineHeight: '1.8',
-                      fontSize: '1.1rem',
-                      color: '#374151'
-                    }}
-                  >
-                    {content ? (
-                      <div 
-                        dangerouslySetInnerHTML={{ __html: content }} 
-                        style={{
-                          fontSize: '1.1rem',
-                          lineHeight: '1.8'
-                        }}
-                      />
-                    ) : (
-                      <p className="text-gray-500 italic text-lg">Content will be available soon.</p>
-                    )}
-                  </div>
+                  {contentLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <i className="pi pi-spin pi-spinner text-4xl text-blue-600"></i>
+                    </div>
+                  ) : (
+                    <div 
+                      className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
+                      style={{ 
+                        lineHeight: '1.8',
+                        fontSize: '1.1rem',
+                        color: '#374151'
+                      }}
+                    >
+                      {content ? (
+                        <div 
+                          dangerouslySetInnerHTML={{ __html: content }} 
+                          style={{
+                            fontSize: '1.1rem',
+                            lineHeight: '1.8'
+                          }}
+                        />
+                      ) : (
+                        <p className="text-gray-500 italic text-lg">Content will be available soon.</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 

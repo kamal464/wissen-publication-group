@@ -330,6 +330,25 @@ export class AdminService {
     if (!title) {
       throw new BadRequestException('Title is required and cannot be empty');
     }
+
+    // CRITICAL: Additional check - if no shortcode was provided, check if a journal with this exact title exists
+    // This prevents creating duplicate journals with the same title
+    if (!journalData.shortcode || !journalData.shortcode.trim()) {
+      const existingByTitle = await this.prisma.journal.findFirst({
+        where: {
+          title: title,
+          shortcode: null // Only match journals without shortcodes
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+      
+      if (existingByTitle) {
+        console.log(`✅ Found existing journal with title "${title}" (no shortcode) - updating instead of creating duplicate`);
+        return await this.updateJournal(existingByTitle.id, journalData);
+      }
+    }
     
     const data: any = {
       title: title,
@@ -352,24 +371,36 @@ export class AdminService {
     // If we reach here, either no shortcode was provided, or no journal exists for it
     if (isValidValue(journalData.shortcode)) {
       const shortcodeToUse = String(journalData.shortcode).trim();
-      // Double-check: Make sure we're not about to create a duplicate
-      // This is a safety net in case the check above didn't catch it
+      // Final safety check: Make absolutely sure we're not about to create a duplicate
+      // This is a critical safety net to catch race conditions or missed checks
       const finalCheck = await this.prisma.journal.findUnique({
         where: { shortcode: shortcodeToUse }
       });
       if (finalCheck) {
-        console.error(`❌ SAFETY CHECK FAILED: Journal with shortcode "${shortcodeToUse}" already exists (ID: ${finalCheck.id})`);
+        console.error(`❌ FINAL SAFETY CHECK FAILED: Journal with shortcode "${shortcodeToUse}" already exists (ID: ${finalCheck.id})`);
         console.error(`   This should have been caught by the check at the beginning. Updating existing journal instead.`);
         return await this.updateJournal(finalCheck.id, journalData);
       }
-      // Also check JournalShortcode table
+      // Also check JournalShortcode table one more time
       const finalShortcodeCheck = await this.prisma.journalShortcode.findUnique({
         where: { shortcode: shortcodeToUse }
       });
       if (finalShortcodeCheck && finalShortcodeCheck.journalId) {
-        console.error(`❌ SAFETY CHECK FAILED: JournalShortcode entry for "${shortcodeToUse}" already points to journal ID ${finalShortcodeCheck.journalId}`);
+        console.error(`❌ FINAL SAFETY CHECK FAILED: JournalShortcode entry for "${shortcodeToUse}" already points to journal ID ${finalShortcodeCheck.journalId}`);
         console.error(`   This should have been caught by the check at the beginning. Updating existing journal instead.`);
         return await this.updateJournal(finalShortcodeCheck.journalId, journalData);
+      }
+      // Also check if a journal with this title was just created (race condition protection)
+      const titleCheck = await this.prisma.journal.findFirst({
+        where: {
+          title: title,
+          shortcode: shortcodeToUse // Same shortcode
+        }
+      });
+      if (titleCheck) {
+        console.error(`❌ FINAL SAFETY CHECK FAILED: Journal with title "${title}" and shortcode "${shortcodeToUse}" already exists (ID: ${titleCheck.id})`);
+        console.error(`   Updating existing journal instead.`);
+        return await this.updateJournal(titleCheck.id, journalData);
       }
       // Safe to use this shortcode
       data.shortcode = shortcodeToUse;
@@ -549,7 +580,7 @@ export class AdminService {
     }
     if (journalData.issn !== undefined) updateData.issn = journalData.issn;
     
-    // Handle shortcode update - always generate unique shortcode if provided
+    // Handle shortcode update - use provided shortcode directly
     if (journalData.shortcode !== undefined) {
       // Get current journal to check if shortcode is actually changing
       const currentJournal = await this.prisma.journal.findUnique({
@@ -562,15 +593,8 @@ export class AdminService {
       
       // Only process if shortcode is actually changing
       if (newShortcode && newShortcode !== currentShortcode) {
-        // Always generate a unique shortcode to prevent conflicts
-        // This handles race conditions and ensures uniqueness
-        const uniqueShortcode = await this.generateUniqueShortcode(newShortcode);
-        updateData.shortcode = uniqueShortcode;
-        
-        // Log if shortcode was modified
-        if (uniqueShortcode !== newShortcode) {
-          console.log(`🔄 Shortcode "${newShortcode}" already exists, using unique shortcode: ${uniqueShortcode}`);
-        }
+        // Use the original shortcode directly - no unique generation
+        updateData.shortcode = newShortcode;
       } else if (newShortcode === currentShortcode) {
         // Shortcode is not changing, don't include it in updateData to avoid unnecessary update
       } else {
@@ -657,20 +681,9 @@ export class AdminService {
         });
         break; // Success, exit loop
       } catch (error: any) {
-        // If it's a unique constraint error for shortcode, generate a new one and retry
+        // If it's a unique constraint error for shortcode, throw error - don't generate unique shortcodes
         if (error?.code === 'P2002' && error?.meta?.target?.includes('shortcode')) {
-          retryCount++;
-          console.log(`🔄 Shortcode conflict during update (attempt ${retryCount}), generating unique shortcode...`);
-          // Get the shortcode that was attempted
-          const attemptedShortcode = updateData.shortcode || journalData.shortcode || 'journal';
-          // Generate a unique shortcode
-          const uniqueShortcode = await this.generateUniqueShortcode(attemptedShortcode);
-          updateData.shortcode = uniqueShortcode;
-          console.log(`✅ Retrying update with unique shortcode: ${uniqueShortcode}`);
-          
-          if (retryCount >= maxRetries) {
-            throw new InternalServerErrorException('Failed to update journal after multiple retries due to shortcode conflicts');
-          }
+          throw new ConflictException(`Shortcode "${updateData.shortcode || journalData.shortcode}" already exists. Please use a different shortcode.`);
         } else {
           // Some other error, re-throw it
           throw error;
@@ -781,37 +794,6 @@ export class AdminService {
   /**
    * Generate a unique shortcode by appending a random suffix if the base shortcode exists
    */
-  private async generateUniqueShortcode(baseShortcode: string): Promise<string> {
-    let shortcode = baseShortcode;
-    let attempts = 0;
-    const maxAttempts = 1000; // Prevent infinite loops
-    
-    while (attempts < maxAttempts) {
-      // Check if shortcode exists in JournalShortcode table
-      const existingShortcode = await this.prisma.journalShortcode.findUnique({
-        where: { shortcode }
-      });
-      
-      // Check if shortcode exists in Journal table
-      const existingJournal = await this.prisma.journal.findUnique({
-        where: { shortcode }
-      });
-      
-      // If shortcode doesn't exist, we can use it
-      if (!existingShortcode && !existingJournal) {
-        return shortcode;
-      }
-      
-      // Generate a new shortcode by appending a random suffix
-      const randomSuffix = Math.random().toString(36).substring(2, 8).toLowerCase(); // 6 random alphanumeric chars
-      shortcode = `${baseShortcode}_${randomSuffix}`;
-      attempts++;
-    }
-    
-    // Fallback: use timestamp if we've tried too many times
-    const timestamp = Date.now().toString(36);
-    return `${baseShortcode}_${timestamp}`;
-  }
 
   async createUser(userData: any) {
     try {
@@ -839,29 +821,123 @@ export class AdminService {
           .substring(0, 20) || 'journal';
       }
 
-      // Always create a new journal record when a user is assigned a journal, even if the title already exists
-      // This ensures each user assignment gets its own independent journal entry
-      let createdJournalId: number | null = null;
+      // CRITICAL: Check if a journal already exists for this shortcode BEFORE creating a new one
+      // This prevents duplicate journal creation when users are created
+      let existingJournalId: number | null = null;
       
-      // ALWAYS create a new journal for each new user, even if title or shortcode already exists
-      // This ensures each user gets their own independent journal with no shared data
-      // Generate a unique shortcode for the Journal table - this ensures no conflicts in the database
-      // The original shortcode will be used for login and JournalShortcode table
-      const uniqueJournalShortcode = await this.generateUniqueShortcode(originalShortcode);
+      if (journalName && originalShortcode) {
+        // Check if JournalShortcode entry exists and points to a journal
+        const existingShortcodeEntry = await this.prisma.journalShortcode.findUnique({
+          where: { shortcode: originalShortcode.trim() }
+        });
+        
+        if (existingShortcodeEntry && existingShortcodeEntry.journalId) {
+          // Journal already exists for this shortcode - use it
+          existingJournalId = existingShortcodeEntry.journalId;
+          console.log(`✅ Found existing journal (ID: ${existingJournalId}) for shortcode "${originalShortcode}" - linking user to it instead of creating duplicate`);
+        } else {
+          // Check if a journal exists with this shortcode directly
+          const existingJournal = await this.prisma.journal.findUnique({
+            where: { shortcode: originalShortcode.trim() }
+          });
+          
+          if (existingJournal) {
+            // Journal exists with this shortcode - use it
+            existingJournalId = existingJournal.id;
+            console.log(`✅ Found existing journal (ID: ${existingJournalId}) with shortcode "${originalShortcode}" - linking user to it instead of creating duplicate`);
+            
+            // Ensure JournalShortcode entry exists and points to this journal
+            if (!existingShortcodeEntry) {
+              await this.prisma.journalShortcode.create({
+                data: {
+                  shortcode: originalShortcode.trim(),
+                  journalName: journalName,
+                  journalId: existingJournalId
+                }
+              });
+            } else if (existingShortcodeEntry.journalId !== existingJournalId) {
+              // Update existing entry to point to the correct journal
+              await this.prisma.journalShortcode.update({
+                where: { shortcode: originalShortcode.trim() },
+                data: {
+                  journalId: existingJournalId,
+                  journalName: journalName
+                }
+              });
+            }
+          } else {
+            // Check if a journal exists with the same title (but different shortcode)
+            const existingByTitle = await this.prisma.journal.findFirst({
+              where: {
+                title: journalName
+              },
+              orderBy: {
+                createdAt: 'desc'
+              }
+            });
+            
+            if (existingByTitle) {
+              // Journal exists with same title - use it and update shortcode
+              existingJournalId = existingByTitle.id;
+              console.log(`✅ Found existing journal (ID: ${existingJournalId}) with title "${journalName}" - linking user to it and updating shortcode`);
+              
+              // Update the journal to use this shortcode (if it doesn't have one)
+              if (!existingByTitle.shortcode) {
+                await this.prisma.journal.update({
+                  where: { id: existingJournalId },
+                  data: { shortcode: originalShortcode.trim() }
+                });
+              }
+              
+              // Ensure JournalShortcode entry exists
+              if (!existingShortcodeEntry) {
+                await this.prisma.journalShortcode.create({
+                  data: {
+                    shortcode: originalShortcode.trim(),
+                    journalName: journalName,
+                    journalId: existingJournalId
+                  }
+                });
+              } else if (existingShortcodeEntry.journalId !== existingJournalId) {
+                await this.prisma.journalShortcode.update({
+                  where: { shortcode: originalShortcode.trim() },
+                  data: {
+                    journalId: existingJournalId,
+                    journalName: journalName
+                  }
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // Only create a new journal if one doesn't already exist
+      let createdJournalId: number | null = existingJournalId;
       
-      if (journalName) {
-        // ALWAYS create a new journal record - never link to existing by title or shortcode
-        // Even if a journal with the same title exists, create a new independent journal entry
-        // Include all available fields from userData to populate the journal properly
+      if (!existingJournalId && journalName) {
+        // No existing journal found - create a new one
+        console.log(`📝 No existing journal found - creating new journal for shortcode "${originalShortcode}"`);
+        
+        // Use the original shortcode directly - no unique generation
         const journalData: any = {
           title: journalName,
           description: journalName, // Use journalName as default description
-          shortcode: uniqueJournalShortcode // Use the generated unique shortcode for Journal table
+          shortcode: originalShortcode // Use the original shortcode directly
         };
 
         // Add optional fields ONLY if they exist in validData - do NOT copy from existing journals
         // This ensures the new journal starts completely fresh with no inherited data
-        if (validData.category) journalData.category = validData.category;
+        // IMPORTANT: Always set category from user's selected category (don't use default)
+        console.log('🔵 Creating journal - validData.category:', validData.category);
+        if (validData.category && validData.category.trim()) {
+          journalData.category = validData.category.trim();
+          console.log('🔵 Setting journal category to:', journalData.category);
+        } else {
+          // Explicitly set to null if not provided (don't use any default)
+          journalData.category = null;
+          console.log('⚠️ No category provided for journal - setting to null');
+        }
         if (validData.publisher) journalData.publisher = validData.publisher;
         if (validData.subjectArea) journalData.subjectArea = validData.subjectArea;
         if (validData.discipline) journalData.discipline = validData.discipline;
@@ -884,65 +960,28 @@ export class AdminService {
           hasImages: !!(journalData.coverImage || journalData.bannerImage || journalData.flyerImage)
         });
 
-        // Try to create journal - if shortcode conflict occurs, generate a new one and retry
+        // Create journal - if shortcode conflict occurs, throw error (no unique generation)
         let newJournal;
-        let retryCount = 0;
-        const maxRetries = 5;
-        
-        while (retryCount < maxRetries) {
-          try {
-            newJournal = await this.prisma.journal.create({
-              data: journalData
-            });
-            break; // Success, exit loop
-          } catch (error: any) {
-            // If it's a unique constraint error for shortcode, generate a new one
-            if (error?.code === 'P2002' && error?.meta?.target?.includes('shortcode')) {
-              retryCount++;
-              // Generate a new unique shortcode
-              const newUniqueShortcode = await this.generateUniqueShortcode(originalShortcode);
-              journalData.shortcode = newUniqueShortcode;
-              console.log(`🔄 Shortcode conflict detected, retrying with new shortcode: ${newUniqueShortcode}`);
-            } else {
-              // Some other error, re-throw it
-              throw error;
-            }
+        try {
+          newJournal = await this.prisma.journal.create({
+            data: journalData
+          });
+        } catch (error: any) {
+          // If it's a unique constraint error for shortcode, throw error
+          if (error?.code === 'P2002' && error?.meta?.target?.includes('shortcode')) {
+            throw new ConflictException(`Journal with shortcode "${originalShortcode}" already exists. Please use a different shortcode or link to the existing journal.`);
+          } else {
+            // Some other error, re-throw it
+            throw error;
           }
         }
         
         if (!newJournal) {
-          throw new InternalServerErrorException('Failed to create journal after multiple retries');
+          throw new InternalServerErrorException('Failed to create journal');
         }
         
         createdJournalId = newJournal.id;
         
-        // CRITICAL: Check if a journal already exists with the original shortcode in Journal table
-        // If it does, we need to either delete it or update the JournalShortcode to point to the new journal
-        // This prevents having two journals: one with original shortcode and one with unique shortcode
-        const existingJournalWithOriginalShortcode = await this.prisma.journal.findUnique({
-          where: { shortcode: originalShortcode }
-        });
-        
-        if (existingJournalWithOriginalShortcode && existingJournalWithOriginalShortcode.id !== newJournal.id) {
-          console.warn(`⚠️ WARNING: A journal already exists with shortcode "${originalShortcode}" (ID: ${existingJournalWithOriginalShortcode.id})`);
-          console.warn(`   This journal (ID: ${existingJournalWithOriginalShortcode.id}) should not exist with the original shortcode.`);
-          console.warn(`   The new journal (ID: ${newJournal.id}) has unique shortcode "${newJournal.shortcode}" and JournalShortcode "${originalShortcode}" will point to it.`);
-          console.warn(`   Consider deleting journal ID ${existingJournalWithOriginalShortcode.id} to prevent conflicts.`);
-          
-          // Check if JournalShortcode entry exists for the old journal
-          const oldJournalShortcodeEntry = await this.prisma.journalShortcode.findUnique({
-            where: { shortcode: originalShortcode }
-          });
-          
-          if (oldJournalShortcodeEntry && oldJournalShortcodeEntry.journalId === existingJournalWithOriginalShortcode.id) {
-            // Update the JournalShortcode entry to point to the new journal
-            await this.prisma.journalShortcode.update({
-              where: { shortcode: originalShortcode },
-              data: { journalId: newJournal.id, journalName: journalName }
-            });
-            console.log(`   ✅ Updated JournalShortcode entry "${originalShortcode}" to point to new journal ID ${newJournal.id}`);
-          }
-        }
         
         // Verify the journal is truly new and empty (no inherited data)
         console.log(`✅ Created NEW journal for user:`, {
@@ -963,17 +1002,13 @@ export class AdminService {
         }
 
         // CRITICAL: Create/update the shortcode entry and link it to the newly created journal
-        // IMPORTANT: Use the ORIGINAL shortcode (before unique generation) for JournalShortcode table
-        // This is what users will use to login. The journal itself has a unique shortcode.
-        // ALWAYS update the JournalShortcode entry to point to the NEW journal, even if one exists
-        // This ensures each new user gets a fresh journal, not data from an old one
+        // Use the shortcode for JournalShortcode table - this is what users will use to login
         try {
-          // Use upsert to ensure the entry is always updated, even if it exists
-          // This is critical - we MUST point the shortcode to the NEW journal, not the old one
+          // Ensure JournalShortcode entry exists and points to the new journal
           const shortcodeEntry = await this.prisma.journalShortcode.upsert({
             where: { shortcode: originalShortcode.trim() },
             update: {
-              journalId: newJournal.id, // ALWAYS point to the NEW journal
+              journalId: newJournal.id,
               journalName: journalName
             },
             create: {
@@ -983,35 +1018,9 @@ export class AdminService {
             }
           });
           
-          console.log(`✅ JournalShortcode entry ensured: "${originalShortcode}" -> NEW Journal ID ${newJournal.id}`);
-          console.log(`   JournalShortcode entry details:`, {
-            id: shortcodeEntry.id,
-            shortcode: shortcodeEntry.shortcode,
-            journalId: shortcodeEntry.journalId,
-            journalName: shortcodeEntry.journalName
-          });
-          
-          // Verify the update actually worked
-          const verifyEntry = await this.prisma.journalShortcode.findUnique({
-            where: { shortcode: originalShortcode.trim() }
-          });
-          
-          if (verifyEntry && verifyEntry.journalId !== newJournal.id) {
-            console.error(`❌ CRITICAL ERROR: JournalShortcode entry was NOT updated correctly!`);
-            console.error(`   Expected journalId: ${newJournal.id}, Got: ${verifyEntry.journalId}`);
-            // Force update one more time
-            await this.prisma.journalShortcode.update({
-              where: { shortcode: originalShortcode.trim() },
-              data: { journalId: newJournal.id, journalName: journalName }
-            });
-            console.log(`   Forced update completed`);
-          } else {
-            console.log(`✅ Verification passed: JournalShortcode correctly points to Journal ID ${newJournal.id}`);
-          }
+          console.log(`✅ JournalShortcode entry ensured: "${originalShortcode}" -> Journal ID ${newJournal.id}`);
         } catch (shortcodeError: any) {
-          // If shortcode entry creation fails, this is critical - log and try to recover
-          console.error('❌ CRITICAL ERROR creating/updating journal shortcode entry:', shortcodeError);
-          console.error('   This means the user will not be able to access their new journal!');
+          console.error('❌ ERROR creating/updating journal shortcode entry:', shortcodeError);
           // Try one more time with a direct update
           try {
             await this.prisma.journalShortcode.updateMany({
@@ -1021,30 +1030,55 @@ export class AdminService {
             console.log(`   Recovery attempt: Updated using updateMany`);
           } catch (recoveryError: any) {
             console.error('   Recovery attempt also failed:', recoveryError);
-            // This is a critical error - the journal was created but can't be linked
             throw new InternalServerErrorException(
               `Journal created (ID: ${newJournal.id}) but failed to link shortcode "${originalShortcode}". ` +
               `Error: ${shortcodeError.message}`
             );
           }
         }
+      } else if (existingJournalId) {
+        // Using existing journal - ensure JournalShortcode entry exists (should already be handled above)
+        console.log(`✅ Using existing journal ID ${existingJournalId} for user creation`);
+        // IMPORTANT: Update the existing journal's category if user provided one
+        if (validData.category && validData.category.trim()) {
+          try {
+            await this.prisma.journal.update({
+              where: { id: existingJournalId },
+              data: { category: validData.category.trim() }
+            });
+            console.log(`✅ Updated existing journal (ID: ${existingJournalId}) category to: ${validData.category.trim()}`);
+          } catch (journalUpdateError) {
+            console.error(`⚠️ Failed to update journal category:`, journalUpdateError);
+            // Don't fail user creation if journal update fails
+          }
+        }
       }
 
-      // Prepare user data - use the ORIGINAL shortcode (what user will login with)
-      // The journal has a unique shortcode, but the user's journalShort is the original
+      // Prepare user data - use the shortcode (what user will login with)
+      // The journal and user both use the same shortcode
       // This is linked via JournalShortcode table
+      // IMPORTANT: Ensure category is properly set from user input (trimmed, not null if provided)
+      const userCategory = validData.category && validData.category.trim() 
+        ? validData.category.trim() 
+        : null;
+      
       let userCreateData: any = {
         userName: validData.userName.trim(),
         password: validData.password || null, // Store password if provided
         journalShort: originalShortcode.trim(), // Use original shortcode for login
         journalName: journalName,
-        category: validData.category || null,
+        category: userCategory, // Use the properly processed category
         isActive: validData.isActive !== undefined ? validData.isActive : true,
       };
 
       // Try to create user - handle shortcode conflicts if they occur
       try {
-        return await this.prisma.user.create({ data: userCreateData });
+        console.log('🔵 Backend - Creating user with category:', userCreateData.category);
+        console.log('🔵 Backend - Full userCreateData:', JSON.stringify(userCreateData, null, 2));
+        const createdUser = await this.prisma.user.create({ data: userCreateData });
+        console.log('🔵 Backend - User created, category in DB:', createdUser.category);
+        console.log('🔵 Backend - Full created user:', JSON.stringify(createdUser, null, 2));
+        return createdUser;
       } catch (userError: any) {
         // Handle Prisma unique constraint errors for user creation
         if (userError?.code === 'P2002') {
@@ -1053,18 +1087,8 @@ export class AdminService {
           if (target && Array.isArray(target) && target.includes('userName')) {
             throw new ConflictException('Username already exists');
           } else if (target && Array.isArray(target) && target.includes('shortcode')) {
-            // This shouldn't happen since we generate unique shortcodes, but handle it gracefully
-            console.error('Unexpected shortcode conflict during user creation:', userError);
-            // Generate a new unique shortcode and retry user creation
-            const currentShortcode = userCreateData.journalShort || 'user';
-            const newShortcode = await this.generateUniqueShortcode(currentShortcode);
-            // Update userCreateData with new shortcode
-            userCreateData = {
-              ...userCreateData,
-              journalShort: newShortcode
-            };
-            // Retry user creation with new shortcode
-            return await this.prisma.user.create({ data: userCreateData });
+            // Shortcode conflict - throw error instead of generating unique shortcode
+            throw new ConflictException(`Shortcode "${userCreateData.journalShort}" already exists. Please use a different shortcode.`);
           } else {
             throw new ConflictException('A unique constraint violation occurred');
           }
@@ -1085,6 +1109,9 @@ export class AdminService {
       const { firstName, lastName, managingJournalName, journalDomainName, journalUrl, journalId, ...validData } = userData;
       const userUpdateData: any = {};
       
+      // DEBUG: Log received category
+      console.log('🔵 updateUser - Received category:', validData.category);
+      
       if (validData.userName !== undefined) userUpdateData.userName = validData.userName;
       if (validData.password !== undefined && String(validData.password).trim()) {
         userUpdateData.password = String(validData.password).trim();
@@ -1095,7 +1122,50 @@ export class AdminService {
         userUpdateData.journalName = validData.managingJournalName;
         userUpdateData.journalShort = validData.managingJournalName;
       }
-      if (validData.category !== undefined) userUpdateData.category = validData.category;
+      // IMPORTANT: Always update category if provided, even if it's an empty string (trim it first)
+      if (validData.category !== undefined) {
+        userUpdateData.category = validData.category && validData.category.trim() 
+          ? validData.category.trim() 
+          : null;
+        console.log('🔵 updateUser - Setting category to:', userUpdateData.category);
+        
+        // Also update the associated journal's category if user has one
+        if (userUpdateData.category) {
+          try {
+            // Find the user first to get journalShort
+            const user = await this.prisma.user.findUnique({ where: { id } });
+            if (user && user.journalShort) {
+              // Find the journal by shortcode or journalId from JournalShortcode
+              const shortcodeEntry = await this.prisma.journalShortcode.findUnique({
+                where: { shortcode: user.journalShort }
+              });
+              
+              if (shortcodeEntry && shortcodeEntry.journalId) {
+                await this.prisma.journal.update({
+                  where: { id: shortcodeEntry.journalId },
+                  data: { category: userUpdateData.category }
+                });
+                console.log(`✅ Updated journal (ID: ${shortcodeEntry.journalId}) category to: ${userUpdateData.category}`);
+              } else {
+                // Try to find journal by shortcode directly
+                const journal = await this.prisma.journal.findUnique({
+                  where: { shortcode: user.journalShort }
+                });
+                if (journal) {
+                  await this.prisma.journal.update({
+                    where: { id: journal.id },
+                    data: { category: userUpdateData.category }
+                  });
+                  console.log(`✅ Updated journal (ID: ${journal.id}) category to: ${userUpdateData.category}`);
+                }
+              }
+            }
+          } catch (journalUpdateError) {
+            console.error(`⚠️ Failed to update journal category during user update:`, journalUpdateError);
+            // Don't fail user update if journal update fails
+          }
+        }
+      }
       if (validData.isActive !== undefined) userUpdateData.isActive = validData.isActive;
 
       return await this.prisma.user.update({
@@ -1173,55 +1243,133 @@ export class AdminService {
   }
 
   async createJournalShortcode(journalName: string, shortcode: string) {
-    // Check if shortcode already exists
+    // CRITICAL: Check if shortcode already exists in JournalShortcode table
     const existing = await this.prisma.journalShortcode.findUnique({
       where: { shortcode }
     });
     if (existing) {
-      throw new Error('Shortcode already exists');
+      // If it already points to a journal, return it (or update if needed)
+      if (existing.journalId) {
+        // Shortcode already exists and points to a journal - do not create duplicate
+        return existing;
+      }
+      // If it exists but doesn't point to a journal, we'll update it below
     }
 
-    // Check if shortcode already exists in Journal table (to prevent duplicate shortcodes)
+    // CRITICAL: Check if a journal already exists with this shortcode
     const existingJournalByShortcode = await this.prisma.journal.findUnique({
       where: { shortcode }
     });
     if (existingJournalByShortcode) {
-      // If journal already exists with this shortcode, just create the shortcode entry and link it
+      // If journal already exists with this shortcode, link the shortcode entry to it
+      if (existing) {
+        // Update existing entry to point to the journal
+        const updated = await this.prisma.journalShortcode.update({
+          where: { shortcode },
+          data: {
+            journalId: existingJournalByShortcode.id,
+            journalName: journalName
+          }
+        });
+        return updated;
+      } else {
+        // Create new shortcode entry linking to existing journal
+        const journalShortcode = await this.prisma.journalShortcode.create({
+          data: {
+            shortcode,
+            journalName,
+            journalId: existingJournalByShortcode.id
+          }
+        });
+        return journalShortcode;
+      }
+    }
+
+    // CRITICAL: Check if a journal with the same title and no shortcode exists
+    // This prevents creating duplicate journals when a journal was just created
+    const existingJournalByTitle = await this.prisma.journal.findFirst({
+      where: {
+        title: journalName,
+        shortcode: null // Journal exists but has no shortcode assigned yet
+      },
+      orderBy: {
+        createdAt: 'desc' // Get the most recently created one
+      }
+    });
+
+    if (existingJournalByTitle) {
+      // Found a journal with matching title and no shortcode - link to it instead of creating new
+      // Update the journal to use this shortcode
+      await this.prisma.journal.update({
+        where: { id: existingJournalByTitle.id },
+        data: { shortcode: shortcode }
+      });
+
+      // Create or update the shortcode entry
+      if (existing) {
+        const updated = await this.prisma.journalShortcode.update({
+          where: { shortcode },
+          data: {
+            journalId: existingJournalByTitle.id,
+            journalName: journalName
+          }
+        });
+        return updated;
+      } else {
+        const journalShortcode = await this.prisma.journalShortcode.create({
+          data: {
+            shortcode,
+            journalName,
+            journalId: existingJournalByTitle.id
+          }
+        });
+        return journalShortcode;
+      }
+    }
+
+    // Only if no existing journal is found, create a new one
+    // Use the original shortcode directly - no unique generation
+    let newJournal;
+    try {
+      newJournal = await this.prisma.journal.create({
+        data: {
+          title: journalName,
+          description: journalName, // Use journalName as default description
+          shortcode: shortcode // Use the original shortcode directly
+        }
+      });
+    } catch (error: any) {
+      // If it's a unique constraint error for shortcode, throw error
+      if (error?.code === 'P2002' && error?.meta?.target?.includes('shortcode')) {
+        throw new ConflictException(`Journal with shortcode "${shortcode}" already exists. Please use a different shortcode or link to the existing journal.`);
+      } else {
+        // Some other error, re-throw it
+        throw error;
+      }
+    }
+
+    // Create the shortcode entry using the ORIGINAL shortcode (what users login with)
+    if (existing) {
+      // Update existing entry to point to new journal
+      const updated = await this.prisma.journalShortcode.update({
+        where: { shortcode },
+        data: {
+          journalId: newJournal.id,
+          journalName: journalName
+        }
+      });
+      return updated;
+    } else {
+      // Create new shortcode entry
       const journalShortcode = await this.prisma.journalShortcode.create({
         data: {
-          shortcode,
+          shortcode: shortcode, // Use the ORIGINAL shortcode for login/JournalShortcode table
           journalName,
-          journalId: existingJournalByShortcode.id
+          journalId: newJournal.id // Link to the journal
         }
       });
       return journalShortcode;
     }
-
-    // Generate a unique shortcode to prevent conflicts in Journal table
-    const uniqueShortcode = await this.generateUniqueShortcode(shortcode);
-
-    // Always create a new journal record, even if the title already exists
-    // This ensures each user assignment gets its own independent journal entry
-    const newJournal = await this.prisma.journal.create({
-      data: {
-        title: journalName,
-        description: journalName, // Use journalName as default description
-        shortcode: uniqueShortcode // Use the generated unique shortcode for Journal table
-      }
-    });
-
-    // Create the shortcode entry using the ORIGINAL shortcode (what users login with)
-    // This entry links the login shortcode to the journal
-    // The journal itself has a unique shortcode, but JournalShortcode uses the original for login
-    const journalShortcode = await this.prisma.journalShortcode.create({
-      data: {
-        shortcode: shortcode, // Use the ORIGINAL shortcode for login/JournalShortcode table
-        journalName,
-        journalId: newJournal.id // Link to the journal with unique shortcode
-      }
-    });
-
-    return journalShortcode;
   }
 
   async deleteJournalShortcode(id: number) {

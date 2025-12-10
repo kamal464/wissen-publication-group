@@ -112,6 +112,11 @@ export const getFileUrl = (path: string): string => {
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
   }
+  
+  // If path is a data URI, return as is (don't try to fetch from server)
+  if (path.startsWith('data:')) {
+    return path;
+  }
 
   const baseUrl = getFileBaseUrl();
   const cleanPath = path.startsWith('/') ? path : `/${path}`;

@@ -36,13 +36,20 @@ const SUBJECT_CLASS_MAP: Record<string, string> = {
   'computer science': 'information',
 };
 
-const getSubjectLabel = (journal: Journal): string => {
-  return (
-    journal.subjectArea ||
-    journal.category ||
-    journal.discipline ||
-    'General Studies'
-  );
+const getSubjectLabel = (journal: Journal, shortcodeToUserCategory?: Map<string, string>): string => {
+  // First try journal's own fields
+  if (journal.subjectArea) return journal.subjectArea;
+  if (journal.category) return journal.category;
+  if (journal.discipline) return journal.discipline;
+  
+  // Fallback to user's category if available
+  if (shortcodeToUserCategory && journal.shortcode) {
+    const userCategory = shortcodeToUserCategory.get(journal.shortcode);
+    if (userCategory) return userCategory;
+  }
+  
+  // Last resort fallback
+  return 'General Studies';
 };
 
 const getSubjectClass = (subject: string): string => {
@@ -126,6 +133,7 @@ export default function JournalsPage() {
   const [allocatedShortcodes, setAllocatedShortcodes] = useState<Set<string>>(new Set());
   const [shortcodeToJournalName, setShortcodeToJournalName] = useState<Map<string, string>>(new Map());
   const [shortcodeToJournalId, setShortcodeToJournalId] = useState<Map<string, number>>(new Map());
+  const [shortcodeToUserCategory, setShortcodeToUserCategory] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     setIsClient(true);
@@ -145,20 +153,28 @@ export default function JournalsPage() {
         journalId?: number | null;
         id?: number;
       }>;
-      const users = (usersRes.data || []) as Array<{ journalShort: string | null }>;
+      const users = (usersRes.data || []) as Array<{ 
+        journalShort: string | null;
+        category: string | null;
+      }>;
       
       // Get shortcodes that have active users assigned
       const allocated = new Set<string>();
       const shortcodeMap = new Map<string, string>();
       const shortcodeToJournalId = new Map<string, number>();
+      const shortcodeToCategory = new Map<string, string>();
       
       shortcodes.forEach(sc => {
-        const hasUser = users.some(u => u.journalShort === sc.shortcode);
-        if (hasUser) {
+        const user = users.find(u => u.journalShort === sc.shortcode);
+        if (user) {
           allocated.add(sc.shortcode);
           shortcodeMap.set(sc.shortcode, sc.journalName);
           if (sc.journalId) {
             shortcodeToJournalId.set(sc.shortcode, sc.journalId);
+          }
+          // Store user's category for fallback
+          if (user.category) {
+            shortcodeToCategory.set(sc.shortcode, user.category);
           }
         }
       });
@@ -167,6 +183,7 @@ export default function JournalsPage() {
       setAllocatedShortcodes(allocated);
       setShortcodeToJournalName(shortcodeMap);
       setShortcodeToJournalId(shortcodeToJournalId);
+      setShortcodeToUserCategory(shortcodeToCategory);
     } catch (err) {
       console.error('Error fetching allocated shortcodes:', err);
       // Continue with empty set if fetch fails
@@ -194,20 +211,28 @@ export default function JournalsPage() {
         journalId?: number | null;
         id?: number;
       }>;
-      const users = (usersRes.data || []) as Array<{ journalShort: string | null }>;
+      const users = (usersRes.data || []) as Array<{ 
+        journalShort: string | null;
+        category: string | null;
+      }>;
       
       // Get allocated shortcodes
       const allocated = new Set<string>();
       const shortcodeMap = new Map<string, string>();
       const shortcodeToJournalId = new Map<string, number>();
+      const shortcodeToCategory = new Map<string, string>();
       
       shortcodes.forEach(sc => {
-        const hasUser = users.some(u => u.journalShort === sc.shortcode);
-        if (hasUser) {
+        const user = users.find(u => u.journalShort === sc.shortcode);
+        if (user) {
           allocated.add(sc.shortcode);
           shortcodeMap.set(sc.shortcode, sc.journalName);
           if (sc.journalId) {
             shortcodeToJournalId.set(sc.shortcode, sc.journalId);
+          }
+          // Store user's category for fallback
+          if (user.category) {
+            shortcodeToCategory.set(sc.shortcode, user.category);
           }
         }
       });
@@ -215,6 +240,7 @@ export default function JournalsPage() {
       setAllocatedShortcodes(allocated);
       setShortcodeToJournalName(shortcodeMap);
       setShortcodeToJournalId(shortcodeToJournalId);
+      setShortcodeToUserCategory(shortcodeToCategory);
       
       // Create virtual journal objects for shortcodes that don't have Journal records yet
       const virtualJournals: Journal[] = [];
@@ -338,7 +364,7 @@ export default function JournalsPage() {
     const uniqueSubjects = new Set<string>();
 
     items.forEach((journal) => {
-      uniqueSubjects.add(getSubjectLabel(journal));
+      uniqueSubjects.add(getSubjectLabel(journal, shortcodeToUserCategory));
     });
 
     return [
@@ -391,7 +417,7 @@ export default function JournalsPage() {
       filtered = filtered.filter((journal) => {
         // Subject filter
         if (hasSubjectFilter) {
-          const subject = getSubjectLabel(journal);
+          const subject = getSubjectLabel(journal, shortcodeToUserCategory);
           if (subject.toLowerCase() !== selectedSubject.toLowerCase()) {
             return false;
           }
@@ -455,7 +481,7 @@ export default function JournalsPage() {
     });
 
     return sorted;
-  }, [items, searchTerm, selectedSubject, sortBy, allocatedShortcodes, shortcodeToJournalName, shortcodeToJournalId]);
+  }, [items, searchTerm, selectedSubject, sortBy, allocatedShortcodes, shortcodeToJournalName, shortcodeToJournalId, shortcodeToUserCategory]);
 
   const paginatedJournals = useMemo(() => {
     return filteredAndSortedJournals.slice(first, first + rows);
@@ -487,7 +513,7 @@ export default function JournalsPage() {
   };
 
   const renderCard = useCallback((journal: Journal) => {
-    const subject = getSubjectLabel(journal);
+    const subject = getSubjectLabel(journal, shortcodeToUserCategory);
     const subjectClass = getSubjectClass(subject);
     
     // Find shortcode for this journal
@@ -509,10 +535,14 @@ export default function JournalsPage() {
     }
     
     // Enhance journal with shortcode and name if found
-    // Always include journalName - use from shortcode map if available, otherwise use title
+    // Only set journalName if it's different from title to avoid duplicates
+    const finalJournalName = journalName && journalName.trim().toLowerCase() !== journal.title?.trim().toLowerCase()
+      ? journalName
+      : '';
+    
     const journalWithShortcode = journalShortcode 
-      ? { ...journal, shortcode: journalShortcode, journalName: journalName || journal.title || '' }
-      : { ...journal, journalName: journal.title || '' };
+      ? { ...journal, shortcode: journalShortcode, journalName: finalJournalName }
+      : { ...journal, journalName: finalJournalName };
 
     return (
       <JournalCard
@@ -523,7 +553,7 @@ export default function JournalsPage() {
         subjectClass={subjectClass}
       />
     );
-  }, [viewMode, shortcodeToJournalName]);
+  }, [viewMode, shortcodeToJournalName, shortcodeToUserCategory]);
 
   return (
     <>
@@ -678,7 +708,7 @@ export default function JournalsPage() {
 
           <div
             className={`mt-8 journal-list__grid ${
-              viewMode === 'grid' ? 'journal-list__grid--cards-4' : 'journal-list__grid--list'
+              viewMode === 'grid' ? 'journal-list__grid--cards-5' : 'journal-list__grid--list'
             }`}
           >
             {loading && !items.length &&

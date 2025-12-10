@@ -6,9 +6,14 @@ export class NewsController {
   constructor(private readonly newsService: NewsService) {}
 
   @Get('latest')
-  findLatest(@Query('limit') limit?: string) {
-    const limitNum = limit ? parseInt(limit, 10) : 5;
-    return this.newsService.findLatest(limitNum);
+  async findLatest(@Query('limit') limit?: string) {
+    try {
+      const limitNum = limit ? parseInt(limit, 10) : 5;
+      return await this.newsService.findLatest(limitNum);
+    } catch (error) {
+      console.error('Error in NewsController.findLatest:', error);
+      throw error;
+    }
   }
 
   @Get()

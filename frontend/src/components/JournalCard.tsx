@@ -105,8 +105,9 @@ const JournalCard = memo(function JournalCard({
               {journal.title}
             </h2>
             
-            {/* Display journal name alongside title */}
-            {(journal as any).journalName && (
+            {/* Display journal name alongside title only if it's different from title */}
+            {(journal as any).journalName && 
+             (journal as any).journalName.trim().toLowerCase() !== journal.title?.trim().toLowerCase() && (
               <h3 className="journal-card__name" style={{ 
                 fontSize: '0.95em', 
                 fontWeight: '400', 
