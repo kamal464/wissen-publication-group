@@ -97,8 +97,8 @@ export default function JournalCovers() {
       const response = await adminAPI.getJournals();
       const allJournals = (response.data as any[]) || [];
       
-      // Take first 6 journals and ensure they have images
-      const journalsWithImages = allJournals.slice(0, 6).map((j: any, index: number) => {
+      // Take first 5 journals and ensure they have images
+      const journalsWithImages = allJournals.slice(0, 5).map((j: any, index: number) => {
         const existingImage = j.coverImage || j.bannerImage || j.flyerImage;
         const coverImage = (existingImage && (existingImage.startsWith('http://') || existingImage.startsWith('https://'))) 
           ? existingImage 
@@ -110,16 +110,24 @@ export default function JournalCovers() {
         };
       });
       
-      // Ensure we have at least 6 journals
-      if (journalsWithImages.length < 6) {
+      // Ensure we have at least 5 journals
+      if (journalsWithImages.length < 5) {
         const staticJournals = getStaticJournals();
-        const needed = 6 - journalsWithImages.length;
+        const needed = 5 - journalsWithImages.length;
         journalsWithImages.push(...staticJournals.slice(0, needed));
       }
       
-      setJournals(journalsWithImages.slice(0, 6));
-    } catch (error) {
-      console.error('Error loading journals:', error);
+      setJournals(journalsWithImages.slice(0, 5));
+    } catch (error: any) {
+      // Only log non-network errors (backend offline is expected in development)
+      const isNetworkError = error.code === 'ERR_NETWORK' || 
+                            error.code === 'ECONNREFUSED' || 
+                            !error.response ||
+                            error.message === 'Network Error';
+      
+      if (!isNetworkError) {
+        console.error('Error loading journals:', error);
+      }
       // Use static journals if API fails
       setJournals(getStaticJournals());
     } finally {
@@ -129,7 +137,7 @@ export default function JournalCovers() {
 
   const getImageUrl = (journal: Journal) => {
     // If it's already a full URL (placeholder or external), return as is
-    if (journal.coverImage?.startsWith('http://') || journal.coverImage?.startsWith('https://')) {
+    if (journal.coverImage?.startsWith('http://') || journal.coverImage?.startsWith('https://') || journal.coverImage?.startsWith('data:')) {
       return journal.coverImage;
     }
     // Otherwise, try to get file URL from API
@@ -160,6 +168,20 @@ export default function JournalCovers() {
   return (
     <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
+        <div className="text-center mb-8 md:mb-12">
+          <span className="inline-block text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3 px-4 py-2 bg-blue-50 rounded-full">
+            FEATURED JOURNALS
+          </span>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 mt-2">
+            Discover Our Academic Publications
+          </h2>
+          <div className="flex justify-center">
+            <p className="text-lg md:text-xl text-gray-600 max-w-2xl text-center">
+              Explore cutting-edge research across multiple disciplines
+            </p>
+          </div>
+        </div>
+
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div className="mb-4 md:mb-0">
             <p className="text-lg text-gray-700 font-medium">
@@ -175,7 +197,7 @@ export default function JournalCovers() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 md:gap-7 lg:gap-8">
           {journals.map((journal) => {
             const imageUrl = getImageUrl(journal);
             const journalUrl = journal.shortcode ? `/journals/${journal.shortcode}` : '#';
@@ -231,18 +253,18 @@ export default function JournalCovers() {
         }
 
         .journal-cover-card:hover .journal-cover-card__container {
-          transform: translateY(-8px);
-          box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+          transform: translateY(-10px);
+          box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
         }
 
         .journal-cover-card__image-wrapper {
           position: relative;
           width: 100%;
           aspect-ratio: 2 / 3;
-          border-radius: 0.5rem;
+          border-radius: 0.75rem;
           overflow: hidden;
           background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
         }
 
         .journal-cover-card__image {
@@ -271,17 +293,17 @@ export default function JournalCovers() {
           left: 0;
           right: 0;
           background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.85) 100%);
-          padding: 0.75rem 0.5rem;
+          padding: 0.875rem 0.625rem;
           display: flex;
           flex-direction: column;
-          gap: 0.25rem;
+          gap: 0.3rem;
         }
 
         .journal-cover-card__title-text {
-          font-size: 0.7rem;
+          font-size: 0.75rem;
           font-weight: 600;
           color: #ffffff;
-          line-height: 1.2;
+          line-height: 1.3;
           text-align: center;
           display: -webkit-box;
           -webkit-line-clamp: 2;
@@ -292,25 +314,25 @@ export default function JournalCovers() {
 
         @media (min-width: 768px) {
           .journal-cover-card__title-text {
-            font-size: 0.75rem;
+            font-size: 0.85rem;
           }
 
           .journal-cover-card__title-bar {
-            padding: 0.875rem 0.625rem;
+            padding: 1rem 0.75rem;
           }
         }
 
         @media (min-width: 1024px) {
           .journal-cover-card__title-text {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
           }
 
           .journal-cover-card__logo-text {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
           }
 
           .journal-cover-card__title-bar {
-            padding: 1rem 0.75rem;
+            padding: 1.125rem 0.875rem;
           }
         }
       `}</style>

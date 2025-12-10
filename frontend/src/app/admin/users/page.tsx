@@ -47,13 +47,8 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [mounted, setMounted] = useState(false);
   const [editingUser, setEditingUser] = useState({
-    firstName: '',
-    lastName: '',
     userName: '',
     password: '',
-    managingJournalName: '',
-    journalDomainName: '',
-    journalUrl: '',
     journalId: null as number | null,
     journalShort: '' as string,
     category: '',
@@ -85,7 +80,16 @@ export default function UsersPage() {
     try {
       setLoading(true);
       const response = await adminAPI.getUsers(searchQuery || undefined);
-      setUsers((response.data as User[]) || []);
+      const usersData = (response.data as User[]) || [];
+      console.log('🔵 Loaded users, count:', usersData.length);
+      // Log the category of the newly created user if we can find it
+      if (usersData.length > 0) {
+        const latestUser = usersData[0]; // First user is usually the latest due to orderBy createdAt desc
+        console.log('🔵 Latest user category:', latestUser.category, 'userName:', latestUser.userName);
+        // Log all users to see their categories
+        console.log('🔵 All users with categories:', usersData.map(u => ({ userName: u.userName, category: u.category })));
+      }
+      setUsers(usersData);
     } catch (error: any) {
       console.error('Error loading users:', error);
       const errorMessage = error.response?.data?.message || 
@@ -213,13 +217,8 @@ export default function UsersPage() {
     }
     
     setEditingUser({
-      firstName: '',
-      lastName: '',
       userName: '',
       password: '',
-      managingJournalName: '',
-      journalDomainName: '',
-      journalUrl: '',
       journalId: null,
       journalShort: '',
       category: '',
@@ -254,13 +253,8 @@ export default function UsersPage() {
       
       // Populate form with database data - bind ALL fields including shortcode
       const initialUser = {
-        firstName: userData?.firstName || '',
-        lastName: userData?.lastName || '',
         userName: userData?.userName || user.userName || journalShort, // userName should match shortcode
         password: '', // Don't populate password for security
-        managingJournalName: journalName,
-        journalDomainName: journalName,
-        journalUrl: userData?.journalUrl || userData?.journalDomainName || '',
         journalId: null as number | null,
         journalShort: journalShort, // Properly bind shortcode
         category: userData?.category || user.category || '',
@@ -298,17 +292,10 @@ export default function UsersPage() {
       console.error('Error loading user details:', error);
       // Fallback to basic user data if API fails - still bind all available data
       const journalShort = user.journalShort || user.userName || '';
-      const matchingShortcode = shortcodes.find(s => s.shortcode === journalShort);
-      const journalName = user.journalName || matchingShortcode?.journalName || '';
       
       setEditingUser({
-        firstName: '',
-        lastName: '',
         userName: user.userName || journalShort,
         password: '', // Don't populate password
-        managingJournalName: journalName,
-        journalDomainName: journalName,
-        journalUrl: '',
         journalId: null,
         journalShort: journalShort, // Properly bind shortcode
         category: user.category || '',
@@ -334,16 +321,6 @@ export default function UsersPage() {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    // First Name is required
-    if (!editingUser.firstName || !editingUser.firstName.trim()) {
-      errors.firstName = 'First name is required';
-    }
-
-    // Last Name is required
-    if (!editingUser.lastName || !editingUser.lastName.trim()) {
-      errors.lastName = 'Last name is required';
-    }
-
     // Username is required
     if (!editingUser.userName || !editingUser.userName.trim()) {
       errors.userName = 'Username is required';
@@ -354,29 +331,9 @@ export default function UsersPage() {
       errors.password = 'Password is required for new users';
     }
 
-    // Managing Journal Name is required
-    if (!editingUser.managingJournalName || !editingUser.managingJournalName.trim()) {
-      errors.managingJournalName = 'Managing journal name is required';
-    }
-
-    // Journal Domain Name is required
-    if (!editingUser.journalDomainName || !editingUser.journalDomainName.trim()) {
-      errors.journalDomainName = 'Journal domain name is required';
-    }
-
-    // Journal URL is required
-    if (!editingUser.journalUrl || !editingUser.journalUrl.trim()) {
-      errors.journalUrl = 'Journal URL is required';
-    }
-
     // Category is required
     if (!editingUser.category || !editingUser.category.trim()) {
       errors.category = 'Category is required';
-    }
-
-    // Journal ID is required
-    if (!editingUser.journalId) {
-      errors.journalId = 'Journal selection is required';
     }
 
     // Journal Short is required (should match userName)
@@ -404,34 +361,69 @@ export default function UsersPage() {
     }
 
     try {
+      // Ensure category is properly set - it's required and should not be null/empty
+      const selectedCategory = editingUser.category && editingUser.category.trim() 
+        ? editingUser.category.trim() 
+        : null;
+      
+      if (!selectedCategory) {
+        toast.current?.show({ 
+          severity: 'error', 
+          summary: 'Validation Error', 
+          detail: 'Category is required. Please select a category.',
+          life: 5000
+        });
+        setValidationErrors({ category: 'Category is required' });
+        return;
+      }
 
       // Prepare user data for API - include password
+      // DEBUG: Log the selected category to ensure it's correct
+      console.log('🔵 Saving user with category:', selectedCategory);
+      console.log('🔵 Editing user category value:', editingUser.category);
+      
       const userData: any = {
         userName: editingUser.userName.trim(),
         journalShort: editingUser.journalShort || null,
-        journalName: editingUser.managingJournalName || editingUser.journalDomainName || null,
-        category: editingUser.category || null,
+        journalName: null,
+        category: selectedCategory, // Always use the selected category - ensure it's not null
         isActive: editingUser.isActive !== undefined ? editingUser.isActive : true
       };
+      
+      // DEBUG: Verify category is in userData
+      console.log('🔵 User data being sent:', { ...userData, password: userData.password ? '***' : null });
 
       // Add password if provided (for both create and update)
       if (editingUser.password && editingUser.password.trim()) {
         userData.password = editingUser.password.trim();
       }
 
-      // If journal ID is selected, prefer its title for journalName (does not change journalShort)
+      // Get journal name from selected journal or shortcode
       if (editingUser.journalId && journals.length > 0) {
         const selectedJournal = journals.find(j => j.id === editingUser.journalId);
         if (selectedJournal) {
           userData.journalName = selectedJournal.title;
         }
+      } else if (editingUser.journalShort) {
+        // Fallback to shortcode's journal name if no journal selected
+        const matchingShortcode = shortcodes.find(s => s.shortcode === editingUser.journalShort);
+        if (matchingShortcode) {
+          userData.journalName = matchingShortcode.journalName;
+        }
       }
 
       if (selectedUser) {
-        await adminAPI.updateUser(selectedUser.id, userData);
+        const updatedUser = await adminAPI.updateUser(selectedUser.id, userData);
+        console.log('🔵 User updated, response:', updatedUser);
+        const updatedUserData = updatedUser?.data as any;
+        console.log('🔵 User updated, category in response:', updatedUserData?.category);
         toast.current?.show({ severity: 'success', summary: 'Success', detail: 'User updated successfully' });
       } else {
-        await adminAPI.createUser(userData);
+        const createdUser = await adminAPI.createUser(userData);
+        console.log('🔵 User created, response:', createdUser);
+        const createdUserData = createdUser?.data as any;
+        console.log('🔵 User created, full response data:', createdUserData);
+        console.log('🔵 User created, category in response:', createdUserData?.category);
         toast.current?.show({ severity: 'success', summary: 'Success', detail: 'User created successfully' });
       }
       
@@ -439,19 +431,17 @@ export default function UsersPage() {
       setSelectedUser(null);
       setValidationErrors({});
       setEditingUser({
-        firstName: '',
-        lastName: '',
         userName: '',
         password: '',
-        managingJournalName: '',
-        journalDomainName: '',
-        journalUrl: '',
         journalId: null,
         journalShort: '',
         category: '',
         isActive: true
       });
-      loadUsers();
+      // Force refresh users list to get latest data - add small delay to ensure DB commit
+      setTimeout(async () => {
+        await loadUsers();
+      }, 100);
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to save user';
       toast.current?.show({ 
@@ -615,6 +605,7 @@ export default function UsersPage() {
 
       <div className="bg-white rounded-lg overflow-hidden shadow">
         <DataTable
+          key={`users-table-${users.length}-${users.map(u => u.id).join('-')}`}
           value={users}
           loading={loading}
           paginator
@@ -645,10 +636,27 @@ export default function UsersPage() {
             sortable 
           />
           <Column 
-            field="category" 
             header="Category" 
             sortable 
-            body={(rowData) => rowData.category || '-'}
+            sortField="category"
+            body={(rowData: User) => {
+              // Force use of user's category field, not journal's
+              const categoryValue = rowData.category || '-';
+              // Debug logging to see what's being rendered
+              console.log('🔵 Rendering category for user:', rowData.userName, 'ID:', rowData.id, 'category field value:', rowData.category, 'displaying:', categoryValue);
+              console.log('🔵 Full user object:', JSON.stringify(rowData, null, 2));
+              // Add a data attribute to help debug
+              return (
+                <span 
+                  data-user-id={rowData.id}
+                  data-user-name={rowData.userName}
+                  data-category={rowData.category || 'null'}
+                  style={{ fontWeight: 'bold', color: rowData.category ? '#000' : '#999' }}
+                >
+                  {categoryValue}
+                </span>
+              );
+            }}
           />
           <Column header="Actions" body={actionBodyTemplate} style={{ width: '200px' }} />
         </DataTable>
@@ -667,13 +675,8 @@ export default function UsersPage() {
           setSelectedUser(null);
           setValidationErrors({});
           setEditingUser({
-            firstName: '',
-            lastName: '',
             userName: '',
             password: '',
-            managingJournalName: '',
-            journalDomainName: '',
-            journalUrl: '',
             journalId: null,
             journalShort: '',
             category: '',
@@ -690,13 +693,8 @@ export default function UsersPage() {
                 setSelectedUser(null);
                 setValidationErrors({});
                 setEditingUser({
-                  firstName: '',
-                  lastName: '',
                   userName: '',
                   password: '',
-                  managingJournalName: '',
-                  journalDomainName: '',
-                  journalUrl: '',
                   journalId: null,
                   journalShort: '',
                   category: '',
@@ -718,175 +716,14 @@ export default function UsersPage() {
           {/* Left Column */}
           <div className="flex flex-col">
             <label className="block mb-2 font-normal text-slate-700 text-sm">
-              First Name <span className="text-red-500">*</span>
-            </label>
-            <InputText
-              value={editingUser.firstName}
-              onChange={(e) => {
-                setEditingUser({ ...editingUser, firstName: e.target.value });
-                // Clear error when user types
-                if (validationErrors.firstName) {
-                  setValidationErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.firstName;
-                    return newErrors;
-                  });
-                }
-              }}
-              className={`w-full py-3 ${validationErrors.firstName ? 'p-invalid border-red-500' : ''}`}
-              placeholder="Enter first name"
-            />
-            {validationErrors.firstName && (
-              <small className="p-error mt-1 block text-red-600 text-sm">
-                {validationErrors.firstName}
-              </small>
-            )}
-          </div>
-
-          {/* Right Column */}
-          <div className="flex flex-col">
-            <label className="block mb-2 font-normal text-slate-700 text-sm">
-              Last Name <span className="text-red-500">*</span>
-            </label>
-            <InputText
-              value={editingUser.lastName}
-              onChange={(e) => {
-                setEditingUser({ ...editingUser, lastName: e.target.value });
-                // Clear error when user types
-                if (validationErrors.lastName) {
-                  setValidationErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.lastName;
-                    return newErrors;
-                  });
-                }
-              }}
-              className={`w-full py-3 ${validationErrors.lastName ? 'p-invalid border-red-500' : ''}`}
-              placeholder="Enter last name"
-            />
-            {validationErrors.lastName && (
-              <small className="p-error mt-1 block text-red-600 text-sm">
-                {validationErrors.lastName}
-              </small>
-            )}
-          </div>
-
-          {/* Left Column */}
-          <div className="flex flex-col">
-            <label className="block mb-2 font-normal text-slate-700 text-sm">
-              Managing Journal Name <span className="text-red-500">*</span>
-            </label>
-            <InputText
-              value={editingUser.managingJournalName}
-              onChange={(e) => {
-                setEditingUser({ 
-                  ...editingUser, 
-                  managingJournalName: e.target.value,
-                  journalDomainName: e.target.value // Keep in sync
-                });
-                // Clear errors when user types
-                if (validationErrors.managingJournalName) {
-                  setValidationErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.managingJournalName;
-                    return newErrors;
-                  });
-                }
-                if (validationErrors.journalDomainName) {
-                  setValidationErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.journalDomainName;
-                    return newErrors;
-                  });
-                }
-              }}
-              className={`w-full py-3 ${validationErrors.managingJournalName ? 'p-invalid border-red-500' : ''}`}
-              placeholder="Enter managing journal name (auto-filled from shortcode)"
-            />
-            {validationErrors.managingJournalName && (
-              <small className="p-error mt-1 block text-red-600 text-sm">
-                {validationErrors.managingJournalName}
-              </small>
-            )}
-          </div>
-
-          {/* Right Column */}
-          <div className="flex flex-col">
-            <label className="block mb-2 font-normal text-slate-700 text-sm">
-              Journal Domain Name <span className="text-red-500">*</span>
-            </label>
-            <InputText
-              value={editingUser.journalDomainName}
-              onChange={(e) => {
-                setEditingUser({ 
-                  ...editingUser, 
-                  journalDomainName: e.target.value,
-                  managingJournalName: e.target.value // Keep in sync
-                });
-                // Clear errors when user types
-                if (validationErrors.journalDomainName) {
-                  setValidationErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.journalDomainName;
-                    return newErrors;
-                  });
-                }
-                if (validationErrors.managingJournalName) {
-                  setValidationErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.managingJournalName;
-                    return newErrors;
-                  });
-                }
-              }}
-              className={`w-full py-3 ${validationErrors.journalDomainName ? 'p-invalid border-red-500' : ''}`}
-              placeholder="Enter journal domain name (auto-filled from shortcode)"
-            />
-            {validationErrors.journalDomainName && (
-              <small className="p-error mt-1 block text-red-600 text-sm">
-                {validationErrors.journalDomainName}
-              </small>
-            )}
-          </div>
-
-          {/* Left Column */}
-          <div className="flex flex-col">
-            <label className="block mb-2 font-normal text-slate-700 text-sm">
-              Journal URL <span className="text-red-500">*</span>
-            </label>
-            <InputText
-              value={editingUser.journalUrl}
-              onChange={(e) => {
-                setEditingUser({ ...editingUser, journalUrl: e.target.value });
-                // Clear error when user types
-                if (validationErrors.journalUrl) {
-                  setValidationErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.journalUrl;
-                    return newErrors;
-                  });
-                }
-              }}
-              className={`w-full py-3 ${validationErrors.journalUrl ? 'p-invalid border-red-500' : ''}`}
-              placeholder="Enter journal URL"
-            />
-            {validationErrors.journalUrl && (
-              <small className="p-error mt-1 block text-red-600 text-sm">
-                {validationErrors.journalUrl}
-              </small>
-            )}
-          </div>
-
-          {/* Right Column */}
-          <div className="flex flex-col">
-            <label className="block mb-2 font-normal text-slate-700 text-sm">
               Select Category <span className="text-red-500">*</span>
             </label>
             <Dropdown
               value={editingUser.category || null}
               options={categories.map(c => ({ label: c, value: c }))}
               onChange={(e) => {
-                setEditingUser({ ...editingUser, category: e.value || '' });
+                const selectedCategory = e.value ? String(e.value).trim() : '';
+                setEditingUser({ ...editingUser, category: selectedCategory });
                 // Clear error when user selects a value
                 if (validationErrors.category) {
                   setValidationErrors(prev => {
@@ -919,13 +756,10 @@ export default function UsersPage() {
             <Dropdown
               value={editingUser.userName || editingUser.journalShort || null}
               onChange={(e) => {
-                const sc = (availableShortcodes || []).find((s) => s.shortcode === e.value);
                 setEditingUser((prev) => ({
                   ...prev,
                   userName: e.value || '',
                   journalShort: e.value || '',
-                  managingJournalName: sc?.journalName || prev.managingJournalName,
-                  journalDomainName: sc?.journalName || prev.journalDomainName,
                 }));
                 // Clear error when user selects a value
                 if (validationErrors.userName) {
@@ -1007,40 +841,6 @@ export default function UsersPage() {
             )}
           </div>
 
-          {/* Left Column - Full Width */}
-          <div className="flex flex-col sm:col-span-2">
-            <label className="block mb-2 font-normal text-slate-700 text-sm">
-              Select Your Journal <span className="text-red-500">*</span>
-            </label>
-            <Dropdown
-              value={editingUser.journalId || null}
-              options={[{ label: 'Select Journal', value: null }, ...journalOptions]}
-              onChange={(e) => {
-                setEditingUser({ ...editingUser, journalId: e.value || null });
-                // Clear error when user selects a value
-                if (validationErrors.journalId) {
-                  setValidationErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.journalId;
-                    return newErrors;
-                  });
-                }
-              }}
-              placeholder="Select Journal"
-              className={`w-full journal-dropdown ${validationErrors.journalId ? 'p-invalid' : ''}`}
-              panelStyle={{ zIndex: 10000 }}
-              appendTo={typeof document !== 'undefined' ? document.body : undefined}
-              loading={loadingJournals}
-              filter
-              filterPlaceholder="Search journals..."
-              showClear={!!editingUser.journalId}
-            />
-            {validationErrors.journalId && (
-              <small className="p-error mt-1 block text-red-600 text-sm">
-                {validationErrors.journalId}
-              </small>
-            )}
-          </div>
         </div>
         </Dialog>
       )}

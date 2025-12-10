@@ -81,7 +81,7 @@ export default function MainContent() {
             <h2 className="text-4xl font-bold text-gray-800 mb-4 mt-2">
               Publish With Us
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-6xl mx-auto text-center pl-40 whitespace-nowrap">
               Join thousands of researchers who trust Wissen Publication Group for their scholarly publications.
             </p>
           </div>
@@ -121,7 +121,7 @@ export default function MainContent() {
               <h2 className="text-4xl font-bold mb-4">
                 About Wissen Publication Group
               </h2>
-              <p className="text-lg text-blue-100 mb-6">
+              <p className="text-lg !text-white mb-6" style={{ color: 'white' }}>
                 Since 1998, we've been advancing knowledge through excellence in academic publishing. 
                 Our commitment to scholarly research and academic excellence has made us a trusted 
                 platform for researchers, academics, and institutions worldwide.

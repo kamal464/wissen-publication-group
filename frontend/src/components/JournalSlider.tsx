@@ -62,8 +62,16 @@ export default function JournalSlider() {
       // Always use static journals with guaranteed working placeholder images
       // This ensures images always load properly
       setJournals(getStaticJournals());
-    } catch (error) {
-      console.error('Error loading journals:', error);
+    } catch (error: any) {
+      // Only log non-network errors (backend offline is expected in development)
+      const isNetworkError = error.code === 'ERR_NETWORK' || 
+                            error.code === 'ECONNREFUSED' || 
+                            !error.response ||
+                            error.message === 'Network Error';
+      
+      if (!isNetworkError) {
+        console.error('Error loading journals:', error);
+      }
       // Use static journals if API fails - these always have working placeholder URLs
       setJournals(getStaticJournals());
     } finally {
@@ -71,6 +79,7 @@ export default function JournalSlider() {
     }
   };
 
+  
   // Static journal data with SVG-based images
   const getStaticJournals = (): Journal[] => {
     return [
@@ -149,7 +158,7 @@ export default function JournalSlider() {
 
     return (
       <div className="journal-slide">
-        <Link href={journalUrl} className="journal-slide__link">
+        <div  className="journal-slide__link">
           <div className="journal-slide__image-container">
             {imageUrl ? (
               <img
@@ -168,30 +177,9 @@ export default function JournalSlider() {
                 }}
               />
             ) : null}
-            <div className="journal-slide__placeholder" style={{ display: imageUrl ? 'none' : 'flex' }}>
-              <div className="journal-slide__placeholder-content">
-                <i className="pi pi-book text-6xl text-white opacity-50 mb-3"></i>
-                <p className="text-white text-lg font-semibold opacity-75">{journal.title}</p>
-              </div>
-            </div>
-            <div className="journal-slide__overlay">
-              <div className="journal-slide__content">
-                <h2 className="journal-slide__title">{journal.title}</h2>
-                {journal.description && (
-                  <p className="journal-slide__description">
-                    {journal.description.length > 150 
-                      ? journal.description.substring(0, 150) + '...' 
-                      : journal.description}
-                  </p>
-                )}
-                <span className="journal-slide__cta">
-                  Explore Journal
-                  <i className="pi pi-arrow-right ml-2"></i>
-                </span>
-              </div>
-            </div>
+           
           </div>
-        </Link>
+        </div>
       </div>
     );
   };
@@ -215,15 +203,7 @@ export default function JournalSlider() {
   return (
     <section className="journal-slider">
       <div className="container mx-auto px-4 py-6 md:py-8 lg:py-12">
-        <div className="text-center mb-6 md:mb-8">
-          <span className="journal-slider__eyebrow">FEATURED JOURNALS</span>
-          <h1 className="journal-slider__heading">
-            Discover Our Academic Publications
-          </h1>
-          <p className="journal-slider__subheading">
-            Explore cutting-edge research across multiple disciplines
-          </p>
-        </div>
+
         
         <div className="journal-slider__carousel-wrapper">
           <Carousel

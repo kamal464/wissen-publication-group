@@ -19,7 +19,7 @@ interface JournalShortcode {
 }
 
 export default function JournalShortcodePage() {
-  const [journalName, setJournalName] = useState('');
+  const [journalTitle, setJournalTitle] = useState('');
   const [shortcode, setShortcode] = useState('');
   const [shortcodes, setShortcodes] = useState<JournalShortcode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,8 +117,8 @@ export default function JournalShortcodePage() {
     return finalCode.toLowerCase();
   };
 
-  const handleJournalNameChange = async (value: string) => {
-    setJournalName(value);
+  const handleJournalTitleChange = async (value: string) => {
+    setJournalTitle(value);
     
     if (value && value.trim().length > 0) {
       const generated = await generateShortcode(value);
@@ -147,11 +147,11 @@ export default function JournalShortcodePage() {
   };
 
   const handleCreate = async () => {
-    if (!journalName || !journalName.trim()) {
+    if (!journalTitle || !journalTitle.trim()) {
       toast.current?.show({ 
         severity: 'warn', 
         summary: 'Validation', 
-        detail: 'Journal name is required' 
+        detail: 'Journal title is required' 
       });
       return;
     }
@@ -185,13 +185,13 @@ export default function JournalShortcodePage() {
 
     try {
       setSaving(true);
-      await adminAPI.createJournalShortcode(journalName.trim(), shortcode.trim());
+      await adminAPI.createJournalShortcode(journalTitle.trim(), shortcode.trim());
       toast.current?.show({ 
         severity: 'success', 
         summary: 'Success', 
         detail: 'Journal shortcode created successfully' 
       });
-      setJournalName('');
+      setJournalTitle('');
       setShortcode('');
       setSuggestedShortcode('');
       setIsUnique(null);
@@ -300,13 +300,13 @@ export default function JournalShortcodePage() {
         <h1 className="text-2xl font-bold text-slate-800 mb-6">Create Journal Shortcode</h1>
         <div className="bg-white p-8 rounded-lg shadow border border-slate-200">
           <div className="flex gap-6 items-start flex-wrap">
-            {/* Journal Name Field */}
+            {/* Journal Title Field */}
             <div className="flex-1 min-w-[280px]">
               <label className="block mb-2 font-normal text-slate-700 text-sm">Journal Name</label>
               <InputText
-                value={journalName}
-                onChange={(e) => handleJournalNameChange(e.target.value)}
-                placeholder="Enter journal name"
+                value={journalTitle}
+                onChange={(e) => handleJournalTitleChange(e.target.value)}
+                placeholder="Enter journal title"
                 className="w-full py-3"
               />
             </div>
@@ -367,7 +367,7 @@ export default function JournalShortcodePage() {
                 icon="pi pi-plus"
                 onClick={handleCreate}
                 className="p-button-info !bg-blue-600 !border-blue-600 !text-white"
-                disabled={!journalName || !shortcode || saving || isUnique === false || backendOnline === false}
+                disabled={!journalTitle || !shortcode || saving || isUnique === false || backendOnline === false}
                 loading={saving}
                 style={{ minWidth: '120px', height: '40px' }}
                 tooltip={backendOnline === false ? "Backend server is offline" : undefined}

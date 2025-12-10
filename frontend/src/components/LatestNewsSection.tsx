@@ -33,7 +33,15 @@ export default function LatestNewsSection() {
         : [];
       setNews(pinnedNews);
     } catch (error: any) {
-      console.error('Error loading news:', error);
+      // Only log non-network errors (backend offline is expected in development)
+      const isNetworkError = error.code === 'ERR_NETWORK' || 
+                            error.code === 'ECONNREFUSED' || 
+                            !error.response ||
+                            error.message === 'Network Error';
+      
+      if (!isNetworkError) {
+        console.error('Error loading news:', error);
+      }
       // Silently fail - don't show error to users if news endpoint doesn't exist yet
       // This allows the page to load even if backend hasn't been updated
       setNews([]);
