@@ -35,6 +35,7 @@ interface Article {
   publishedAt?: string;
   authors?: Array<{ name: string; affiliation?: string; email?: string }>;
   pdfUrl?: string;
+  doi?: string;
   heading1Title?: string;
   heading1Content?: string;
   heading2Title?: string;

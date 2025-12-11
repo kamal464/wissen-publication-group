@@ -86,35 +86,35 @@ export default function JournalSlider() {
       { 
         id: 1, 
         title: 'Slide 1', 
-        coverImage: '/images/slides/slide1.jpeg',
+        coverImage: '/images/slides/image.png',
         description: '',
         shortcode: ''
       },
       { 
         id: 2, 
         title: 'Slide 2', 
-        coverImage: '/images/slides/slide2.jpeg',
+        coverImage: '/images/slides/image.png',
         description: '',
         shortcode: ''
       },
       { 
         id: 3, 
         title: 'Slide 3', 
-        coverImage: '/images/slides/slide3.jpeg',
+        coverImage: '/images/slides/image.png',
         description: '',
         shortcode: ''
       },
       { 
         id: 4, 
         title: 'Slide 4', 
-        coverImage: '/images/slides/slide4.jpeg',
+        coverImage: '/images/slides/image.png',
         description: '',
         shortcode: ''
       },
       { 
         id: 5, 
         title: 'Slide 5', 
-        coverImage: '/images/slides/slide5.jpeg',
+        coverImage: '/images/slides/image.png',
         description: '',
         shortcode: ''
       },

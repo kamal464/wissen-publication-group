@@ -19,7 +19,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import 'quill/dist/quill.snow.css';
 
-interface ArticleEdit extends Article {
+interface ArticleEdit extends Omit<Article, 'authors' | 'abstract'> {
   articleType?: string;
   volumeNo?: string;
   issueNo?: string;
@@ -34,6 +34,8 @@ interface ArticleEdit extends Article {
   country?: string;
   receivedAt?: string;
   acceptedAt?: string;
+  doi?: string;
+  abstract?: string;
   heading1Title?: string;
   heading1Content?: string;
   heading2Title?: string;
