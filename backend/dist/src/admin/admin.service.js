@@ -914,6 +914,18 @@ let AdminService = class AdminService {
             }
             else if (existingJournalId) {
                 console.log(`✅ Using existing journal ID ${existingJournalId} for user creation`);
+                if (validData.category && validData.category.trim()) {
+                    try {
+                        await this.prisma.journal.update({
+                            where: { id: existingJournalId },
+                            data: { category: validData.category.trim() }
+                        });
+                        console.log(`✅ Updated existing journal (ID: ${existingJournalId}) category to: ${validData.category.trim()}`);
+                    }
+                    catch (journalUpdateError) {
+                        console.error(`⚠️ Failed to update journal category:`, journalUpdateError);
+                    }
+                }
             }
             const userCategory = validData.category && validData.category.trim()
                 ? validData.category.trim()
@@ -980,6 +992,38 @@ let AdminService = class AdminService {
                     ? validData.category.trim()
                     : null;
                 console.log('🔵 updateUser - Setting category to:', userUpdateData.category);
+                if (userUpdateData.category) {
+                    try {
+                        const user = await this.prisma.user.findUnique({ where: { id } });
+                        if (user && user.journalShort) {
+                            const shortcodeEntry = await this.prisma.journalShortcode.findUnique({
+                                where: { shortcode: user.journalShort }
+                            });
+                            if (shortcodeEntry && shortcodeEntry.journalId) {
+                                await this.prisma.journal.update({
+                                    where: { id: shortcodeEntry.journalId },
+                                    data: { category: userUpdateData.category }
+                                });
+                                console.log(`✅ Updated journal (ID: ${shortcodeEntry.journalId}) category to: ${userUpdateData.category}`);
+                            }
+                            else {
+                                const journal = await this.prisma.journal.findUnique({
+                                    where: { shortcode: user.journalShort }
+                                });
+                                if (journal) {
+                                    await this.prisma.journal.update({
+                                        where: { id: journal.id },
+                                        data: { category: userUpdateData.category }
+                                    });
+                                    console.log(`✅ Updated journal (ID: ${journal.id}) category to: ${userUpdateData.category}`);
+                                }
+                            }
+                        }
+                    }
+                    catch (journalUpdateError) {
+                        console.error(`⚠️ Failed to update journal category during user update:`, journalUpdateError);
+                    }
+                }
             }
             if (validData.isActive !== undefined)
                 userUpdateData.isActive = validData.isActive;

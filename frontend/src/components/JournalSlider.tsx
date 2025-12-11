@@ -80,43 +80,43 @@ export default function JournalSlider() {
   };
 
   
-  // Static journal data with SVG-based images
+  // Static slide data with images from /images/slides/
   const getStaticJournals = (): Journal[] => {
     return [
       { 
         id: 1, 
-        title: 'Journal of Advanced Research', 
-        coverImage: generatePlaceholderImage('Journal of Advanced Research', 0),
-        description: 'Publishing cutting-edge research across multiple disciplines. A peer-reviewed, open-access journal committed to advancing knowledge.',
-        shortcode: 'jar'
+        title: 'Slide 1', 
+        coverImage: '/images/slides/slide1.jpeg',
+        description: '',
+        shortcode: ''
       },
       { 
         id: 2, 
-        title: 'International Journal of Science', 
-        coverImage: generatePlaceholderImage('International Journal of Science', 1),
-        description: 'Advancing scientific knowledge through rigorous peer review. Connecting researchers worldwide with groundbreaking discoveries.',
-        shortcode: 'ijs'
+        title: 'Slide 2', 
+        coverImage: '/images/slides/slide2.jpeg',
+        description: '',
+        shortcode: ''
       },
       { 
         id: 3, 
-        title: 'Journal of Medical Studies', 
-        coverImage: generatePlaceholderImage('Journal of Medical Studies', 2),
-        description: 'Leading medical research and clinical studies. Bridging the gap between research and clinical practice.',
-        shortcode: 'jms'
+        title: 'Slide 3', 
+        coverImage: '/images/slides/slide3.jpeg',
+        description: '',
+        shortcode: ''
       },
       { 
         id: 4, 
-        title: 'Engineering Research Journal', 
-        coverImage: generatePlaceholderImage('Engineering Research Journal', 3),
-        description: 'Innovation in engineering and technology. Showcasing the latest advancements in engineering disciplines.',
-        shortcode: 'erj'
+        title: 'Slide 4', 
+        coverImage: '/images/slides/slide4.jpeg',
+        description: '',
+        shortcode: ''
       },
       { 
         id: 5, 
-        title: 'Social Sciences Review', 
-        coverImage: generatePlaceholderImage('Social Sciences Review', 4),
-        description: 'Exploring human society and social relationships. Understanding the complexities of human behavior and social structures.',
-        shortcode: 'ssr'
+        title: 'Slide 5', 
+        coverImage: '/images/slides/slide5.jpeg',
+        description: '',
+        shortcode: ''
       },
     ];
   };
@@ -321,15 +321,24 @@ export default function JournalSlider() {
           border-radius: 1rem;
           overflow: hidden;
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
-          aspect-ratio: 21 / 9;
+          width: 1600px;
+          height: 700px;
           background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-          max-width: 100%;
           margin: 0 auto;
         }
 
-        @media (min-width: 1024px) {
+        @media (max-width: 1680px) {
           .journal-slide__image-container {
-            aspect-ratio: 21 / 8;
+            width: 100%;
+            max-width: 1600px;
+            height: 700px;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .journal-slide__image-container {
+            width: 100%;
+            height: 500px;
           }
         }
 

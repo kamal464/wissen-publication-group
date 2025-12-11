@@ -237,13 +237,16 @@ export default function ArchivePage() {
                               key={`${volumeStr}-${issueStr}-${index}`}
                               type="button"
                               onClick={() => {
-                                // Navigate to articles in press preview with filters
-                                const params = new URLSearchParams();
-                                if (issueMonth) params.set('month', issueMonth);
-                                if (issue.year) params.set('year', String(issue.year));
-                                params.set('preview', 'true');
-                                // Navigate to articles in press page with preview dialog
-                                router.push(`/journal-admin/journals/articles-press?${params.toString()}`);
+                                // Open first article's detail page in new tab with admin flag
+                                if (firstArticle && firstArticle.id) {
+                                  window.open(`/articles/${firstArticle.id}?admin=true`, '_blank');
+                                } else {
+                                  toast.current?.show({
+                                    severity: 'warn',
+                                    summary: 'No Article',
+                                    detail: 'No articles found for this issue'
+                                  });
+                                }
                               }}
                               className={`px-4 py-2 rounded-lg border-2 transition-all text-sm ${
                                 selectedIssue?.volume === volumeStr && selectedIssue?.issue === issueStr

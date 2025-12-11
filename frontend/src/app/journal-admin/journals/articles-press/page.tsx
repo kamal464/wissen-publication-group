@@ -265,11 +265,6 @@ export default function ArticlesInPressPage() {
     
     // Authors validation
     if (!selectedArticle.authors || selectedArticle.authors.length === 0) return false;
-    
-    // Validate author emails
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const invalidAuthors = selectedArticle.authors.filter(a => !a.email || !emailRegex.test(a.email));
-    if (invalidAuthors.length > 0) return false;
 
     // Check if at least one author has a name
     const hasAuthorNames = selectedArticle.authors.some(a => a.name && String(a.name).trim());
@@ -330,18 +325,10 @@ export default function ArticlesInPressPage() {
       return;
     }
 
-    // Validate author emails
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const invalidAuthors = selectedArticle.authors.filter(a => !a.email || !emailRegex.test(a.email));
-    if (invalidAuthors.length > 0) {
-      toast.current?.show({ severity: 'error', summary: 'Validation Error', detail: 'All authors must have valid email addresses' });
-      return;
-    }
-
     try {
       setSaving(true);
       
-      // Format authors - ensure they have email (required by DTO)
+      // Format authors - email is optional
       const formattedAuthors = selectedArticle.authors.map(author => ({
         name: author.name || '',
         email: author.email || '',
@@ -847,7 +834,7 @@ export default function ArticlesInPressPage() {
                     />
                   </div>
                   <div className="flex flex-col">
-                    <label className="block mb-2 text-sm font-medium text-gray-700">Enter Author Emails *</label>
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Enter Author Emails</label>
                     <InputTextarea
                       value={selectedArticle.authors ? selectedArticle.authors.map(a => a.email || '').join(', ') : ''}
                       onChange={(e) => {

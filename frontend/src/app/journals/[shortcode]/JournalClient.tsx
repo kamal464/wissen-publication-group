@@ -438,28 +438,50 @@ export default function JournalDetailPage() {
         case 'archive':
           // Load archive articles and organize by year
           try {
+            // Fetch all articles, then filter to show only PUBLISHED and ACCEPTED
+            // This allows articles to appear immediately after acceptance, matching admin archive behavior
+            // Set a high limit to get all articles (or fetch in batches if needed)
             const articlesResponse = await adminAPI.getArticles({ 
-              journalId: journalData.id, 
-              status: 'PUBLISHED' 
+              journalId: journalData.id,
+              limit: 1000, // Get all articles (adjust if you have more than 1000)
+              page: 1
+              // No status filter - get all articles, then filter client-side
             });
             const allArticles = (articlesResponse.data as any[]) || [];
-            setArticles(allArticles);
+            // Filter to only show PUBLISHED and ACCEPTED articles in public archive
+            const filteredArticles = allArticles.filter((article: any) => 
+              article.status === 'PUBLISHED' || article.status === 'ACCEPTED'
+            );
+            setArticles(filteredArticles);
+            
+            console.log('Loading archive articles for journal:', journalData.id, 'Total articles:', filteredArticles.length);
             
             const issuesByYear = new Map<number, any[]>();
-            allArticles.forEach((article: any) => {
-              // Use year from article, or derive from publishedAt
+            filteredArticles.forEach((article: any) => {
+              // Use year from article, or derive from publishedAt or acceptedAt
               let year: number;
               if (article.year) {
-                year = parseInt(article.year);
+                year = parseInt(String(article.year));
               } else if (article.publishedAt) {
                 const publishedDate = new Date(article.publishedAt);
                 year = publishedDate.getFullYear();
+              } else if (article.acceptedAt) {
+                const acceptedDate = new Date(article.acceptedAt);
+                year = acceptedDate.getFullYear();
               } else {
                 return; // Skip articles without year info
               }
               
-              const volume = article.volumeNo || '1';
-              const issue = article.issueNo || '1';
+              // Volume and Issue are now required fields, but provide fallback for existing articles
+              // Ensure they are strings (handle numbers from dropdowns)
+              const volume = article.volumeNo ? String(article.volumeNo) : '1';
+              const issue = article.issueNo ? String(article.issueNo) : '1';
+              
+              // Skip if volume or issue is missing (shouldn't happen for new articles)
+              if (!volume || !issue || volume === 'undefined' || issue === 'undefined') {
+                console.warn('Article missing volume or issue:', article.id, article.title);
+                return;
+              }
               
               if (!issuesByYear.has(year)) {
                 issuesByYear.set(year, []);
@@ -485,14 +507,22 @@ export default function JournalDetailPage() {
               }
             });
             
+            // Sort issues within each year (descending - newest first)
             issuesByYear.forEach((issues) => {
               issues.sort((a: any, b: any) => {
-                const volCompare = parseInt(b.volume) - parseInt(a.volume);
+                // Ensure volumes and issues are strings, then convert to numbers for comparison
+                const volA = parseInt(String(a.volume || '0'));
+                const volB = parseInt(String(b.volume || '0'));
+                const volCompare = volB - volA;
                 if (volCompare !== 0) return volCompare;
-                return parseInt(b.issue) - parseInt(a.issue);
+                
+                const issueA = parseInt(String(a.issue || '0'));
+                const issueB = parseInt(String(b.issue || '0'));
+                return issueB - issueA;
               });
             });
             
+            console.log('Archive issues organized:', Array.from(issuesByYear.keys()), 'years');
             setArchiveIssues(issuesByYear);
             contentToShow = journalData.archiveContent || '';
           } catch (err) {
@@ -1253,35 +1283,90 @@ export default function JournalDetailPage() {
                               {/* Issues Grid */}
                               {isExpanded && (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                  {issues.map((issue: any, index: number) => (
-                                    <div
-                                      key={`${issue.volume}-${issue.issue}-${index}`}
-                                      className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow text-center"
-                                    >
-                                      {/* Book Icon */}
-                                      <div className="mb-4 flex justify-center">
-                                        <i className="pi pi-book text-4xl text-blue-500"></i>
-                                      </div>
-                                      
-                                      {/* Volume and Issue */}
-                                      <h3 className="text-lg font-bold text-gray-900 mb-4">
-                                        Volume {issue.volume}, Issue {issue.issue}
-                                      </h3>
-                                      
-                                      {/* View Articles Button */}
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setSelectedArchiveIssue(issue);
-                                          setShowArchiveArticlesDialog(true);
-                                        }}
-                                        className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                  {issues.map((issue: any, index: number) => {
+                                    // Helper function to get file URL (same as In Press section)
+                                    const getImageUrl = (imagePath?: string) => {
+                                      if (!imagePath) return '';
+                                      return getFileUrl(imagePath);
+                                    };
+                                    
+                                    // Find first article with PDF
+                                    const articleWithPdf = issue.articles?.find((article: any) => article.pdfUrl);
+                                    
+                                    // Debug: Log PDF availability
+                                    if (issue.articles && issue.articles.length > 0) {
+                                      console.log(`Archive Issue ${issue.volume}-${issue.issue}:`, {
+                                        totalArticles: issue.articles.length,
+                                        articlesWithPdf: issue.articles.filter((a: any) => a.pdfUrl).length,
+                                        firstArticlePdf: issue.articles[0]?.pdfUrl,
+                                        foundPdf: !!articleWithPdf?.pdfUrl
+                                      });
+                                    }
+                                    
+                                    return (
+                                      <div
+                                        key={`${issue.volume}-${issue.issue}-${index}`}
+                                        className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow text-center"
                                       >
-                                        <i className="pi pi-eye"></i>
-                                        <span>View Articles</span>
-                                      </button>
-                                    </div>
-                                  ))}
+                                        {/* Book Icon */}
+                                        <div className="mb-4 flex justify-center">
+                                          <i className="pi pi-book text-4xl text-blue-500"></i>
+                                        </div>
+                                        
+                                        {/* Volume and Issue */}
+                                        <h3 className="text-lg font-bold text-gray-900 mb-4">
+                                          Volume {issue.volume}, Issue {issue.issue}
+                                        </h3>
+                                        
+                                        {/* View Articles Button */}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedArchiveIssue(issue);
+                                            setShowArchiveArticlesDialog(true);
+                                          }}
+                                          className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center justify-center gap-2 mb-2"
+                                        >
+                                          <i className="pi pi-eye"></i>
+                                          <span>View Articles</span>
+                                        </button>
+                                        
+                                        {/* Action Buttons - Same as dialog (View Full Text + PDF) */}
+                                        {issue.articles && issue.articles.length > 0 && (
+                                          <div className="flex items-center justify-center gap-3">
+                                            {/* View Full Text Button */}
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                // Open first article's full text view
+                                                const firstArticle = issue.articles[0];
+                                                if (firstArticle?.id) {
+                                                  window.open(`/articles/${firstArticle.id}`, '_blank');
+                                                }
+                                              }}
+                                              className="w-12 h-12 rounded-full border-2 border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400 flex items-center justify-center transition-all shadow-sm"
+                                              title="View Full Text"
+                                            >
+                                              <i className="pi pi-file text-gray-600 text-sm"></i>
+                                            </button>
+                                            
+                                            {/* PDF Download Button */}
+                                            {articleWithPdf?.pdfUrl && (
+                                              <a
+                                                href={getImageUrl(articleWithPdf.pdfUrl)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="w-12 h-12 rounded-full border-2 border-red-500 bg-white hover:bg-red-50 hover:border-red-600 flex items-center justify-center transition-all shadow-sm"
+                                                title="Download PDF"
+                                              >
+                                                <i className="pi pi-file-pdf text-red-600 text-sm"></i>
+                                              </a>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
@@ -1458,21 +1543,37 @@ export default function JournalDetailPage() {
               
               return (
                 <div key={article.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                  {/* Article Header with Type Badge and PDF Icon */}
                   <div className="flex items-start justify-between mb-3">
                     {article.articleType && (
                       <span className="inline-block px-3 py-1 text-xs font-bold text-white bg-gray-700 rounded-full">
                         {article.articleType}
                       </span>
                     )}
-                    {article.doi && (
-                      <span className="inline-block px-3 py-1 text-xs font-bold text-white bg-orange-500 rounded-full">
-                        doi
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {article.doi && (
+                        <span className="inline-block px-3 py-1 text-xs font-bold text-white bg-orange-500 rounded-full">
+                          doi
+                        </span>
+                      )}
+                      {article.pdfUrl && (
+                        <a
+                          href={getImageUrl(article.pdfUrl)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-10 h-10 rounded-full border-2 border-red-500 bg-white hover:bg-red-50 flex items-center justify-center transition-colors shadow-sm"
+                          title="Download PDF"
+                        >
+                          <i className="pi pi-file-pdf text-red-600 text-sm"></i>
+                        </a>
+                      )}
+                    </div>
                   </div>
                   
+                  {/* Article Title */}
                   <h3 className="text-lg font-bold text-blue-600 mb-3">{article.title}</h3>
                   
+                  {/* Authors */}
                   {article.authors && article.authors.length > 0 && (
                     <div className="mb-3 flex items-start gap-2">
                       <i className="pi pi-user text-gray-500 mt-0.5 flex-shrink-0"></i>
@@ -1483,7 +1584,8 @@ export default function JournalDetailPage() {
                     </div>
                   )}
                   
-                  <div className="space-y-1 text-sm text-gray-600">
+                  {/* Dates Section */}
+                  <div className="space-y-1 text-sm text-gray-600 mb-4">
                     {article.receivedAt && (
                       <div className="flex items-center gap-2">
                         <i className="pi pi-hourglass text-gray-500"></i>
@@ -1504,19 +1606,33 @@ export default function JournalDetailPage() {
                     )}
                   </div>
                   
-                  {article.pdfUrl && (
-                    <div className="mt-4 flex justify-end">
-                      <a
-                        href={getImageUrl(article.pdfUrl)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-10 h-10 rounded-full border-2 border-red-500 bg-white hover:bg-red-50 flex items-center justify-center transition-colors shadow-sm"
-                        title="Download PDF"
+                  {/* Action Buttons - Same as In Press */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <div className="flex items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Open full text view or article details
+                          window.open(`/articles/${article.id}`, '_blank');
+                        }}
+                        className="w-12 h-12 rounded-full border-2 border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400 flex items-center justify-center transition-all shadow-sm"
+                        title="View Full Text"
                       >
-                        <i className="pi pi-file-pdf text-red-600 text-sm"></i>
-                      </a>
+                        <i className="pi pi-file text-gray-600 text-sm"></i>
+                      </button>
+                      {article.pdfUrl && (
+                        <a
+                          href={getImageUrl(article.pdfUrl)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-12 h-12 rounded-full border-2 border-red-500 bg-white hover:bg-red-50 hover:border-red-600 flex items-center justify-center transition-all shadow-sm"
+                          title="Download PDF"
+                        >
+                          <i className="pi pi-file-pdf text-red-600 text-sm"></i>
+                        </a>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               );
             })}

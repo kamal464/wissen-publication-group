@@ -7,6 +7,9 @@ import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { FileUpload } from 'primereact/fileupload';
 import { Editor } from 'primereact/editor';
 import { InputText } from 'primereact/inputtext';
+import { InputTextarea } from 'primereact/inputtextarea';
+import { Dropdown } from 'primereact/dropdown';
+import { TabView, TabPanel } from 'primereact/tabview';
 import { adminAPI } from '@/lib/api';
 import { loadJournalData } from '@/lib/journalAdminUtils';
 import { getFileUrl, getApiUrl } from '@/lib/apiConfig';
@@ -23,6 +26,12 @@ interface Article {
   issueMonth?: string;
   year?: string;
   specialIssue?: string;
+  keywords?: string;
+  firstPageNumber?: string;
+  lastPageNumber?: string;
+  correspondingAuthorDetails?: string;
+  citeAs?: string;
+  country?: string;
   receivedAt?: string;
   acceptedAt?: string;
   publishedAt?: string;
@@ -54,13 +63,59 @@ export default function CurrentIssuePage() {
   const [showUploadPdfDialog, setShowUploadPdfDialog] = useState(false);
   const [showUploadImagesDialog, setShowUploadImagesDialog] = useState(false);
   const [showFullTextDialog, setShowFullTextDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [savingFullText, setSavingFullText] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null);
   const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
   const toast = useRef<Toast>(null);
+
+  const articleTypes = [
+    { label: 'Select Article Type', value: null },
+    { label: 'Research Article', value: 'Research Article' },
+    { label: 'Review Article', value: 'Review Article' },
+    { label: 'Case Report', value: 'Case Report' },
+    { label: 'Mini Review', value: 'Mini Review' },
+    { label: 'Short Communication', value: 'Short Communication' }
+  ];
+
+  // Dropdown options for edit dialog
+  const monthOptions = [
+    { label: 'Select Month', value: '' },
+    { label: 'January', value: 'January' },
+    { label: 'February', value: 'February' },
+    { label: 'March', value: 'March' },
+    { label: 'April', value: 'April' },
+    { label: 'May', value: 'May' },
+    { label: 'June', value: 'June' },
+    { label: 'July', value: 'July' },
+    { label: 'August', value: 'August' },
+    { label: 'September', value: 'September' },
+    { label: 'October', value: 'October' },
+    { label: 'November', value: 'November' },
+    { label: 'December', value: 'December' }
+  ];
+
+  const yearOptions = Array.from({ length: 20 }, (_, i) => {
+    const year = new Date().getFullYear() - i;
+    return { label: year.toString(), value: year.toString() };
+  });
+  yearOptions.unshift({ label: 'Select Year', value: '' });
+
+  const volumeOptions = Array.from({ length: 50 }, (_, i) => ({
+    label: `Volume ${i + 1}`,
+    value: (i + 1).toString()
+  }));
+  volumeOptions.unshift({ label: 'Select Volume', value: '' });
+
+  const issueOptions = Array.from({ length: 12 }, (_, i) => ({
+    label: `Issue ${i + 1}`,
+    value: (i + 1).toString()
+  }));
+  issueOptions.unshift({ label: 'Select Issue', value: '' });
 
   useEffect(() => {
     loadJournalAndArticles();
@@ -133,6 +188,125 @@ export default function CurrentIssuePage() {
   const formatAuthors = (authors?: Array<{ name: string; affiliation?: string }>) => {
     if (!authors || authors.length === 0) return 'No authors listed';
     return authors.map(a => a.name).join(', ');
+  };
+
+  const handleEdit = async (article: Article) => {
+    try {
+      // Fetch full article data to ensure we have all fields
+      const fullArticle = await adminAPI.getArticle(article.id);
+      setSelectedArticle(fullArticle.data as Article);
+      setShowEditDialog(true);
+    } catch (error: any) {
+      console.error('Error loading article:', error);
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: 'Failed to load article details' 
+      });
+    }
+  };
+
+  const handleSave = async () => {
+    if (!selectedArticle || !journalId) {
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: 'Missing required data' 
+      });
+      return;
+    }
+
+    // Validate required fields
+    if (!selectedArticle.title || !selectedArticle.title.trim()) {
+      toast.current?.show({ severity: 'error', summary: 'Validation Error', detail: 'Article title is required' });
+      return;
+    }
+
+    const volumeNo = String(selectedArticle.volumeNo || '').trim();
+    if (!volumeNo) {
+      toast.current?.show({ severity: 'error', summary: 'Validation Error', detail: 'Volume number is required' });
+      return;
+    }
+
+    const issueNo = String(selectedArticle.issueNo || '').trim();
+    if (!issueNo) {
+      toast.current?.show({ severity: 'error', summary: 'Validation Error', detail: 'Issue number is required' });
+      return;
+    }
+
+    const issueMonth = String(selectedArticle.issueMonth || '').trim();
+    if (!issueMonth) {
+      toast.current?.show({ severity: 'error', summary: 'Validation Error', detail: 'Issue month is required' });
+      return;
+    }
+
+    const year = String(selectedArticle.year || '').trim();
+    if (!year) {
+      toast.current?.show({ severity: 'error', summary: 'Validation Error', detail: 'Year is required' });
+      return;
+    }
+
+    if (!selectedArticle.authors || selectedArticle.authors.length === 0) {
+      toast.current?.show({ severity: 'error', summary: 'Validation Error', detail: 'At least one author is required' });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      
+      // Format authors - email is optional
+      const formattedAuthors = selectedArticle.authors.map(author => ({
+        name: author.name || '',
+        email: author.email || '',
+        affiliation: author.affiliation || ''
+      }));
+
+      // Extract HTML content from Editor fields
+      const getPlainText = (html?: string) => {
+        if (!html) return '';
+        const tmp = document.createElement('DIV');
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || '';
+      };
+
+      const articleData = {
+        title: selectedArticle.title,
+        abstract: getPlainText(selectedArticle.abstract) || selectedArticle.title,
+        authors: formattedAuthors,
+        journalId: journalId,
+        status: selectedArticle.status || 'PUBLISHED',
+        pdfUrl: selectedArticle.pdfUrl,
+        articleType: selectedArticle.articleType,
+        keywords: getPlainText(selectedArticle.keywords),
+        doi: selectedArticle.doi,
+        volumeNo: selectedArticle.volumeNo ? String(selectedArticle.volumeNo).trim() : '',
+        issueNo: selectedArticle.issueNo ? String(selectedArticle.issueNo).trim() : '',
+        issueMonth: selectedArticle.issueMonth ? String(selectedArticle.issueMonth).trim() : '',
+        year: selectedArticle.year ? String(selectedArticle.year).trim() : '',
+        specialIssue: selectedArticle.specialIssue,
+        firstPageNumber: selectedArticle.firstPageNumber,
+        lastPageNumber: selectedArticle.lastPageNumber,
+        correspondingAuthorDetails: getPlainText(selectedArticle.correspondingAuthorDetails),
+        citeAs: getPlainText(selectedArticle.citeAs),
+        country: selectedArticle.country,
+        receivedAt: selectedArticle.receivedAt ? new Date(selectedArticle.receivedAt).toISOString() : undefined,
+        acceptedAt: selectedArticle.acceptedAt ? new Date(selectedArticle.acceptedAt).toISOString() : undefined,
+        publishedAt: selectedArticle.publishedAt ? new Date(selectedArticle.publishedAt).toISOString() : undefined,
+      };
+
+      // Update existing article
+      await adminAPI.updateArticle(selectedArticle.id, articleData);
+      toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Article updated successfully' });
+      setShowEditDialog(false);
+      setSelectedArticle(null);
+      await loadJournalAndArticles();
+    } catch (error: any) {
+      console.error('Error saving article:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to save article';
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: errorMessage });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const getImageUrl = (imagePath?: string) => {
@@ -236,6 +410,58 @@ export default function CurrentIssuePage() {
         } catch (error: any) {
           console.error('Error moving articles:', error);
           toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to move articles to Articles in Press' });
+        }
+      },
+      reject: () => {
+        // Do nothing
+      }
+    });
+  };
+
+  /**
+   * Move articles from Current Issue (PUBLISHED) to Months (ACCEPTED)
+   * Same functionality as in articles-press page - updates status to ACCEPTED
+   */
+  const handleMoveToMonths = async () => {
+    if (selectedArticles.size === 0) {
+      toast.current?.show({ severity: 'warn', summary: 'No Selection', detail: 'Please select at least one article to move' });
+      return;
+    }
+    
+    // Get selected articles from filtered articles
+    const articlesToMove = filteredArticles.filter(a => selectedArticles.has(a.id));
+    
+    if (articlesToMove.length === 0) {
+      toast.current?.show({ severity: 'warn', summary: 'No Articles', detail: 'No articles found to move' });
+      return;
+    }
+    
+    confirmDialog({
+      message: `Are you sure you want to move ${articlesToMove.length} article(s) to Months?`,
+      header: 'Confirm Move to Months',
+      icon: 'pi pi-exclamation-triangle',
+      accept: async () => {
+        try {
+          // Clear selection immediately to prevent checkbox issues
+          setSelectedArticles(new Set());
+          
+          // Update each article status to ACCEPTED (for in-press/months)
+          // Same as articles-press page functionality
+          for (const article of articlesToMove) {
+            await adminAPI.updateArticle(article.id, {
+              status: 'ACCEPTED'
+            });
+          }
+          
+          toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Articles moved to Months successfully' });
+          // Clear filters to show updated list
+          setSelectedMonth('');
+          setSelectedYear('');
+          setSelectedSpecialIssue('');
+          await loadJournalAndArticles();
+        } catch (error: any) {
+          console.error('Error moving articles:', error);
+          toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to move articles to Months' });
         }
       },
       reject: () => {
@@ -498,6 +724,16 @@ export default function CurrentIssuePage() {
                       >
                         Full Text
                       </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await handleEdit(article);
+                        }}
+                        className="px-3 py-1.5 text-sm bg-yellow-50 text-yellow-700 border border-yellow-200 rounded hover:bg-yellow-100 transition-colors flex items-center gap-1"
+                      >
+                        <i className="pi pi-pencil text-xs"></i>
+                        <span>Edit</span>
+                      </button>
                     </div>
                   </div>
 
@@ -534,6 +770,39 @@ export default function CurrentIssuePage() {
       {/* Bottom Action Buttons */}
       {filteredArticles.length > 0 && (
         <div className="mt-6 flex justify-end gap-4">
+          <button
+            type="button"
+            onClick={handleMoveToMonths}
+            disabled={selectedArticles.size === 0}
+            style={{
+              opacity: selectedArticles.size === 0 ? 0.5 : 1,
+              cursor: selectedArticles.size === 0 ? 'not-allowed' : 'pointer',
+              backgroundColor: selectedArticles.size === 0 ? '#d1d5db' : '#6b7280',
+              color: selectedArticles.size === 0 ? '#6b7280' : '#ffffff',
+              border: 'none',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '8px',
+              fontWeight: '500',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+            title={selectedArticles.size === 0 ? 'Please select at least one article to move' : `Move ${selectedArticles.size} selected article(s) to Months (unpublish them)`}
+          >
+            <i className="pi pi-calendar"></i>
+            <span>Move to Months</span>
+            {selectedArticles.size > 0 && (
+              <span style={{
+                marginLeft: '0.25rem',
+                padding: '0.125rem 0.5rem',
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '4px',
+                fontSize: '0.75rem'
+              }}>
+                {selectedArticles.size}
+              </span>
+            )}
+          </button>
           <button
             type="button"
             onClick={handleMoveToArticlesInPress}
@@ -980,6 +1249,352 @@ export default function CurrentIssuePage() {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+      </Dialog>
+
+      {/* Edit Article Dialog */}
+      <Dialog
+        header="Edit Article"
+        visible={showEditDialog}
+        style={{ width: '90vw', maxWidth: '900px' }}
+        contentStyle={{ maxHeight: 'calc(90vh - 120px)', overflow: 'auto' }}
+        onHide={() => {
+          setShowEditDialog(false);
+          setSelectedArticle(null);
+        }}
+        footer={
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowEditDialog(false);
+                setSelectedArticle(null);
+              }}
+              disabled={saving}
+              style={{
+                backgroundColor: '#f1f5f9',
+                color: '#475569',
+                border: '1px solid #cbd5e1',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontWeight: '500',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                opacity: saving ? 0.6 : 1
+              }}
+            >
+              <i className="pi pi-times"></i>
+              <span>Cancel</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              style={{
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontWeight: '500',
+                cursor: saving ? 'wait' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                minWidth: '120px'
+              }}
+            >
+              {saving ? <i className="pi pi-spin pi-spinner"></i> : <i className="pi pi-check"></i>}
+              <span>{saving ? 'Saving...' : 'Submit'}</span>
+            </button>
+          </div>
+        }
+      >
+        {selectedArticle && (
+          <div className="flex flex-col gap-4 py-4">
+            <TabView>
+              <TabPanel header="Publication Details">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <label className="block mb-2 text-sm font-medium text-gray-700">Volume No *</label>
+                      <Dropdown
+                        value={selectedArticle.volumeNo}
+                        options={volumeOptions}
+                        onChange={(e) => setSelectedArticle({ ...selectedArticle, volumeNo: e.value })}
+                        className="w-full"
+                        placeholder="Select Volume"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="block mb-2 text-sm font-medium text-gray-700">Issue No *</label>
+                      <Dropdown
+                        value={selectedArticle.issueNo}
+                        options={issueOptions}
+                        onChange={(e) => setSelectedArticle({ ...selectedArticle, issueNo: e.value })}
+                        className="w-full"
+                        placeholder="Select Issue"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <label className="block mb-2 text-sm font-medium text-gray-700">Issue Month *</label>
+                      <Dropdown
+                        value={selectedArticle.issueMonth}
+                        options={monthOptions}
+                        onChange={(e) => setSelectedArticle({ ...selectedArticle, issueMonth: e.value })}
+                        className="w-full"
+                        placeholder="Select Month"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="block mb-2 text-sm font-medium text-gray-700">Year *</label>
+                      <Dropdown
+                        value={selectedArticle.year}
+                        options={yearOptions}
+                        onChange={(e) => setSelectedArticle({ ...selectedArticle, year: e.value })}
+                        className="w-full"
+                        placeholder="Select Year"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Article Type</label>
+                    <InputText
+                      value={selectedArticle.articleType || ''}
+                      onChange={(e) => setSelectedArticle({ ...selectedArticle, articleType: e.target.value })}
+                      className="w-full"
+                      placeholder="Enter article type"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Special Issue / Conference Proceedings title</label>
+                    <InputText
+                      value={selectedArticle.specialIssue || ''}
+                      onChange={(e) => setSelectedArticle({ ...selectedArticle, specialIssue: e.target.value })}
+                      className="w-full"
+                      placeholder="Enter special issue or conference title"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Article Title *</label>
+                    <InputText
+                      value={selectedArticle.title}
+                      onChange={(e) => setSelectedArticle({ ...selectedArticle, title: e.target.value })}
+                      className="w-full"
+                      placeholder="Enter article title"
+                    />
+                  </div>
+                </div>
+              </TabPanel>
+
+              <TabPanel header="Authors">
+                <div className="space-y-4">
+                  <div className="flex flex-col">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Enter Author Names *</label>
+                    <Editor
+                      value={selectedArticle.authors ? selectedArticle.authors.map(a => a.name).join(', ') : ''}
+                      onTextChange={(e) => {
+                        const authorNames = e.htmlValue?.replace(/<[^>]*>/g, '').split(',').map(name => name.trim()).filter(Boolean) || [];
+                        setSelectedArticle({
+                          ...selectedArticle,
+                          authors: authorNames.map(name => ({ 
+                            name, 
+                            email: '', 
+                            affiliation: '' 
+                          }))
+                        });
+                      }}
+                      style={{ height: '200px' }}
+                      placeholder="Enter author names..."
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Enter Author Affiliations *</label>
+                    <Editor
+                      value={selectedArticle.authors ? selectedArticle.authors.map(a => a.affiliation || '').join(', ') : ''}
+                      onTextChange={(e) => {
+                        const affiliations = e.htmlValue?.replace(/<[^>]*>/g, '').split(',').map(aff => aff.trim()) || [];
+                        setSelectedArticle({
+                          ...selectedArticle,
+                          authors: selectedArticle.authors?.map((a, i) => ({ 
+                            ...a, 
+                            affiliation: affiliations[i] || '' 
+                          })) || []
+                        });
+                      }}
+                      style={{ height: '200px' }}
+                      placeholder="Enter author affiliations..."
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Enter Author Emails</label>
+                    <InputTextarea
+                      value={selectedArticle.authors ? selectedArticle.authors.map(a => a.email || '').join(', ') : ''}
+                      onChange={(e) => {
+                        const emails = e.target.value.split(',').map(email => email.trim()).filter(Boolean);
+                        setSelectedArticle({
+                          ...selectedArticle,
+                          authors: selectedArticle.authors?.map((a, i) => ({ 
+                            ...a, 
+                            email: emails[i] || '' 
+                          })) || []
+                        });
+                      }}
+                      rows={3}
+                      className="w-full"
+                      placeholder="Enter author emails separated by commas"
+                    />
+                  </div>
+                </div>
+              </TabPanel>
+
+              <TabPanel header="Content">
+                <div className="space-y-4">
+                  <div className="flex flex-col">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Keywords *</label>
+                    <Editor
+                      value={selectedArticle.keywords || ''}
+                      onTextChange={(e) => setSelectedArticle({ ...selectedArticle, keywords: e.htmlValue || '' })}
+                      style={{ height: '150px' }}
+                      placeholder="Separate keywords with commas"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <label className="block mb-2 text-sm font-medium text-gray-700">First Page Number *</label>
+                      <InputText
+                        value={selectedArticle.firstPageNumber || ''}
+                        onChange={(e) => setSelectedArticle({ ...selectedArticle, firstPageNumber: e.target.value })}
+                        className="w-full"
+                        placeholder="Enter first page number"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="block mb-2 text-sm font-medium text-gray-700">Last Page Number *</label>
+                      <InputText
+                        value={selectedArticle.lastPageNumber || ''}
+                        onChange={(e) => setSelectedArticle({ ...selectedArticle, lastPageNumber: e.target.value })}
+                        className="w-full"
+                        placeholder="Enter last page number"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">DOI Number</label>
+                    <InputText
+                      value={selectedArticle.doi || ''}
+                      onChange={(e) => setSelectedArticle({ ...selectedArticle, doi: e.target.value })}
+                      className="w-full"
+                      placeholder="Enter DOI number"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Abstract</label>
+                    <Editor
+                      value={selectedArticle.abstract || ''}
+                      onTextChange={(e) => setSelectedArticle({ ...selectedArticle, abstract: e.htmlValue || '' })}
+                      style={{ height: '250px' }}
+                      placeholder="Enter abstract..."
+                    />
+                  </div>
+                </div>
+              </TabPanel>
+
+              <TabPanel header="Additional Details">
+                <div className="space-y-4">
+                  <div className="flex flex-col">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Enter Corresponding Author Details *</label>
+                    <Editor
+                      value={selectedArticle.correspondingAuthorDetails || ''}
+                      onTextChange={(e) => setSelectedArticle({ ...selectedArticle, correspondingAuthorDetails: e.htmlValue || '' })}
+                      style={{ height: '200px' }}
+                      placeholder="Enter corresponding author details..."
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Cite this article as *</label>
+                    <Editor
+                      value={selectedArticle.citeAs || ''}
+                      onTextChange={(e) => setSelectedArticle({ ...selectedArticle, citeAs: e.htmlValue || '' })}
+                      style={{ height: '200px' }}
+                      placeholder="Enter citation format..."
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Country</label>
+                    <InputText
+                      value={selectedArticle.country || ''}
+                      onChange={(e) => setSelectedArticle({ ...selectedArticle, country: e.target.value })}
+                      className="w-full"
+                      placeholder="Enter country"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="flex flex-col">
+                      <label className="block mb-2 text-sm font-medium text-gray-700">Received on Date</label>
+                      <InputText
+                        type="date"
+                        value={selectedArticle.receivedAt ? formatDate(selectedArticle.receivedAt) : ''}
+                        onChange={(e) => setSelectedArticle({ ...selectedArticle, receivedAt: e.target.value })}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="block mb-2 text-sm font-medium text-gray-700">Accepted on Date</label>
+                      <InputText
+                        type="date"
+                        value={selectedArticle.acceptedAt ? formatDate(selectedArticle.acceptedAt) : ''}
+                        onChange={(e) => setSelectedArticle({ ...selectedArticle, acceptedAt: e.target.value })}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="block mb-2 text-sm font-medium text-gray-700">Published on Date</label>
+                      <InputText
+                        type="date"
+                        value={selectedArticle.publishedAt ? formatDate(selectedArticle.publishedAt) : ''}
+                        onChange={(e) => setSelectedArticle({ ...selectedArticle, publishedAt: e.target.value })}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </TabPanel>
+
+              {selectedArticle.id !== 0 && (
+                <TabPanel header="Article Content">
+                  <div className="space-y-6">
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <div key={num} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex flex-col mb-4">
+                          <label className="block mb-2 text-sm font-medium text-gray-700">Heading {num} Title</label>
+                          <InputText
+                            value={selectedArticle[`heading${num}Title` as keyof Article] as string || ''}
+                            onChange={(e) => setSelectedArticle({ ...selectedArticle, [`heading${num}Title`]: e.target.value } as any)}
+                            className="w-full"
+                            placeholder={`Enter heading ${num} title`}
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          <label className="block mb-2 text-sm font-medium text-gray-700">Heading {num} Content</label>
+                          <Editor
+                            value={selectedArticle[`heading${num}Content` as keyof Article] as string || ''}
+                            onTextChange={(e) => setSelectedArticle({ ...selectedArticle, [`heading${num}Content`]: e.htmlValue || '' } as any)}
+                            style={{ height: '200px' }}
+                            placeholder={`Enter heading ${num} content...`}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </TabPanel>
+              )}
+            </TabView>
           </div>
         )}
       </Dialog>
