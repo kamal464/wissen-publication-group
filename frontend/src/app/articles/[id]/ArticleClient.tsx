@@ -246,8 +246,13 @@ export default function ArticleDetailPage() {
         setLoading(true);
         setError(null);
 
-        // Fetch article details
-        const articleResponse = await articleService.getById(Number(id));
+        // Fetch article details - use adminAPI if accessed from admin to get all fields
+        let articleResponse;
+        if (isAdmin) {
+          articleResponse = await adminAPI.getArticle(Number(id));
+        } else {
+          articleResponse = await articleService.getById(Number(id));
+        }
         setArticle(articleResponse.data as Article);
 
         // Fetch related articles
@@ -262,7 +267,7 @@ export default function ArticleDetailPage() {
     };
 
     fetchArticleData();
-  }, [id]);
+  }, [id, isAdmin]);
 
   if (loading) {
     return (
@@ -298,11 +303,36 @@ export default function ArticleDetailPage() {
     );
   }
 
+  // Build breadcrumbs - include year-volume-issue when available and accessed from admin
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Home', href: '/' },
     { label: 'Articles', href: '/articles' },
-    { label: article.title, href: `/articles/${article.id}` },
   ];
+
+  // Add journal and year-volume-issue info if available and accessed from admin
+  if (isAdmin && article) {
+    const articleData = article as any; // Type assertion to access volume/issue fields
+    if (articleData.journal?.title) {
+      breadcrumbItems.push({ 
+        label: articleData.journal.title, 
+        href: `/journals/${article.journalId}` 
+      });
+      
+      // Add year-volume-issue if available
+      if (articleData.year && articleData.volumeNo && articleData.issueNo) {
+        breadcrumbItems.push({ 
+          label: `${articleData.year}-${articleData.volumeNo}-${articleData.issueNo}`,
+          href: undefined // No link for current page
+        });
+      }
+    }
+  }
+  
+  // Always add article title as last item
+  breadcrumbItems.push({ 
+    label: article.title, 
+    href: `/articles/${article.id}` 
+  });
 
   return (
     <>
@@ -362,7 +392,7 @@ export default function ArticleDetailPage() {
                     </time>
                   )}
 
-                  <div className="article__status" style={isAdmin ? { display: 'flex', alignItems: 'center', gap: '12px' } : {}}>
+                  <div className="article__status" style={isAdmin ? { display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'space-between', width: '100%' } : {}}>
                     <span className={`article__status-badge article__status-badge--${article.status.toLowerCase()}`}>
                       {article.status}
                     </span>
@@ -370,10 +400,11 @@ export default function ArticleDetailPage() {
                       <button
                         type="button"
                         onClick={handleEdit}
-                        className="px-3 py-1.5 text-sm bg-yellow-50 text-yellow-700 border border-yellow-200 rounded hover:bg-yellow-100 transition-colors flex items-center gap-1"
+                        className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium"
                         title="Edit Article"
+                        style={{ marginLeft: 'auto' }}
                       >
-                        <i className="pi pi-pencil text-xs"></i>
+                        <i className="pi pi-pencil"></i>
                         <span>Edit</span>
                       </button>
                     )}
