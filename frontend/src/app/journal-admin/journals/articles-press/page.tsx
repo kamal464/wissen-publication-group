@@ -65,6 +65,11 @@ export default function ArticlesInPressPage() {
   const [previewMonth, setPreviewMonth] = useState<string>('');
   const [previewYear, setPreviewYear] = useState<string>('');
   const [previewSelectedArticles, setPreviewSelectedArticles] = useState<Set<number>>(new Set());
+  const [openMonthDropdown, setOpenMonthDropdown] = useState<string | null>(null);
+  const [showMoveToMonthsDialog, setShowMoveToMonthsDialog] = useState(false);
+  const [selectedMoveMonth, setSelectedMoveMonth] = useState<string>('');
+  const [selectedMoveYear, setSelectedMoveYear] = useState<string>('');
+  const [articlesToMove, setArticlesToMove] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -139,6 +144,25 @@ export default function ArticlesInPressPage() {
       }
     }
   }, []);
+
+  // Close month dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openMonthDropdown && showPreviewDialog) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.month-dropdown-container')) {
+          setOpenMonthDropdown(null);
+        }
+      }
+    };
+
+    if (showPreviewDialog) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [openMonthDropdown, showPreviewDialog]);
 
   const loadJournalAndArticles = async () => {
     try {
@@ -464,10 +488,10 @@ export default function ArticlesInPressPage() {
             type="button"
             onClick={() => {
               setShowPreviewDialog(true);
-              const now = new Date();
-              const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-              setPreviewMonth(monthNames[now.getMonth()]);
-              setPreviewYear(now.getFullYear().toString());
+              // Don't set default month/year - let user select
+              setPreviewMonth('');
+              setPreviewYear('');
+              setPreviewSelectedArticles(new Set());
             }}
             style={{
               backgroundColor: 'transparent',
@@ -1012,6 +1036,7 @@ export default function ArticlesInPressPage() {
           setPreviewMonth('');
           setPreviewYear('');
           setPreviewSelectedArticles(new Set());
+          setOpenMonthDropdown(null);
         }}
         footer={
           <div className="flex justify-end gap-2">
@@ -1093,11 +1118,11 @@ export default function ArticlesInPressPage() {
                   ? articles.filter(a => a.issueMonth === previewMonth && a.year === previewYear)
                   : articles;
                 
-                const articlesToMove = previewSelectedArticles.size > 0
+                const articlesToMoveList = previewSelectedArticles.size > 0
                   ? filteredArticles.filter(a => previewSelectedArticles.has(a.id))
                   : filteredArticles;
                 
-                if (articlesToMove.length === 0) {
+                if (articlesToMoveList.length === 0) {
                   if (previewSelectedArticles.size === 0) {
                     toast.current?.show({ severity: 'warn', summary: 'No Articles', detail: previewMonth && previewYear ? `No articles found for ${previewMonth} ${previewYear}` : 'No articles available' });
                   } else {
@@ -1106,34 +1131,9 @@ export default function ArticlesInPressPage() {
                   return;
                 }
                 
-                confirmDialog({
-                  message: `Are you sure you want to move ${articlesToMove.length} article(s) to Months?`,
-                  header: 'Confirm Move to Months',
-                  icon: 'pi pi-exclamation-triangle',
-                  accept: async () => {
-                    try {
-                      // Update each article status to ACCEPTED (for in-press/months)
-                      for (const article of articlesToMove) {
-                        await adminAPI.updateArticle(article.id, {
-                          status: 'ACCEPTED'
-                        });
-                      }
-                      
-                      toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Articles moved to Months successfully' });
-                      setShowPreviewDialog(false);
-                      setPreviewMonth('');
-                      setPreviewYear('');
-                      setPreviewSelectedArticles(new Set());
-                      await loadJournalAndArticles();
-                    } catch (error: any) {
-                      console.error('Error moving articles:', error);
-                      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to move articles to Months' });
-                    }
-                  },
-                  reject: () => {
-                    // Do nothing
-                  }
-                });
+                // Set articles to move and open month selection dialog
+                setArticlesToMove(articlesToMoveList);
+                setShowMoveToMonthsDialog(true);
               }}
               style={{
                 backgroundColor: '#6b7280',
@@ -1178,6 +1178,7 @@ export default function ArticlesInPressPage() {
           <div className="mb-6 flex flex-wrap gap-2 relative">
             {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month) => {
               const isSelected = previewMonth === month;
+              const isDropdownOpen = openMonthDropdown === month;
               const currentYear = new Date().getFullYear();
               const yearOptions = Array.from({ length: currentYear - 2017 }, (_, i) => {
                 const year = 2018 + i;
@@ -1185,11 +1186,23 @@ export default function ArticlesInPressPage() {
               });
               
               return (
-                <div key={month} className="relative">
+                <div key={month} className="relative month-dropdown-container">
                   <button
                     type="button"
-                    onClick={() => {
-                      setPreviewMonth(isSelected ? '' : month);
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isSelected) {
+                        // If already selected, toggle year dropdown
+                        setOpenMonthDropdown(isDropdownOpen ? null : month);
+                      } else {
+                        // Select month and show year dropdown, close other dropdowns
+                        // IMPORTANT: Clear year when selecting a different month
+                        setPreviewYear(''); // Clear year first
+                        setPreviewMonth(month);
+                        setOpenMonthDropdown(month);
+                        // Clear selected articles when changing month
+                        setPreviewSelectedArticles(new Set());
+                      }
                     }}
                     className={`px-4 py-2 rounded-lg border-2 transition-all ${
                       isSelected
@@ -1208,14 +1221,19 @@ export default function ArticlesInPressPage() {
                     <span style={{ color: isSelected ? '#1e40af' : '#374151' }}>{month}</span>
                     <i className="pi pi-chevron-down text-xs" style={{ color: isSelected ? '#2563eb' : '#6b7280' }}></i>
                   </button>
-                  {isSelected && (
-                    <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[200px] max-h-[300px] overflow-y-auto">
+                  {isSelected && isDropdownOpen && (
+                    <div 
+                      className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[200px] max-h-[300px] overflow-y-auto"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {yearOptions.map((option) => (
                         <button
                           key={option.value}
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setPreviewYear(option.value);
+                            setOpenMonthDropdown(null);
                           }}
                           className={`w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors ${
                             previewYear === option.value ? 'bg-blue-100 font-semibold' : ''
@@ -1280,10 +1298,25 @@ export default function ArticlesInPressPage() {
               </thead>
               <tbody>
                 {(() => {
-                  // Filter articles by selected month/year if both are selected
-                  const filteredArticles = previewMonth && previewYear
-                    ? articles.filter(a => a.issueMonth === previewMonth && a.year === previewYear)
-                    : articles;
+                  // Filter articles by selected month/year
+                  // Only show articles when BOTH month AND year are selected
+                  // If only month is selected, show no articles (user must select year)
+                  let filteredArticles: Article[] = [];
+                  
+                  if (previewMonth && previewYear) {
+                    // Both month and year selected - filter by both
+                    filteredArticles = articles.filter(a => {
+                      const articleMonth = String(a.issueMonth || '').trim();
+                      const articleYear = String(a.year || '').trim();
+                      return articleMonth === previewMonth && articleYear === previewYear;
+                    });
+                  } else if (previewMonth && !previewYear) {
+                    // Only month selected, no year - show no articles (user needs to select year)
+                    filteredArticles = [];
+                  } else {
+                    // No month selected - show all articles
+                    filteredArticles = articles;
+                  }
                   
                   return filteredArticles.length > 0 ? (
                     filteredArticles.map((article) => (
@@ -2021,6 +2054,165 @@ export default function ArticlesInPressPage() {
             </div>
           </div>
         )}
+      </Dialog>
+
+      {/* Move to Months Dialog - Month Selection */}
+      <Dialog
+        header="Select Month and Year"
+        visible={showMoveToMonthsDialog}
+        style={{ width: '90vw', maxWidth: '600px' }}
+        onHide={() => {
+          setShowMoveToMonthsDialog(false);
+          setSelectedMoveMonth('');
+          setSelectedMoveYear('');
+          setArticlesToMove([]);
+        }}
+        footer={
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowMoveToMonthsDialog(false);
+                setSelectedMoveMonth('');
+                setSelectedMoveYear('');
+                setArticlesToMove([]);
+              }}
+              style={{
+                backgroundColor: '#f1f5f9',
+                color: '#475569',
+                border: '1px solid #cbd5e1',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!selectedMoveMonth || !selectedMoveYear) {
+                  toast.current?.show({ 
+                    severity: 'warn', 
+                    summary: 'Validation Error', 
+                    detail: 'Please select both month and year' 
+                  });
+                  return;
+                }
+
+                if (articlesToMove.length === 0) {
+                  toast.current?.show({ 
+                    severity: 'warn', 
+                    summary: 'No Articles', 
+                    detail: 'No articles selected to move' 
+                  });
+                  return;
+                }
+
+                confirmDialog({
+                  message: `Are you sure you want to move ${articlesToMove.length} article(s) to ${selectedMoveMonth} ${selectedMoveYear}?`,
+                  header: 'Confirm Move to Months',
+                  icon: 'pi pi-exclamation-triangle',
+                  accept: async () => {
+                    try {
+                      // Update each article with the selected month and year, and keep status as ACCEPTED
+                      for (const article of articlesToMove) {
+                        await adminAPI.updateArticle(article.id, {
+                          status: 'ACCEPTED',
+                          issueMonth: selectedMoveMonth,
+                          year: selectedMoveYear
+                        });
+                      }
+                      
+                      toast.current?.show({ 
+                        severity: 'success', 
+                        summary: 'Success', 
+                        detail: `${articlesToMove.length} article(s) moved to ${selectedMoveMonth} ${selectedMoveYear} successfully` 
+                      });
+                      setShowMoveToMonthsDialog(false);
+                      setShowPreviewDialog(false);
+                      setPreviewMonth('');
+                      setPreviewYear('');
+                      setPreviewSelectedArticles(new Set());
+                      setSelectedMoveMonth('');
+                      setSelectedMoveYear('');
+                      setArticlesToMove([]);
+                      await loadJournalAndArticles();
+                    } catch (error: any) {
+                      console.error('Error moving articles:', error);
+                      toast.current?.show({ 
+                        severity: 'error', 
+                        summary: 'Error', 
+                        detail: 'Failed to move articles to Months' 
+                      });
+                    }
+                  },
+                  reject: () => {
+                    // Do nothing
+                  }
+                });
+              }}
+              disabled={!selectedMoveMonth || !selectedMoveYear}
+              style={{
+                backgroundColor: (!selectedMoveMonth || !selectedMoveYear) ? '#9ca3af' : '#6b7280',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontWeight: '500',
+                cursor: (!selectedMoveMonth || !selectedMoveYear) ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                opacity: (!selectedMoveMonth || !selectedMoveYear) ? 0.6 : 1
+              }}
+            >
+              <i className="pi pi-check"></i>
+              <span>Move Articles</span>
+            </button>
+          </div>
+        }
+      >
+        <div className="py-4 space-y-4">
+          <div className="mb-4">
+            <p className="text-sm text-gray-600 mb-2">
+              Select the month and year to move <strong>{articlesToMove.length}</strong> article(s) to:
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col">
+              <label className="block mb-2 text-sm font-medium text-gray-700">Select Month *</label>
+              <Dropdown
+                value={selectedMoveMonth}
+                options={months.filter(m => m.value !== '')}
+                onChange={(e) => setSelectedMoveMonth(e.value)}
+                className="w-full"
+                placeholder="Select Month"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="block mb-2 text-sm font-medium text-gray-700">Select Year *</label>
+              <Dropdown
+                value={selectedMoveYear}
+                options={years.filter(y => y.value !== '')}
+                onChange={(e) => setSelectedMoveYear(e.value)}
+                className="w-full"
+                placeholder="Select Year"
+              />
+            </div>
+          </div>
+
+          {selectedMoveMonth && selectedMoveYear && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-900">
+                <i className="pi pi-info-circle mr-2"></i>
+                Articles will be moved to <strong>{selectedMoveMonth} {selectedMoveYear}</strong>
+              </p>
+            </div>
+          )}
+        </div>
       </Dialog>
     </div>
   );
