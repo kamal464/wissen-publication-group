@@ -9,6 +9,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { Dropdown } from 'primereact/dropdown';
 import { Editor } from 'primereact/editor';
 import { TabView, TabPanel } from 'primereact/tabview';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { adminAPI } from '@/lib/api';
 import { loadJournalData } from '@/lib/journalAdminUtils';
 import 'quill/dist/quill.snow.css';
@@ -57,6 +58,8 @@ export default function ArchiveIssuePage() {
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [movingToInpress, setMovingToInpress] = useState(false);
+  const [selectedArticles, setSelectedArticles] = useState<Set<number>>(new Set());
   const toast = useRef<Toast>(null);
 
   const volume = searchParams.get('volume') || '';
@@ -88,8 +91,11 @@ export default function ArchiveIssuePage() {
     { label: 'December', value: 'December' }
   ];
 
-  const yearOptions = Array.from({ length: 20 }, (_, i) => {
-    const year = new Date().getFullYear() - i;
+  const currentYear = new Date().getFullYear();
+  const startYear = 2040;
+  const endYear = currentYear - 20; // Go back 20 years from current
+  const yearOptions = Array.from({ length: startYear - endYear + 1 }, (_, i) => {
+    const year = startYear - i;
     return { label: year.toString(), value: year.toString() };
   });
   yearOptions.unshift({ label: 'Select Year', value: '' });
@@ -108,6 +114,8 @@ export default function ArchiveIssuePage() {
 
   useEffect(() => {
     loadJournalAndArticles();
+    // Clear selections when volume/issue/year changes
+    setSelectedArticles(new Set());
   }, [volume, issue, year]);
 
   const loadJournalAndArticles = async () => {
@@ -166,6 +174,88 @@ export default function ArchiveIssuePage() {
   const formatAuthors = (authors?: Array<{ name: string; affiliation?: string }>) => {
     if (!authors || authors.length === 0) return 'No authors listed';
     return authors.map(a => a.name).join(', ');
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedArticles.size === articles.length) {
+      // Deselect all
+      setSelectedArticles(new Set());
+    } else {
+      // Select all
+      setSelectedArticles(new Set(articles.map(a => a.id)));
+    }
+  };
+
+  const handleToggleArticle = (articleId: number) => {
+    setSelectedArticles(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(articleId)) {
+        newSet.delete(articleId);
+      } else {
+        newSet.add(articleId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleMoveToInpress = () => {
+    if (selectedArticles.size === 0) {
+      toast.current?.show({ 
+        severity: 'warn', 
+        summary: 'No Selection', 
+        detail: 'Please select at least one article to move' 
+      });
+      return;
+    }
+
+    const articlesToMove = articles.filter(a => selectedArticles.has(a.id));
+    if (articlesToMove.length === 0) {
+      toast.current?.show({ 
+        severity: 'warn', 
+        summary: 'No Articles', 
+        detail: 'No articles selected to move' 
+      });
+      return;
+    }
+
+    confirmDialog({
+      message: `Are you sure you want to move ${articlesToMove.length} selected article(s) to Inpress? This will change their status from PUBLISHED to ACCEPTED.`,
+      header: 'Confirm Move to Inpress',
+      icon: 'pi pi-exclamation-triangle',
+      accept: async () => {
+        try {
+          setMovingToInpress(true);
+          // Update each selected article status to ACCEPTED (for inpress)
+          for (const article of articlesToMove) {
+            await adminAPI.updateArticle(article.id, {
+              status: 'ACCEPTED'
+            });
+          }
+          
+          toast.current?.show({ 
+            severity: 'success', 
+            summary: 'Success', 
+            detail: `${articlesToMove.length} article(s) moved to Inpress successfully` 
+          });
+          
+          // Clear selection and reload articles
+          setSelectedArticles(new Set());
+          await loadJournalAndArticles();
+        } catch (error: any) {
+          console.error('Error moving articles to inpress:', error);
+          toast.current?.show({ 
+            severity: 'error', 
+            summary: 'Error', 
+            detail: error.message || 'Failed to move articles to Inpress' 
+          });
+        } finally {
+          setMovingToInpress(false);
+        }
+      },
+      reject: () => {
+        // Do nothing
+      }
+    });
   };
 
   const handleEdit = async (article: Article) => {
@@ -301,6 +391,7 @@ export default function ArchiveIssuePage() {
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-8">
       <Toast ref={toast} />
+      <ConfirmDialog />
       
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -323,47 +414,122 @@ export default function ArchiveIssuePage() {
       </div>
 
       {articles.length > 0 ? (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">List of Articles</h2>
-          
-          <div className="space-y-4">
-            {articles.map((article) => (
-              <div key={article.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-blue-600 mb-2">{article.title}</h3>
-                    
-                    {article.authors && article.authors.length > 0 && (
-                      <div className="mb-3 flex items-start gap-2">
-                        <i className="pi pi-user text-gray-500 mt-0.5"></i>
-                        <span className="text-sm text-gray-700">{formatAuthors(article.authors)}</span>
-                      </div>
-                    )}
+        <>
+          {/* Select All / Deselect All Button */}
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleToggleSelectAll}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm"
+              >
+                <i className={`pi ${selectedArticles.size === articles.length ? 'pi-check-square' : 'pi-square'}`}></i>
+                <span>{selectedArticles.size === articles.length ? 'Deselect All' : 'Select All'}</span>
+              </button>
+              {selectedArticles.size > 0 && (
+                <span className="text-sm text-gray-600">
+                  {selectedArticles.size} of {articles.length} article(s) selected
+                </span>
+              )}
+            </div>
+          </div>
 
-                    <div className="flex items-center gap-4">
-                      {article.publishedAt && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-gray-700">Published:</span>
-                          <span className="text-sm text-gray-600">{formatDate(article.publishedAt)}</span>
-                        </div>
-                      )}
-                      
-                      {/* Edit Button beside Published */}
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(article)}
-                        className="px-3 py-1.5 text-sm bg-yellow-50 text-yellow-700 border border-yellow-200 rounded hover:bg-yellow-100 transition-colors flex items-center gap-1"
-                      >
-                        <i className="pi pi-pencil text-xs"></i>
-                        <span>Edit</span>
-                      </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {articles.map((article) => (
+              <div
+                key={article.id}
+                className={`bg-white rounded-lg shadow-md p-4 border-2 transition-all ${
+                  selectedArticles.has(article.id) 
+                    ? 'border-blue-500 shadow-lg' 
+                    : 'border-gray-200 hover:shadow-lg'
+                }`}
+              >
+                {/* Checkbox */}
+                <div className="mb-3 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedArticles.has(article.id)}
+                    onChange={() => handleToggleArticle(article.id)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label className="text-sm text-gray-700 cursor-pointer" onClick={() => handleToggleArticle(article.id)}>
+                    Select article
+                  </label>
+                </div>
+
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                  {/* Article Type Badge */}
+                  {article.articleType && (
+                    <div className="mb-2">
+                      <span className="inline-block px-2 py-0.5 text-xs font-bold text-white bg-gray-700 rounded-full">
+                        {article.articleType}
+                      </span>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Article Title */}
+                  <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2" style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden'
+                  }}>
+                    {article.title}
+                  </h3>
+
+                  {/* Authors */}
+                  {article.authors && article.authors.length > 0 && (
+                    <div className="mb-2">
+                      <span className="text-xs font-semibold text-gray-700">Author(s): </span>
+                      <span className="text-xs text-gray-600 line-clamp-1">{formatAuthors(article.authors)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-1 ml-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(article)}
+                    style={{
+                      backgroundColor: '#fbbf24',
+                      color: 'white',
+                      border: 'none',
+                      padding: '0.4rem',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem'
+                    }}
+                    title="Edit"
+                  >
+                    <i className="pi pi-pencil"></i>
+                  </button>
                 </div>
               </div>
-            ))}
+
+              {/* Dates - Compact */}
+              <div className="space-y-1 text-xs text-gray-600">
+                {article.receivedAt && (
+                  <div>
+                    <span className="font-semibold">Received:</span> {formatDate(article.receivedAt)}
+                  </div>
+                )}
+                {article.acceptedAt && (
+                  <div>
+                    <span className="font-semibold">Accepted:</span> {formatDate(article.acceptedAt)}
+                  </div>
+                )}
+                {article.publishedAt && (
+                  <div>
+                    <span className="font-semibold">Published:</span> {formatDate(article.publishedAt)}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
           </div>
-        </div>
+        </>
       ) : (
         <div className="bg-white rounded-lg shadow-md p-12 text-center">
           <i className="pi pi-file text-6xl text-gray-300 mb-4"></i>
@@ -373,6 +539,43 @@ export default function ArchiveIssuePage() {
               ? `No articles found for Volume ${volume}, Issue ${issue}, Year ${year}`
               : 'No articles available for the selected filters.'}
           </p>
+        </div>
+      )}
+
+      {/* Move to Inpress Button */}
+      {articles.length > 0 && (
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            onClick={handleMoveToInpress}
+            disabled={movingToInpress || selectedArticles.size === 0}
+            style={{
+              backgroundColor: (movingToInpress || selectedArticles.size === 0) ? '#9ca3af' : '#10b981',
+              color: 'white',
+              border: 'none',
+              padding: '0.75rem 2rem',
+              borderRadius: '8px',
+              fontWeight: '500',
+              cursor: (movingToInpress || selectedArticles.size === 0) ? 'not-allowed' : 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '1rem',
+              opacity: (movingToInpress || selectedArticles.size === 0) ? 0.6 : 1
+            }}
+          >
+            {movingToInpress ? (
+              <>
+                <i className="pi pi-spin pi-spinner"></i>
+                <span>Moving to Inpress...</span>
+              </>
+            ) : (
+              <>
+                <i className="pi pi-arrow-right"></i>
+                <span>Move to Inpress {selectedArticles.size > 0 && `(${selectedArticles.size})`}</span>
+              </>
+            )}
+          </button>
         </div>
       )}
 

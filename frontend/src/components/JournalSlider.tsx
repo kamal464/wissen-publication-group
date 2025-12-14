@@ -86,35 +86,35 @@ export default function JournalSlider() {
       { 
         id: 1, 
         title: 'Slide 1', 
-        coverImage: '/images/slides/image.png',
+        coverImage: '/images/slides/image (1).png',
         description: '',
         shortcode: ''
       },
       { 
         id: 2, 
         title: 'Slide 2', 
-        coverImage: '/images/slides/image.png',
+        coverImage: '/images/slides/image (1).png',
         description: '',
         shortcode: ''
       },
       { 
         id: 3, 
         title: 'Slide 3', 
-        coverImage: '/images/slides/image.png',
+        coverImage: '/images/slides/image (1).png',
         description: '',
         shortcode: ''
       },
       { 
         id: 4, 
         title: 'Slide 4', 
-        coverImage: '/images/slides/image.png',
+        coverImage: '/images/slides/image (1).png',
         description: '',
         shortcode: ''
       },
       { 
         id: 5, 
         title: 'Slide 5', 
-        coverImage: '/images/slides/image.png',
+        coverImage: '/images/slides/image (1).png',
         description: '',
         shortcode: ''
       },
@@ -202,52 +202,57 @@ export default function JournalSlider() {
 
   return (
     <section className="journal-slider">
-      <div className="container mx-auto px-4 py-6 md:py-8 lg:py-12">
-
-        
-        <div className="journal-slider__carousel-wrapper">
-          <Carousel
-            value={journals}
-            numVisible={1}
-            numScroll={1}
-            itemTemplate={journalTemplate}
-            circular={true}
-            autoplayInterval={4000}
-            showIndicators={true}
-            showNavigators={true}
-            className="journal-slider__carousel"
-            pt={{
-              root: { className: 'custom-carousel' },
-              content: { className: 'custom-carousel-content' },
-              item: { className: 'custom-carousel-item' },
-              indicators: { className: 'custom-carousel-indicators' },
-              indicator: { className: 'custom-carousel-indicator' }
-            }}
-          />
-        </div>
+      <div className="journal-slider__carousel-wrapper">
+        <Carousel
+          value={journals}
+          numVisible={1}
+          numScroll={1}
+          itemTemplate={journalTemplate}
+          circular={true}
+          autoplayInterval={4000}
+          showIndicators={true}
+          showNavigators={true}
+          className="journal-slider__carousel"
+          pt={{
+            root: { className: 'custom-carousel' },
+            content: { className: 'custom-carousel-content' },
+            item: { className: 'custom-carousel-item' },
+            indicators: { className: 'custom-carousel-indicators' },
+            indicator: { className: 'custom-carousel-indicator' }
+          }}
+        />
       </div>
 
       <style jsx>{`
         .journal-slider {
-          background: linear-gradient(135deg, #2563eb 0%, #1e40af 50%, #1e3a8a 100%);
+          background: transparent;
           position: relative;
           overflow: hidden;
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          margin-left: calc(50% - 50vw) !important;
+          margin-right: calc(50% - 50vw) !important;
+          left: 0 !important;
+          right: 0 !important;
+          box-sizing: border-box !important;
         }
 
         .journal-slider::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(to bottom, rgba(30, 58, 138, 0.4) 0%, rgba(30, 64, 175, 0.2) 100%);
-          z-index: 1;
+          display: none;
         }
 
         .journal-slider > div {
           position: relative;
           z-index: 2;
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-sizing: border-box !important;
         }
 
         .journal-slider__eyebrow {
@@ -299,54 +304,84 @@ export default function JournalSlider() {
         }
 
         .journal-slider__carousel-wrapper {
-          margin-top: 2rem;
-          max-width: 1400px;
-          margin-left: auto;
-          margin-right: auto;
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden;
+          box-sizing: border-box !important;
         }
 
         .journal-slide {
-          padding: 0.5rem;
-          width: 100%;
+          padding: 0 !important;
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          margin: 0 !important;
+          box-sizing: border-box !important;
+          flex-shrink: 0 !important;
+          flex-grow: 0 !important;
         }
 
         .journal-slide__link {
           display: block;
           text-decoration: none;
           color: inherit;
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-sizing: border-box !important;
         }
 
         .journal-slide__image-container {
           position: relative;
-          border-radius: 1rem;
+          border-radius: 0;
           overflow: hidden;
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
-          width: 1600px;
-          height: 700px;
-          background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-          margin: 0 auto;
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          height: calc(100vw * 736 / 1520);
+          max-height: 736px;
+          background: transparent;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-sizing: border-box !important;
         }
 
-        @media (max-width: 1680px) {
+        @media (min-width: 1520px) {
           .journal-slide__image-container {
-            width: 100%;
-            max-width: 1600px;
-            height: 700px;
+            width: 100vw !important;
+            max-width: 100vw !important;
+            min-width: 100vw !important;
+            height: 736px;
           }
         }
 
         @media (max-width: 768px) {
           .journal-slide__image-container {
-            width: 100%;
-            height: 500px;
+            width: 100vw !important;
+            max-width: 100vw !important;
+            min-width: 100vw !important;
+            height: calc(100vw * 736 / 1520);
+            min-height: 300px;
           }
         }
 
         .journal-slide__image {
-          width: 100%;
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
           height: 100%;
           object-fit: cover;
           transition: transform 0.5s ease;
+          display: block;
+          margin: 0 !important;
+          padding: 0 !important;
+          flex-shrink: 0 !important;
         }
 
         .journal-slide__link:hover .journal-slide__image {
@@ -359,7 +394,7 @@ export default function JournalSlider() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, #2563eb 0%, #1e40af 50%, #1e3a8a 100%);
+          background: transparent;
           position: absolute;
           top: 0;
           left: 0;
@@ -452,20 +487,97 @@ export default function JournalSlider() {
           }
         }
 
-        /* Custom Carousel Styles */
+        /* Custom Carousel Styles - Force Full Width */
         :global(.custom-carousel) {
-          padding: 0;
-          width: 100%;
+          padding: 0 !important;
+          margin: 0 !important;
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          box-sizing: border-box !important;
+          overflow: hidden !important;
+        }
+
+        :global(.custom-carousel .p-carousel-content) {
+          padding: 0 !important;
+          margin: 0 !important;
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          box-sizing: border-box !important;
+          transform: none !important;
         }
 
         :global(.custom-carousel-content) {
-          padding: 0;
-          width: 100%;
+          padding: 0 !important;
+          margin: 0 !important;
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          box-sizing: border-box !important;
+          transform: none !important;
         }
 
         :global(.custom-carousel-item) {
-          padding: 0;
-          width: 100%;
+          padding: 0 !important;
+          margin: 0 !important;
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          box-sizing: border-box !important;
+          flex-shrink: 0 !important;
+          flex-grow: 0 !important;
+        }
+
+        :global(.p-carousel) {
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          overflow: hidden !important;
+        }
+
+        :global(.p-carousel .p-carousel-content) {
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          transform: none !important;
+        }
+
+        :global(.p-carousel .p-carousel-content .p-carousel-item) {
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          flex-shrink: 0 !important;
+          flex-grow: 0 !important;
+        }
+
+        :global(.p-carousel-container) {
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+
+        :global(.p-carousel-items-container) {
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          display: flex !important;
+        }
+
+        :global(.p-carousel-items-container .p-carousel-item) {
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          flex-shrink: 0 !important;
+          flex-grow: 0 !important;
         }
 
         :global(.custom-carousel-indicators) {
@@ -477,24 +589,24 @@ export default function JournalSlider() {
           width: 12px;
           height: 12px;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.4);
-          border: 2px solid rgba(255, 255, 255, 0.6);
+          background: rgba(37, 99, 235, 0.4);
+          border: 2px solid rgba(37, 99, 235, 0.6);
           transition: all 0.3s ease;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         :global(.custom-carousel-indicator button:hover) {
-          background: rgba(255, 255, 255, 0.7);
-          border-color: rgba(255, 255, 255, 0.9);
+          background: rgba(37, 99, 235, 0.7);
+          border-color: rgba(37, 99, 235, 0.9);
           transform: scale(1.2);
         }
 
         :global(.custom-carousel-indicator.p-highlight button) {
-          background: #ffffff;
-          border-color: #ffffff;
+          background: #2563eb;
+          border-color: #2563eb;
           width: 32px;
           border-radius: 6px;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
         }
 
         :global(.custom-carousel-prev),
@@ -502,20 +614,20 @@ export default function JournalSlider() {
           width: 48px;
           height: 48px;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.25);
+          background: rgba(37, 99, 235, 0.8);
           backdrop-filter: blur(10px);
-          border: 2px solid rgba(255, 255, 255, 0.4);
+          border: 2px solid rgba(37, 99, 235, 0.9);
           color: #ffffff;
           transition: all 0.3s ease;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
         }
 
         :global(.custom-carousel-prev:hover),
         :global(.custom-carousel-next:hover) {
-          background: rgba(255, 255, 255, 0.35);
-          border-color: rgba(255, 255, 255, 0.6);
+          background: rgba(37, 99, 235, 1);
+          border-color: rgba(37, 99, 235, 1);
           transform: scale(1.1);
-          box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4);
         }
 
         :global(.custom-carousel-prev) {
@@ -531,6 +643,8 @@ export default function JournalSlider() {
           :global(.custom-carousel-next) {
             width: 40px;
             height: 40px;
+            background: rgba(37, 99, 235, 0.8);
+            border: 2px solid rgba(37, 99, 235, 0.9);
           }
 
           :global(.custom-carousel-prev) {
@@ -540,6 +654,24 @@ export default function JournalSlider() {
           :global(.custom-carousel-next) {
             right: 0.5rem;
           }
+        }
+
+        /* Global overrides to break out of any container */
+        :global(main .journal-slider),
+        :global(.container .journal-slider),
+        :global([class*="container"] .journal-slider),
+        :global([class*="mx-auto"] .journal-slider),
+        :global(body .journal-slider),
+        :global(html .journal-slider) {
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 100vw !important;
+          margin-left: calc(50% - 50vw) !important;
+          margin-right: calc(50% - 50vw) !important;
+          left: 0 !important;
+          right: 0 !important;
+          transform: none !important;
+          position: relative !important;
         }
       `}</style>
     </section>

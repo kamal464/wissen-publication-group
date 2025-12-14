@@ -104,8 +104,11 @@ export default function CurrentIssuePage() {
     { label: 'December', value: 'December' }
   ];
 
-  const yearOptions = Array.from({ length: 20 }, (_, i) => {
-    const year = new Date().getFullYear() - i;
+  const currentYearForOptions = new Date().getFullYear();
+  const startYearForOptions = 2040;
+  const endYearForOptions = currentYearForOptions - 20; // Go back 20 years from current
+  const yearOptions = Array.from({ length: startYearForOptions - endYearForOptions + 1 }, (_, i) => {
+    const year = startYearForOptions - i;
     return { label: year.toString(), value: year.toString() };
   });
   yearOptions.unshift({ label: 'Select Year', value: '' });
@@ -372,7 +375,7 @@ export default function CurrentIssuePage() {
       return false;
     } else {
       // No month or year selected - show all articles (except special issue filter above)
-      return true;
+    return true;
     }
   });
 
@@ -380,9 +383,11 @@ export default function CurrentIssuePage() {
   const specialIssues = Array.from(new Set(articles.map(a => a.specialIssue).filter(Boolean))) as string[];
 
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: currentYear - 2017 }, (_, i) => {
-    const year = 2018 + i;
+  const currentYearForMonthDropdown = new Date().getFullYear();
+  const startYearForMonthDropdown = 2040;
+  const endYearForMonthDropdown = 2018;
+  const years = Array.from({ length: startYearForMonthDropdown - endYearForMonthDropdown + 1 }, (_, i) => {
+    const year = startYearForMonthDropdown - i;
     return { label: year.toString(), value: year.toString() };
   }).reverse();
 

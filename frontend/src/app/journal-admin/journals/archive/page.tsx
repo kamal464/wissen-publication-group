@@ -8,6 +8,7 @@ import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Dropdown } from 'primereact/dropdown';
 import { TabView, TabPanel } from 'primereact/tabview';
+import { ConfirmDialog } from 'primereact/confirmdialog';
 import { adminAPI } from '@/lib/api';
 import { loadJournalData } from '@/lib/journalAdminUtils';
 import 'quill/dist/quill.snow.css';
@@ -67,8 +68,13 @@ export default function ArchivePage() {
   const [selectedIssueForBreadcrumb, setSelectedIssueForBreadcrumb] = useState<{year: number, volume: string, issue: string} | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [showArticleView, setShowArticleView] = useState(false);
+  const [currentIssueArticles, setCurrentIssueArticles] = useState<Article[]>([]);
+  const [currentArticleIndex, setCurrentArticleIndex] = useState<number>(0);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showIssueArticles, setShowIssueArticles] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const toast = useRef<Toast>(null);
 
   // Dropdown options for edit dialog
@@ -88,8 +94,11 @@ export default function ArchivePage() {
     { label: 'December', value: 'December' }
   ];
 
-  const yearOptions = Array.from({ length: 20 }, (_, i) => {
-    const year = new Date().getFullYear() - i;
+  const currentYear = new Date().getFullYear();
+  const startYear = 2040;
+  const endYear = currentYear - 20; // Go back 20 years from current
+  const yearOptions = Array.from({ length: startYear - endYear + 1 }, (_, i) => {
+    const year = startYear - i;
     return { label: year.toString(), value: year.toString() };
   });
   yearOptions.unshift({ label: 'Select Year', value: '' });
@@ -116,6 +125,11 @@ export default function ArchivePage() {
     }
   };
 
+  const formatAuthors = (authors?: Array<{ name: string; affiliation?: string }>) => {
+    if (!authors || authors.length === 0) return 'No authors listed';
+    return authors.map(a => a.name).join(', ');
+  };
+
   const handleArticleClick = async (articleId: number, issue: ArchiveIssue) => {
     try {
       setSelectedIssueForBreadcrumb({
@@ -123,6 +137,12 @@ export default function ArchivePage() {
         volume: issue.volume,
         issue: issue.issue
       });
+      // Store all articles for this issue
+      setCurrentIssueArticles(issue.articles);
+      // Find the index of the clicked article
+      const articleIndex = issue.articles.findIndex(a => a.id === articleId);
+      setCurrentArticleIndex(articleIndex >= 0 ? articleIndex : 0);
+      
       const articleResponse = await adminAPI.getArticle(articleId);
       setSelectedArticle(articleResponse.data as Article);
       setShowArticleView(true);
@@ -136,16 +156,52 @@ export default function ArchivePage() {
     }
   };
 
-  const handleBackToArchive = () => {
-    setShowArticleView(false);
-    setSelectedArticle(null);
-    setSelectedIssueForBreadcrumb(null);
+  const handleNavigateArticle = async (direction: 'prev' | 'next') => {
+    if (currentIssueArticles.length === 0) return;
+    
+    let newIndex = currentArticleIndex;
+    if (direction === 'prev') {
+      newIndex = currentArticleIndex > 0 ? currentArticleIndex - 1 : currentIssueArticles.length - 1;
+    } else {
+      newIndex = currentArticleIndex < currentIssueArticles.length - 1 ? currentArticleIndex + 1 : 0;
+    }
+    
+    setCurrentArticleIndex(newIndex);
+    const article = currentIssueArticles[newIndex];
+    try {
+      const articleResponse = await adminAPI.getArticle(article.id);
+      setSelectedArticle(articleResponse.data as Article);
+    } catch (error: any) {
+      console.error('Error loading article:', error);
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to load article details'
+      });
+    }
   };
 
-  const handleEdit = async () => {
-    if (!selectedArticle) return;
+  const handleBackToArchive = () => {
+    setShowArticleView(false);
+    setShowIssueArticles(false);
+    setSelectedArticle(null);
+    setSelectedIssueForBreadcrumb(null);
+    setCurrentIssueArticles([]);
+    setCurrentArticleIndex(0);
+    setSelectedIssue(null);
+  };
+
+  const handleBackToIssueCards = () => {
+    setShowArticleView(false);
+    setSelectedArticle(null);
+    setCurrentArticleIndex(0);
+  };
+
+  const handleEdit = async (article?: Article) => {
+    const articleToEdit = article || selectedArticle;
+    if (!articleToEdit) return;
     try {
-      const fullArticle = await adminAPI.getArticle(selectedArticle.id);
+      const fullArticle = await adminAPI.getArticle(articleToEdit.id);
       setSelectedArticle(fullArticle.data as Article);
       setShowEditDialog(true);
     } catch (error: any) {
@@ -155,6 +211,50 @@ export default function ArchivePage() {
         summary: 'Error',
         detail: 'Failed to load article details'
       });
+    }
+  };
+
+  const handleDeleteClick = (article: Article) => {
+    setSelectedArticle(article);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedArticle) return;
+
+    try {
+      setDeleting(true);
+      await adminAPI.deleteArticle(selectedArticle.id);
+      // Remove from current issue articles
+      setCurrentIssueArticles(prev => prev.filter(a => a.id !== selectedArticle.id));
+      // Update the selected issue
+      if (selectedIssue) {
+        const updatedIssue = {
+          ...selectedIssue,
+          articles: selectedIssue.articles.filter(a => a.id !== selectedArticle.id),
+          articleCount: selectedIssue.articleCount - 1
+        };
+        setSelectedIssue(updatedIssue);
+      }
+      // If we're viewing the article, go back to cards view
+      if (showArticleView) {
+        setShowArticleView(false);
+        setSelectedArticle(null);
+      }
+      setShowDeleteDialog(false);
+      setSelectedArticle(null);
+      toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Article deleted successfully' });
+      // Reload articles to update the archive
+      await loadJournalAndArticles();
+      // Refresh the current issue articles if we're viewing an issue
+      if (showIssueArticles && selectedIssue) {
+        const updatedArticles = currentIssueArticles.filter(a => a.id !== selectedArticle.id);
+        setCurrentIssueArticles(updatedArticles);
+      }
+    } catch (error: any) {
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to delete article' });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -257,10 +357,32 @@ export default function ArchivePage() {
       await adminAPI.updateArticle(selectedArticle.id, articleData);
       toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Article updated successfully' });
       setShowEditDialog(false);
-      await loadJournalAndArticles();
-      // Reload article with updated data
+      
+      // Reload article with updated data immediately
       const updatedArticle = await adminAPI.getArticle(selectedArticle.id);
-      setSelectedArticle(updatedArticle.data as Article);
+      const updatedArticleData = updatedArticle.data as Article;
+      setSelectedArticle(updatedArticleData);
+      
+      // Update the article in currentIssueArticles immediately if we're viewing cards
+      if (showIssueArticles && currentIssueArticles.length > 0) {
+        setCurrentIssueArticles(prev => 
+          prev.map(a => a.id === updatedArticleData.id ? updatedArticleData : a)
+        );
+      }
+      
+      // Update the selected issue articles if it exists
+      if (selectedIssue) {
+        const updatedIssueArticles = selectedIssue.articles.map(a => 
+          a.id === updatedArticleData.id ? updatedArticleData : a
+        );
+        setSelectedIssue({
+          ...selectedIssue,
+          articles: updatedIssueArticles
+        });
+      }
+      
+      // Reload all articles to update the archive structure (this happens in background)
+      loadJournalAndArticles();
     } catch (error: any) {
       console.error('Error saving article:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to save article';
@@ -273,6 +395,7 @@ export default function ArchivePage() {
   useEffect(() => {
     loadJournalAndArticles();
   }, []);
+
 
   const loadJournalAndArticles = async () => {
     try {
@@ -417,9 +540,10 @@ export default function ArchivePage() {
   return (
     <>
       <Toast ref={toast} />
+      <ConfirmDialog />
       
-      {/* Show article view if article is selected */}
-      {showArticleView && selectedArticle ? (
+      {/* Show article cards for selected issue */}
+      {showIssueArticles && selectedIssue ? (
         <div className="min-h-screen bg-slate-50 p-4 sm:p-8">
           {/* Back Button and Header */}
           <div className="mb-6">
@@ -432,17 +556,189 @@ export default function ArchivePage() {
                 <i className="pi pi-arrow-left"></i>
                 <span>Back to Archive</span>
               </button>
-              
-              {/* Edit Button in Top Right */}
+            </div>
+            
+            <div className="mb-4">
+              {journalTitle && (
+                <div className="mb-2">
+                  <span className="text-sm text-gray-600">Journal: </span>
+                  <span className="text-xl font-bold text-slate-800">{journalTitle}</span>
+                  {selectedIssueForBreadcrumb && (
+                    <span className="text-sm text-gray-600 ml-2">
+                      / {selectedIssueForBreadcrumb.year}-{selectedIssueForBreadcrumb.volume}-{selectedIssueForBreadcrumb.issue}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Articles List - Cards */}
+          {currentIssueArticles.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {currentIssueArticles.map((article, index) => (
+                <div
+                  key={article.id}
+                  className="bg-white rounded-lg shadow-md p-4 border-2 border-gray-200 hover:shadow-lg transition-all cursor-pointer"
+                  onClick={() => {
+                    const articleIndex = currentIssueArticles.findIndex(a => a.id === article.id);
+                    setCurrentArticleIndex(articleIndex >= 0 ? articleIndex : 0);
+                    handleArticleClick(article.id, selectedIssue);
+                  }}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      {/* Article Type Badge */}
+                      {article.articleType && (
+                        <div className="mb-2">
+                          <span className="inline-block px-2 py-0.5 text-xs font-bold text-white bg-gray-700 rounded-full">
+                            {article.articleType}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Article Title */}
+                      <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2" style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}>
+                        {article.title}
+                      </h3>
+
+                      {/* Authors */}
+                      {article.authors && article.authors.length > 0 && (
+                        <div className="mb-2">
+                          <span className="text-xs font-semibold text-gray-700">Author(s): </span>
+                          <span className="text-xs text-gray-600 line-clamp-1">{formatAuthors(article.authors)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-1 ml-2 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(article);
+                        }}
+                        style={{
+                          backgroundColor: '#fbbf24',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.4rem',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem'
+                        }}
+                        title="Edit"
+                      >
+                        <i className="pi pi-pencil"></i>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClick(article);
+                        }}
+                        style={{
+                          backgroundColor: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.4rem',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem'
+                        }}
+                        title="Delete"
+                      >
+                        <i className="pi pi-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Dates - Compact */}
+                  <div className="space-y-1 text-xs text-gray-600">
+                    {article.receivedAt && (
+                      <div>
+                        <span className="font-semibold">Received:</span> {formatDate(article.receivedAt)}
+                      </div>
+                    )}
+                    {article.acceptedAt && (
+                      <div>
+                        <span className="font-semibold">Accepted:</span> {formatDate(article.acceptedAt)}
+                      </div>
+                    )}
+                    {article.publishedAt && (
+                      <div>
+                        <span className="font-semibold">Published:</span> {formatDate(article.publishedAt)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-md p-12 text-center">
+              <i className="pi pi-file-edit text-6xl text-gray-300 mb-4"></i>
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">No Articles Found</h3>
+              <p className="text-gray-500">There are no articles for this issue.</p>
+            </div>
+          )}
+        </div>
+      ) : showArticleView && selectedArticle ? (
+        <div className="min-h-screen bg-slate-50 p-4 sm:p-8">
+          {/* Back Button and Header */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
               <button
                 type="button"
-                onClick={handleEdit}
-                className="px-4 py-2 bg-blue-600 text-black rounded hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium shadow-md"
-                title="Edit Article"
+                onClick={showIssueArticles ? handleBackToArchive : handleBackToIssueCards}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors flex items-center gap-2"
               >
-                <i className="pi pi-pencil"></i>
-                <span>Edit</span>
+                <i className="pi pi-arrow-left"></i>
+                <span>{showIssueArticles ? 'Back to Archive' : 'Back to Articles'}</span>
               </button>
+              
+              <div className="flex items-center gap-3">
+                {/* Article Navigation - Only show if there are multiple articles */}
+                {currentIssueArticles.length > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleNavigateArticle('prev')}
+                      className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors flex items-center gap-2"
+                      title="Previous Article"
+                    >
+                      <i className="pi pi-chevron-left"></i>
+                    </button>
+                    <span className="text-sm text-gray-600">
+                      Article {currentArticleIndex + 1} of {currentIssueArticles.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleNavigateArticle('next')}
+                      className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors flex items-center gap-2"
+                      title="Next Article"
+                    >
+                      <i className="pi pi-chevron-right"></i>
+                    </button>
+                  </div>
+                )}
+                
+                {/* Edit Button in Top Right */}
+                <button
+                  type="button"
+                  onClick={() => handleEdit()}
+                  className="px-4 py-2 bg-blue-600 text-black rounded hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium shadow-md"
+                  title="Edit Article"
+                >
+                  <i className="pi pi-pencil"></i>
+                  <span>Edit</span>
+                </button>
+              </div>
             </div>
             
             <div className="mb-4">
@@ -596,27 +892,27 @@ export default function ArchivePage() {
       ) : (
         /* Archive List View */
         <div className="min-h-screen bg-slate-50 p-4 sm:p-8">
-
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              {journalTitle && (
-                <div className="mb-2">
-                  <span className="text-sm text-gray-600">Journal: </span>
-                  <span className="text-xl font-bold text-slate-800">{journalTitle}</span>
+      
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          {journalTitle && (
+            <div className="mb-2">
+              <span className="text-sm text-gray-600">Journal: </span>
+              <span className="text-xl font-bold text-slate-800">{journalTitle}</span>
                   {selectedIssueForBreadcrumb && (
                     <span className="text-sm text-gray-600 ml-2">
                       / {selectedIssueForBreadcrumb.year}-{selectedIssueForBreadcrumb.volume}-{selectedIssueForBreadcrumb.issue}
                     </span>
                   )}
-                </div>
-              )}
-              <h1 className="text-3xl font-bold text-slate-800 mb-2 flex items-center gap-3">
-                <i className="pi pi-folder-open text-blue-600"></i>
-                <span>Archive</span>
-              </h1>
-              <p className="text-slate-600">Browse archived issues by year</p>
             </div>
-          </div>
+          )}
+          <h1 className="text-3xl font-bold text-slate-800 mb-2 flex items-center gap-3">
+            <i className="pi pi-folder-open text-blue-600"></i>
+            <span>Archive</span>
+          </h1>
+          <p className="text-slate-600">Browse archived issues by year</p>
+        </div>
+      </div>
 
       {years.length > 0 ? (
         <div className="bg-white rounded-xl shadow-lg p-6">
@@ -654,30 +950,23 @@ export default function ArchivePage() {
                               key={`${volumeStr}-${issueStr}-${index}`}
                               type="button"
                               onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                // Set selected issue for breadcrumb display
-                                setSelectedIssueForBreadcrumb({
-                                  year: issue.year,
-                                  volume: volumeStr,
-                                  issue: issueStr
-                                });
-                                // Open article in dialog on same page (no navigation)
-                                if (firstArticle && firstArticle.id) {
-                                  handleArticleClick(firstArticle.id, issue);
+                                // Only work if Ctrl (or Cmd on Mac) is pressed
+                                if (e.ctrlKey || e.metaKey) {
+                                  // Open article cards page in new tab
+                                  const url = `/journal-admin/journals/archive-issue?volume=${volumeStr}&issue=${issueStr}&year=${issue.year}`;
+                                  window.open(url, '_blank');
                                 } else {
+                                  // Normal click - do nothing, show message
+                                  e.preventDefault();
+                                  e.stopPropagation();
                                   toast.current?.show({
-                                    severity: 'warn',
-                                    summary: 'No Article',
-                                    detail: 'No articles found for this issue'
+                                    severity: 'info',
+                                    summary: 'Tip',
+                                    detail: 'Use Ctrl+Click (or Cmd+Click on Mac) to open in a new tab'
                                   });
                                 }
                               }}
-                              className={`px-4 py-2 rounded-lg border-2 transition-all text-sm ${
-                                selectedIssue?.volume === volumeStr && selectedIssue?.issue === issueStr
-                                  ? 'bg-gray-700 text-white border-gray-700'
-                                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
-                              }`}
+                              className="px-4 py-2 rounded-lg border-2 transition-all text-sm bg-white text-gray-700 border-gray-300 hover:border-gray-400"
                             >
                               Volume {volumeStr}, Issue {issueStr}
                             </button>
@@ -698,7 +987,7 @@ export default function ArchivePage() {
           <p className="text-gray-500">There are currently no archived issues for this journal.</p>
         </div>
       )}
-      </div>
+        </div>
       )}
 
       {/* Edit Article Dialog - Available in both views */}
@@ -763,7 +1052,7 @@ export default function ArchivePage() {
           <div className="flex flex-col gap-4 py-4">
             <TabView>
               <TabPanel header="Publication Details">
-                <div className="space-y-4">
+          <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col">
                       <label className="block mb-2 text-sm font-medium text-gray-700">Volume No *</label>
@@ -952,7 +1241,7 @@ export default function ArchivePage() {
               </TabPanel>
 
               <TabPanel header="Additional Details">
-                <div className="space-y-4">
+          <div className="space-y-4">
                   <div className="flex flex-col">
                     <label className="block mb-2 text-sm font-medium text-gray-700">Enter Corresponding Author Details *</label>
                     <Editor
@@ -1035,14 +1324,89 @@ export default function ArchivePage() {
                             placeholder={`Enter heading ${num} content...`}
                           />
                         </div>
-                      </div>
-                    ))}
-                  </div>
+              </div>
+            ))}
+          </div>
                 </TabPanel>
               )}
             </TabView>
           </div>
         )}
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        header="Confirm Delete"
+        visible={showDeleteDialog}
+        style={{ width: '90vw', maxWidth: '500px' }}
+        onHide={() => {
+          setShowDeleteDialog(false);
+          setSelectedArticle(null);
+        }}
+        footer={
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setSelectedArticle(null);
+              }}
+              disabled={deleting}
+              style={{
+                backgroundColor: '#f1f5f9',
+                color: '#475569',
+                border: '1px solid #cbd5e1',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontWeight: '500',
+                cursor: deleting ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                opacity: deleting ? 0.6 : 1
+              }}
+            >
+              <i className="pi pi-times"></i>
+              <span>Cancel</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+              style={{
+                backgroundColor: '#ef4444',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontWeight: '500',
+                cursor: deleting ? 'wait' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                minWidth: '120px'
+              }}
+            >
+              {deleting ? <i className="pi pi-spin pi-spinner"></i> : <i className="pi pi-trash"></i>}
+              <span>{deleting ? 'Deleting...' : 'Delete'}</span>
+            </button>
+    </div>
+        }
+      >
+        <div className="py-4">
+          <div className="flex items-center gap-4 mb-4">
+            <i className="pi pi-exclamation-triangle text-4xl text-red-500"></i>
+            <div>
+              <p className="text-lg font-semibold text-gray-900 mb-2">Are you sure you want to delete this article?</p>
+              {selectedArticle && (
+                <p className="text-gray-600">
+                  <strong>{selectedArticle.title}</strong> will be permanently deleted.
+                </p>
+              )}
+            </div>
+          </div>
+          <p className="text-sm text-gray-500">This action cannot be undone.</p>
+        </div>
       </Dialog>
     </>
   );

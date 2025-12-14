@@ -108,8 +108,11 @@ export default function ArticlesInPressPage() {
     { label: 'December', value: 'December' }
   ];
 
-  const years = Array.from({ length: 20 }, (_, i) => {
-    const year = new Date().getFullYear() - i;
+  const currentYear = new Date().getFullYear();
+  const startYear = 2040;
+  const endYear = currentYear - 20; // Go back 20 years from current
+  const years = Array.from({ length: startYear - endYear + 1 }, (_, i) => {
+    const year = startYear - i;
     return { label: year.toString(), value: year.toString() };
   });
   years.unshift({ label: 'Select Year', value: '' });
@@ -1180,8 +1183,10 @@ export default function ArticlesInPressPage() {
               const isSelected = previewMonth === month;
               const isDropdownOpen = openMonthDropdown === month;
               const currentYear = new Date().getFullYear();
-              const yearOptions = Array.from({ length: currentYear - 2017 }, (_, i) => {
-                const year = 2018 + i;
+              const startYear = 2040;
+              const endYear = 2018;
+              const yearOptions = Array.from({ length: startYear - endYear + 1 }, (_, i) => {
+                const year = startYear - i;
                 return { label: `${month} ${year}`, value: year.toString() };
               });
               
