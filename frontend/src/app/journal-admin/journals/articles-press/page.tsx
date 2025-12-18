@@ -191,7 +191,20 @@ export default function ArticlesInPressPage() {
         status: 'ACCEPTED' 
       });
       console.log('Articles response:', articlesResponse);
-      setArticles((articlesResponse.data as any[]) || []);
+      const loadedArticles = (articlesResponse.data as any[]) || [];
+      // Log dates for debugging
+      if (loadedArticles.length > 0) {
+        console.log('=== Loaded Articles Dates ===');
+        loadedArticles.forEach((article, index) => {
+          console.log(`Article ${index + 1} (ID: ${article.id}):`, {
+            title: article.title,
+            receivedAt: article.receivedAt,
+            acceptedAt: article.acceptedAt,
+            publishedAt: article.publishedAt
+          });
+        });
+      }
+      setArticles(loadedArticles);
     } catch (error: any) {
       console.error('=== ERROR loading articles ===', error);
       console.error('Error details:', {
@@ -370,6 +383,19 @@ export default function ArticlesInPressPage() {
         return tmp.textContent || tmp.innerText || '';
       };
 
+      // Convert dates to ISO format for saving
+      const receivedAtISO = convertDateToISO(selectedArticle.receivedAt);
+      const acceptedAtISO = convertDateToISO(selectedArticle.acceptedAt);
+      const publishedAtISO = convertDateToISO(selectedArticle.publishedAt);
+      
+      console.log('=== Date Conversion Debug ===');
+      console.log('Original receivedAt:', selectedArticle.receivedAt);
+      console.log('Converted receivedAt:', receivedAtISO);
+      console.log('Original acceptedAt:', selectedArticle.acceptedAt);
+      console.log('Converted acceptedAt:', acceptedAtISO);
+      console.log('Original publishedAt:', selectedArticle.publishedAt);
+      console.log('Converted publishedAt:', publishedAtISO);
+
       const articleData = {
         title: selectedArticle.title,
         abstract: getPlainText(selectedArticle.abstract) || selectedArticle.title, // Use title as fallback if abstract is empty
@@ -391,10 +417,12 @@ export default function ArticlesInPressPage() {
         correspondingAuthorDetails: getPlainText(selectedArticle.correspondingAuthorDetails),
         citeAs: getPlainText(selectedArticle.citeAs),
         country: selectedArticle.country,
-        receivedAt: selectedArticle.receivedAt ? new Date(selectedArticle.receivedAt).toISOString() : undefined,
-        acceptedAt: selectedArticle.acceptedAt ? new Date(selectedArticle.acceptedAt).toISOString() : undefined,
-        publishedAt: selectedArticle.publishedAt ? new Date(selectedArticle.publishedAt).toISOString() : undefined,
+        receivedAt: receivedAtISO,
+        acceptedAt: acceptedAtISO,
+        publishedAt: publishedAtISO,
       };
+      
+      console.log('Article data being sent:', articleData);
 
       if (selectedArticle.id === 0) {
         // Create new article
@@ -425,6 +453,112 @@ export default function ArticlesInPressPage() {
       return date.toISOString().split('T')[0];
     } catch {
       return dateString;
+    }
+  };
+
+  // Format date for date input fields (YYYY-MM-DD) without timezone conversion issues
+  const formatDateForInput = (dateString?: string) => {
+    if (!dateString) return '';
+    try {
+      // If already in YYYY-MM-DD format, return as is
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        return dateString;
+      }
+      // If it's an ISO date string (contains 'T'), extract just the date part
+      if (dateString.includes('T')) {
+        const datePart = dateString.split('T')[0];
+        if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+          return datePart;
+        }
+      }
+      // For other formats, parse manually to avoid timezone issues
+      // Try to extract date components directly from string
+      const dateMatch = dateString.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (dateMatch) {
+        return `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`;
+      }
+      // Fallback: parse as date and use local components
+      // Parse as local date by treating YYYY-MM-DD as local time
+      const dateParts = dateString.split(/[-/]/);
+      if (dateParts.length >= 3) {
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10);
+        const day = parseInt(dateParts[2], 10);
+        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+          // Create date in local timezone
+          const date = new Date(year, month - 1, day);
+          // Verify the date is valid and matches what we expect
+          if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          }
+        }
+      }
+      // Last resort: use Date constructor but extract local components
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  };
+
+  // Convert date input value (YYYY-MM-DD) to ISO string without timezone issues
+  const convertDateToISO = (dateString?: string): string | undefined => {
+    if (!dateString || !dateString.trim()) return undefined;
+    try {
+      const trimmedDate = dateString.trim();
+      // If already in YYYY-MM-DD format, create date in local timezone and convert to ISO
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedDate)) {
+        const [year, month, day] = trimmedDate.split('-').map(Number);
+        // Validate the date components
+        if (isNaN(year) || isNaN(month) || isNaN(day)) {
+          return undefined;
+        }
+        // Create date at noon local time to avoid timezone edge cases
+        // This ensures the date stays the same regardless of timezone
+        const date = new Date(year, month - 1, day, 12, 0, 0, 0);
+        // Verify the date is valid
+        if (isNaN(date.getTime())) {
+          return undefined;
+        }
+        // Verify the date components match (handles invalid dates like Feb 30)
+        if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+          return undefined;
+        }
+        // Convert to ISO string - this will preserve the date correctly
+        return date.toISOString();
+      }
+      // If it's already an ISO string, extract date part and reconvert to ensure consistency
+      if (trimmedDate.includes('T')) {
+        const datePart = trimmedDate.split('T')[0];
+        if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+          // Reconvert using the same logic to ensure consistency
+          const [year, month, day] = datePart.split('-').map(Number);
+          const date = new Date(year, month - 1, day, 12, 0, 0, 0);
+          if (!isNaN(date.getTime()) && date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+            return date.toISOString();
+          }
+        }
+        // If it's a valid ISO string, return as is
+        const date = new Date(trimmedDate);
+        if (!isNaN(date.getTime())) {
+          return date.toISOString();
+        }
+      }
+      // For other formats, try to parse and convert
+      const date = new Date(trimmedDate);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+      return undefined;
+    } catch (error) {
+      console.error('Error converting date to ISO:', error, dateString);
+      return undefined;
     }
   };
 
@@ -968,8 +1102,11 @@ export default function ArticlesInPressPage() {
                       <label className="block mb-2 text-sm font-medium text-gray-700">Received on Date</label>
                       <InputText
                         type="date"
-                        value={selectedArticle.receivedAt ? formatDate(selectedArticle.receivedAt) : ''}
-                        onChange={(e) => setSelectedArticle({ ...selectedArticle, receivedAt: e.target.value })}
+                        value={formatDateForInput(selectedArticle.receivedAt)}
+                        onChange={(e) => {
+                          console.log('Received date changed:', e.target.value);
+                          setSelectedArticle({ ...selectedArticle, receivedAt: e.target.value });
+                        }}
                         className="w-full"
                       />
                     </div>
@@ -977,8 +1114,11 @@ export default function ArticlesInPressPage() {
                       <label className="block mb-2 text-sm font-medium text-gray-700">Accepted on Date</label>
                       <InputText
                         type="date"
-                        value={selectedArticle.acceptedAt ? formatDate(selectedArticle.acceptedAt) : ''}
-                        onChange={(e) => setSelectedArticle({ ...selectedArticle, acceptedAt: e.target.value })}
+                        value={formatDateForInput(selectedArticle.acceptedAt)}
+                        onChange={(e) => {
+                          console.log('Accepted date changed:', e.target.value);
+                          setSelectedArticle({ ...selectedArticle, acceptedAt: e.target.value });
+                        }}
                         className="w-full"
                       />
                     </div>
@@ -986,8 +1126,11 @@ export default function ArticlesInPressPage() {
                       <label className="block mb-2 text-sm font-medium text-gray-700">Published on Date</label>
                       <InputText
                         type="date"
-                        value={selectedArticle.publishedAt ? formatDate(selectedArticle.publishedAt) : ''}
-                        onChange={(e) => setSelectedArticle({ ...selectedArticle, publishedAt: e.target.value })}
+                        value={formatDateForInput(selectedArticle.publishedAt)}
+                        onChange={(e) => {
+                          console.log('Published date changed:', e.target.value);
+                          setSelectedArticle({ ...selectedArticle, publishedAt: e.target.value });
+                        }}
                         className="w-full"
                       />
                     </div>

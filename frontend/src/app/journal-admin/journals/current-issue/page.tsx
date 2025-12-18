@@ -76,6 +76,7 @@ export default function CurrentIssuePage() {
   const [selectedMoveMonth, setSelectedMoveMonth] = useState<string>('');
   const [selectedMoveYear, setSelectedMoveYear] = useState<string>('');
   const [articlesToMove, setArticlesToMove] = useState<Article[]>([]);
+  const [shouldAutoSelectLatest, setShouldAutoSelectLatest] = useState(true);
   const toast = useRef<Toast>(null);
 
   const articleTypes = [
@@ -128,6 +129,40 @@ export default function CurrentIssuePage() {
   useEffect(() => {
     loadJournalAndArticles();
   }, []);
+
+  // Auto-select the latest month/year when articles are loaded (current issue)
+  // Only do this on initial load, not after moving articles
+  useEffect(() => {
+    if (articles.length > 0 && !selectedMonth && !selectedYear && shouldAutoSelectLatest) {
+      // Find the latest month/year combination
+      const latestArticle = articles.reduce((latest, article) => {
+        if (!article.year || !article.issueMonth) return latest;
+        
+        const articleYear = parseInt(article.year);
+        const latestYear = latest ? parseInt(latest.year || '0') : 0;
+        
+        if (articleYear > latestYear) {
+          return article;
+        } else if (articleYear === latestYear && latest) {
+          // Same year, compare months
+          const monthOrder = ['January', 'February', 'March', 'April', 'May', 'June', 
+                             'July', 'August', 'September', 'October', 'November', 'December'];
+          const articleMonthIndex = monthOrder.indexOf(article.issueMonth);
+          const latestMonthIndex = monthOrder.indexOf(latest.issueMonth || '');
+          if (articleMonthIndex > latestMonthIndex) {
+            return article;
+          }
+        }
+        return latest;
+      }, null as Article | null);
+
+      if (latestArticle && latestArticle.year && latestArticle.issueMonth) {
+        setSelectedMonth(latestArticle.issueMonth);
+        setSelectedYear(latestArticle.year);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [articles, shouldAutoSelectLatest]);
 
   // Clear selected articles if they're no longer in the filtered list
   useEffect(() => {
@@ -374,8 +409,8 @@ export default function CurrentIssuePage() {
       // Only year selected, no month - show no articles
       return false;
     } else {
-      // No month or year selected - show all articles (except special issue filter above)
-    return true;
+      // No month or year selected - show no articles (user must select month/year or we auto-select latest)
+      return false;
     }
   });
 
@@ -463,7 +498,8 @@ export default function CurrentIssuePage() {
   };
 
   /**
-   * Move articles from Current Issue (PUBLISHED) to Months (ACCEPTED)
+   * Move articles from Current Issue to Archive (past months/years)
+   * Keeps status as PUBLISHED but updates month/year so they appear in archive
    * Opens month selection dialog first
    */
   const handleMoveToMonths = async () => {
@@ -824,7 +860,7 @@ export default function CurrentIssuePage() {
               alignItems: 'center',
               gap: '0.5rem'
             }}
-            title={selectedArticles.size === 0 ? 'Please select at least one article to move' : `Move ${selectedArticles.size} selected article(s) to Months (unpublish them)`}
+            title={selectedArticles.size === 0 ? 'Please select at least one article to move' : `Move ${selectedArticles.size} selected article(s) to Archive (past month/year)`}
           >
             <i className="pi pi-calendar"></i>
             <span>Move to Months</span>
@@ -1696,10 +1732,11 @@ export default function CurrentIssuePage() {
                   icon: 'pi pi-exclamation-triangle',
                   accept: async () => {
                     try {
-                      // Update each article with the selected month and year, and change status to ACCEPTED
+                      // Update each article with the selected month and year, keeping status as PUBLISHED
+                      // This moves them to archive (past issues) without unpublishing them
                       for (const article of articlesToMove) {
                         await adminAPI.updateArticle(article.id, {
-                          status: 'ACCEPTED',
+                          status: 'PUBLISHED',
                           issueMonth: selectedMoveMonth,
                           year: selectedMoveYear
                         });
@@ -1708,18 +1745,21 @@ export default function CurrentIssuePage() {
                       toast.current?.show({ 
                         severity: 'success', 
                         summary: 'Success', 
-                        detail: `${articlesToMove.length} article(s) moved to ${selectedMoveMonth} ${selectedMoveYear} successfully` 
+                        detail: `${articlesToMove.length} article(s) moved to ${selectedMoveMonth} ${selectedMoveYear} successfully. They are now archived and will appear in the archive page for that month/year.` 
                       });
                       setShowMoveToMonthsDialog(false);
                       setSelectedMoveMonth('');
                       setSelectedMoveYear('');
                       setArticlesToMove([]);
-                      // Clear selection and filters
+                      // Clear selection and filters - this ensures no articles are shown after moving
                       setSelectedArticles(new Set());
                       setSelectedMonth('');
                       setSelectedYear('');
                       setSelectedSpecialIssue('');
+                      // Disable auto-select so no articles show after moving
+                      setShouldAutoSelectLatest(false);
                       await loadJournalAndArticles();
+                      // After reload, filters remain clear so no articles show
                     } catch (error: any) {
                       console.error('Error moving articles:', error);
                       toast.current?.show({ 

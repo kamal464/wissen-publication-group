@@ -286,6 +286,7 @@ export default function JournalSlider() {
           padding: 0 !important;
           overflow: hidden;
           box-sizing: border-box !important;
+          position: relative;
         }
 
         .journal-slide {
@@ -310,7 +311,7 @@ export default function JournalSlider() {
 
         .journal-slide__image-container {
           position: relative;
-          overflow: hidden;
+          overflow: visible;
           width: 100vw !important;
           max-width: 100vw !important;
           height: calc(100vw * 736 / 1520);
@@ -364,7 +365,7 @@ export default function JournalSlider() {
           width: 100vw !important;
           max-width: 100vw !important;
           box-sizing: border-box !important;
-          overflow: hidden !important;
+          overflow: visible !important;
         }
 
         :global(.custom-carousel-content),
@@ -390,9 +391,36 @@ export default function JournalSlider() {
           opacity: 1 !important;
         }
 
-        :global(.custom-carousel-indicators) {
-          bottom: 1.5rem;
-          gap: 0.5rem;
+        /* Position indicators at the bottom of the image container */
+        :global(.custom-carousel-indicators),
+        :global(.p-carousel-indicators) {
+          position: absolute !important;
+          bottom: 0 !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          gap: 0.5rem !important;
+          margin: 0 !important;
+          padding: 0.75rem 0 !important;
+          z-index: 20 !important;
+          width: 100% !important;
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+        }
+        
+        /* Ensure carousel container is positioned relative for absolute positioning */
+        :global(.p-carousel),
+        :global(.custom-carousel) {
+          position: relative !important;
+        }
+        
+        /* Remove any default PrimeReact padding/margin from carousel that creates gap */
+        :global(.p-carousel .p-carousel-content),
+        :global(.p-carousel-container),
+        :global(.p-carousel-items-container) {
+          padding-bottom: 0 !important;
+          margin-bottom: 0 !important;
+          position: relative !important;
         }
 
         :global(.custom-carousel-indicator button) {
@@ -415,44 +443,74 @@ export default function JournalSlider() {
           border-radius: 6px;
         }
 
+        :global(.p-carousel-prev),
+        :global(.p-carousel-next),
         :global(.custom-carousel-prev),
         :global(.custom-carousel-next) {
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
-          background: rgba(37, 99, 235, 0.8);
-          border: 2px solid rgba(37, 99, 235, 0.9);
-          color: #ffffff;
-          transition: all 0.3s ease;
+          width: 48px !important;
+          height: 48px !important;
+          border-radius: 50% !important;
+          background: rgba(37, 99, 235, 0.8) !important;
+          border: 2px solid rgba(37, 99, 235, 0.9) !important;
+          color: #ffffff !important;
+          transition: all 0.3s ease !important;
+          position: absolute !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
+          z-index: 10 !important;
         }
 
+        :global(.p-carousel-prev:hover),
+        :global(.p-carousel-next:hover),
         :global(.custom-carousel-prev:hover),
         :global(.custom-carousel-next:hover) {
-          background: rgba(37, 99, 235, 1);
-          transform: scale(1.1);
+          background: rgba(37, 99, 235, 1) !important;
+          transform: translateY(-50%) scale(1.1) !important;
         }
 
+        :global(.p-carousel-prev),
         :global(.custom-carousel-prev) {
-          left: 1rem;
+          left: 1rem !important;
+          right: auto !important;
         }
 
+        :global(.p-carousel-next),
         :global(.custom-carousel-next) {
-          right: 1rem;
+          right: 1rem !important;
+          left: auto !important;
         }
 
         @media (max-width: 768px) {
+          :global(.p-carousel-prev),
+          :global(.p-carousel-next),
           :global(.custom-carousel-prev),
           :global(.custom-carousel-next) {
-            width: 40px;
-            height: 40px;
+            width: 40px !important;
+            height: 40px !important;
           }
 
+          :global(.p-carousel-prev),
           :global(.custom-carousel-prev) {
-            left: 0.5rem;
+            left: 0.5rem !important;
           }
 
+          :global(.p-carousel-next),
           :global(.custom-carousel-next) {
-            right: 0.5rem;
+            right: 0.5rem !important;
+          }
+
+          :global(.custom-carousel-indicators),
+          :global(.p-carousel-indicators) {
+            bottom: 0 !important;
+            padding: 0.5rem 0 !important;
+          }
+          
+          :global(.p-carousel .p-carousel-content),
+          :global(.p-carousel-container),
+          :global(.p-carousel-items-container) {
+            padding-bottom: 0 !important;
+            margin-bottom: 0 !important;
+            position: relative !important;
           }
         }
 

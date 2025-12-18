@@ -24,7 +24,9 @@ interface Article {
   journalTitle?: string;
   journal?: { title: string };
   volume?: string;
+  volumeNo?: string;
   issue?: string;
+  issueNo?: string;
   publishedAt?: string;
 }
 
@@ -133,8 +135,16 @@ export default function SearchArticlesPage() {
         <DataTable value={filteredArticles} loading={loading} paginator rows={10}>
           <Column field="title" header="Title" sortable />
           <Column field="authors" header="Authors" body={authorsBodyTemplate} />
-          <Column field="volume" header="Volume" body={(rowData) => rowData.volume || '-'} />
-          <Column field="issue" header="Issue" body={(rowData) => rowData.issue || '-'} />
+          <Column 
+            field="volume" 
+            header="Volume" 
+            body={(rowData) => rowData.volumeNo || rowData.volume || '-'} 
+          />
+          <Column 
+            field="issue" 
+            header="Issue" 
+            body={(rowData) => rowData.issueNo || rowData.issue || '-'} 
+          />
           <Column 
             field="publishedAt" 
             header="Published" 

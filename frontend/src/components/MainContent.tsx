@@ -114,52 +114,86 @@ export default function MainContent() {
       </section>
 
       {/* About Us Teaser Section */}
-      <section className="py-16 bg-gradient-to-br from-blue-900 to-indigo-900 text-white">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-4xl font-bold mb-4">
+      <section className="py-20 bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900 text-white relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-400 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-6">
+              <div className="inline-block">
+                {/* <span className="text-sm font-semibold text-blue-300 uppercase tracking-wider px-4 py-2 bg-blue-500/20 rounded-full border border-blue-400/30">
+                  About Us
+                </span> */}
+              </div>
+              <h2 className="text-5xl font-bold mb-6 leading-tight" style={{ color: '#ffffff' }}>
                 About Wissen Publication Group
               </h2>
-              <p className="text-lg !text-white mb-6" style={{ color: 'white' }}>
+              <p className="text-lg leading-relaxed mb-8" style={{ color: '#ffffff' }}>
                 Since 1998, we've been advancing knowledge through excellence in academic publishing. 
                 Our commitment to scholarly research and academic excellence has made us a trusted 
                 platform for researchers, academics, and institutions worldwide.
               </p>
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-2 gap-4 mb-8">
                 {aboutHighlights.map((highlight, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <i className={`${highlight.icon} text-green-400`}></i>
-                    <span className="text-sm">{highlight.text}</span>
+                  <div key={index} className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors duration-300">
+                    <div className="flex-shrink-0">
+                      <i className={`${highlight.icon} text-xl text-green-400`}></i>
+                    </div>
+                    <span className="text-sm text-blue-100 font-medium">{highlight.text}</span>
                   </div>
                 ))}
               </div>
-              <Link href="/about">
-                <Button 
-                  label="Learn More About Us"
-                  className="p-button-outlined p-button-secondary"
-                  icon="pi pi-arrow-right"
-                  iconPos="right"
-                />
-              </Link>
+              
             </div>
+            
             <div className="grid grid-cols-2 gap-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center">
-                <div className="text-4xl font-bold text-blue-300 mb-2">25+</div>
-                <div className="text-sm text-blue-100">Years of Excellence</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center">
-                <div className="text-4xl font-bold text-blue-300 mb-2">50+</div>
-                <div className="text-sm text-blue-100">Academic Journals</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center">
-                <div className="text-4xl font-bold text-blue-300 mb-2">100+</div>
-                <div className="text-sm text-blue-100">Countries Reached</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center">
-                <div className="text-4xl font-bold text-blue-300 mb-2">10K+</div>
-                <div className="text-sm text-blue-100">Published Articles</div>
-              </div>
+              <Link href="/about" className="group bg-white/10 backdrop-blur-lg rounded-2xl p-10 text-center hover:bg-white/20 hover:shadow-2xl hover:shadow-blue-500/20 hover:scale-105 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center border border-white/20 hover:border-white/40 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10">
+                  <div className="mb-4">
+                    <i className="pi pi-info-circle text-4xl text-blue-300 group-hover:text-blue-200 group-hover:scale-110 transition-all duration-300"></i>
+                  </div>
+                  <div className="text-xl font-bold text-white uppercase tracking-wider group-hover:text-blue-100 transition-colors duration-300">About</div>
+                </div>
+              </Link>
+              
+              <Link href="/journals" className="group bg-white/10 backdrop-blur-lg rounded-2xl p-10 text-center hover:bg-white/20 hover:shadow-2xl hover:shadow-blue-500/20 hover:scale-105 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center border border-white/20 hover:border-white/40 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10">
+                  <div className="mb-4">
+                    <i className="pi pi-book text-4xl text-blue-300 group-hover:text-blue-200 group-hover:scale-110 transition-all duration-300"></i>
+                  </div>
+                  <div className="text-xl font-bold text-white uppercase tracking-wider group-hover:text-blue-100 transition-colors duration-300">Journals</div>
+                </div>
+              </Link>
+              
+              <Link href="/instructions" className="group bg-white/10 backdrop-blur-lg rounded-2xl p-10 text-center hover:bg-white/20 hover:shadow-2xl hover:shadow-blue-500/20 hover:scale-105 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center border border-white/20 hover:border-white/40 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10">
+                  <div className="mb-4">
+                    <i className="pi pi-file-edit text-4xl text-blue-300 group-hover:text-blue-200 group-hover:scale-110 transition-all duration-300"></i>
+                  </div>
+                  <div className="text-xl font-bold text-white uppercase tracking-wider group-hover:text-blue-100 transition-colors duration-300">Guidelines</div>
+                </div>
+              </Link>
+              
+              <Link href="/contact" className="group bg-white/10 backdrop-blur-lg rounded-2xl p-10 text-center hover:bg-white/20 hover:shadow-2xl hover:shadow-blue-500/20 hover:scale-105 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center border border-white/20 hover:border-white/40 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10">
+                  <div className="mb-4">
+                    <i className="pi pi-envelope text-4xl text-blue-300 group-hover:text-blue-200 group-hover:scale-110 transition-all duration-300"></i>
+                  </div>
+                  <div className="text-xl font-bold text-white uppercase tracking-wider group-hover:text-blue-100 transition-colors duration-300">Contact US</div>
+                </div>
+              </Link>
             </div>
           </div>
         </div>
@@ -167,24 +201,17 @@ export default function MainContent() {
 
       {/* Editorial Excellence Section */}
       <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 pl-64 md:pl-96 lg:pl-[300px] xl:pl-[500px] 2xl:pl-[700px]">
           <div className="max-w-4xl mx-auto text-center">
             <i className="pi pi-star text-5xl text-yellow-500 mb-4"></i>
-            <h2 className="text-4xl font-bold text-gray-800 mb-4">
+            <h2 className="text-4xl font-bold text-gray-800 mb-4 text-center">
               Editorial Excellence
             </h2>
-            <p className="text-xl text-gray-600 mb-8">
+            <p className="text-xl text-gray-600 mb-8 text-center">
               Our distinguished editorial board comprises leading experts from prestigious institutions worldwide, 
               ensuring rigorous peer review and maintaining the highest publication standards.
             </p>
-            <div className="flex justify-center gap-4 flex-wrap">
-              <Link href="/editorial-board">
-                <Button 
-                  label="View Editorial Board"
-                  icon="pi pi-users"
-                  className="p-button-lg"
-                />
-              </Link>
+            <div className="flex justify-center items-center gap-4 flex-wrap">
               <Link href="/contact">
                 <Button 
                   label="Contact Us"
@@ -198,35 +225,133 @@ export default function MainContent() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-16 bg-white">
+      <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-4">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-12 text-center text-white shadow-2xl">
-            <h2 className="text-4xl font-bold mb-4">
-              Ready to Share Your Research?
-            </h2>
-            <p className="text-xl mb-8 text-blue-100">
-              Join our global community of researchers and publish your work with Wissen Publication Group today.
-            </p>
-            <div className="flex justify-center gap-4 flex-wrap">
-              <Link href="/submit-manuscript">
-                <Button 
-                  label="Submit Manuscript"
-                  icon="pi pi-upload"
-                  className="p-button-lg p-button-warning"
-                  severity="warning"
-                />
-              </Link>
-              <Link href="/journals">
-                <Button 
-                  label="Browse Journals"
-                  icon="pi pi-book"
-                  className="p-button-lg p-button-outlined p-button-secondary"
-                />
-              </Link>
+          <div className="relative bg-gradient-to-br from-blue-800 via-indigo-800 to-blue-900 rounded-3xl p-12 md:p-16 text-center text-white shadow-2xl overflow-hidden cta-section-white-text">
+            {/* Decorative background elements */}
+            <div className="absolute inset-0 opacity-8">
+              <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-500 rounded-full blur-3xl"></div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-600 rounded-full blur-3xl"></div>
+            </div>
+            
+            {/* Subtle grid pattern overlay */}
+            <div className="absolute inset-0 opacity-[0.04]" style={{
+              backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)',
+              backgroundSize: '50px 50px'
+            }}></div>
+            
+            {/* Content */}
+            <div className="relative z-10 text-center">
+              <div className="inline-block mb-4">
+                <span className="text-sm font-semibold text-white uppercase tracking-wider px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 shadow-lg" style={{ color: '#ffffff' }}>
+                  Get Started
+                </span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight text-white drop-shadow-lg text-center" style={{ color: '#ffffff', textAlign: 'center' }}>
+                Ready to Share Your Research?
+              </h2>
+              <p className="text-lg md:text-xl mb-10 text-white max-w-2xl mx-auto leading-relaxed drop-shadow-md text-center" style={{ color: '#ffffff', textAlign: 'center', marginLeft: 'auto', marginRight: 'auto', display: 'block' }}>
+                Join our global community of researchers and publish your work with Wissen Publication Group today. 
+                Experience excellence in academic publishing.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 md:gap-6">
+                <Link href="/submit-manuscript" className="group">
+                  <Button 
+                    label="Submit Manuscript"
+                    icon="pi pi-upload"
+                    className="p-button-lg p-button-warning shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105"
+                    severity="warning"
+                  />
+                </Link>
+                <Link href="/journals" className="group">
+                  <Button 
+                    label="Browse Journals"
+                    icon="pi pi-book"
+                    className="p-button-lg p-button-outlined border-2 border-white text-white hover:bg-white hover:text-indigo-600 transition-all duration-300 group-hover:scale-105 shadow-lg"
+                    style={{ color: '#ffffff' }}
+                  />
+                </Link>
+              </div>
+              
+              {/* Trust indicators */}
+              <div className="mt-12 pt-8 border-t border-white/30 flex flex-wrap justify-center items-center gap-6 md:gap-8 text-sm">
+                <div className="flex items-center gap-2 text-white/90" style={{ color: '#ffffff' }}>
+                  <i className="pi pi-check-circle text-green-400 text-lg"></i>
+                  <span className="font-medium" style={{ color: '#ffffff' }}>Peer Reviewed</span>
+                </div>
+                <div className="flex items-center gap-2 text-white/90" style={{ color: '#ffffff' }}>
+                  <i className="pi pi-globe text-blue-300 text-lg"></i>
+                  <span className="font-medium" style={{ color: '#ffffff' }}>Global Reach</span>
+                </div>
+                <div className="flex items-center gap-2 text-white/90" style={{ color: '#ffffff' }}>
+                  <i className="pi pi-clock text-yellow-300 text-lg"></i>
+                  <span className="font-medium" style={{ color: '#ffffff' }}>Fast Publication</span>
+                </div>
+                <div className="flex items-center gap-2 text-white/90" style={{ color: '#ffffff' }}>
+                  <i className="pi pi-shield text-purple-300 text-lg"></i>
+                  <span className="font-medium" style={{ color: '#ffffff' }}>Open Access</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
+
+      <style jsx>{`
+        /* Force white text in CTA section - overrides global p tag styles from base/_base.scss */
+        .cta-section-white-text,
+        .cta-section-white-text *,
+        .cta-section-white-text p,
+        .cta-section-white-text h2,
+        .cta-section-white-text span,
+        .cta-section-white-text div {
+          color: #ffffff !important;
+        }
+        
+        /* Force center alignment - overrides any global text alignment */
+        .cta-section-white-text,
+        .cta-section-white-text h2,
+        .cta-section-white-text p,
+        .cta-section-white-text .text-center {
+          text-align: center !important;
+        }
+        
+        /* Specifically target the paragraph to ensure it's centered */
+        .cta-section-white-text p {
+          text-align: center !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          display: block !important;
+          width: 100% !important;
+          max-width: 42rem !important; /* max-w-2xl equivalent */
+        }
+        
+        /* Ensure colored icons maintain their colors */
+        .cta-section-white-text i[class*="text-green"],
+        .cta-section-white-text i[class*="text-blue"],
+        .cta-section-white-text i[class*="text-yellow"],
+        .cta-section-white-text i[class*="text-purple"] {
+          color: inherit !important;
+        }
+        
+        /* Force white text on PrimeReact buttons in CTA section */
+        .cta-section-white-text .p-button,
+        .cta-section-white-text .p-button .p-button-label,
+        .cta-section-white-text .p-button-outlined,
+        .cta-section-white-text .p-button-outlined .p-button-label {
+          color: #ffffff !important;
+        }
+        
+        /* Only change button text color on hover, not the base color */
+        .cta-section-white-text .p-button-outlined:hover:not(:focus) {
+          background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        .cta-section-white-text .p-button-outlined:hover:not(:focus) .p-button-label {
+          color: #ffffff !important;
+        }
+      `}</style>
     </>
   );
 }
