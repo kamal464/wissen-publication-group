@@ -110,4 +110,18 @@ export class CreateArticleDto {
   @IsOptional()
   @IsString()
   submitterCountry?: string;
+
+  @IsOptional()
+  @IsString()
+  inPressMonth?: string;
+
+  @IsOptional()
+  @IsString()
+  inPressYear?: string;
+
+  @IsOptional()
+  showInInpressCards?: boolean;
+
+  @IsOptional()
+  issueId?: number;
 }

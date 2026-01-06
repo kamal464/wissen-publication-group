@@ -91,7 +91,7 @@ model Article {
   authors       Author[]
   journal       Journal  @relation(fields: [journalId], references: [id])
   journalId     Int
-  status        String   @default("PENDING") // PENDING, UNDER_REVIEW, ACCEPTED, PUBLISHED
+  status        String   @default("PENDING") // PENDING, UNDER_REVIEW, ACCEPTED, PUBLISHED, INPRESS, CURRENT_ISSUE
   pdfUrl        String?
   wordUrl       String?
   articleType   String?  // Review Article, Case Report, Research Article, etc.
@@ -108,6 +108,11 @@ model Article {
   issueMonth   String?   // Issue month (e.g., "January", "February")
   year         String?   // Publication year (e.g., "2025", "2024")
   specialIssue String?   // Special issue or conference title
+  issueId      Int?      // Issue ID reference (can be removed when moving to months)
+  // Articles in Press Management
+  showInInpressCards Boolean @default(false) // Controls visibility in In-Press cards view
+  inPressMonth       String?  // Month for In-Press calendar filtering (e.g., "January", "February")
+  inPressYear        String?  // Year for In-Press calendar filtering (e.g., "2025", "2024")
   // Additional publication details
   firstPageNumber String?
   lastPageNumber  String?

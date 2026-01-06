@@ -104,7 +104,21 @@ export default function EditorialBoardPage() {
 
   const getImageUrl = (imagePath: string | undefined) => {
     if (!imagePath) return null;
-    return getFileUrl(imagePath);
+    
+    // If it's already a data URI, return as is
+    if (imagePath.startsWith('data:')) {
+      return imagePath;
+    }
+    
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    
+    // Otherwise, use getFileUrl to construct the full URL
+    // Ensure the path starts with /uploads/ for proper server routing
+    const normalizedPath = imagePath.startsWith('/uploads/') ? imagePath : `/uploads/${imagePath.replace(/^\/?uploads\//, '')}`;
+    return getFileUrl(normalizedPath);
   };
 
   const handleAdd = () => {
@@ -163,11 +177,24 @@ export default function EditorialBoardPage() {
       if (selectedMember.id > 0) {
         const response = await adminAPI.uploadBoardMemberPhoto(selectedMember.id, file);
         const responseData = response.data as { path?: string };
-        setSelectedMember({ ...selectedMember, imageUrl: responseData.path || '' });
+        const imagePath = responseData.path || '';
+        
+        // Update selected member state with the new image URL
+        setSelectedMember({ ...selectedMember, imageUrl: imagePath });
+        
+        // Update the members list immediately to reflect the change
+        setMembers(prevMembers => 
+          prevMembers.map(m => 
+            m.id === selectedMember.id 
+              ? { ...m, imageUrl: imagePath }
+              : m
+          )
+        );
+        
         toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Photo uploaded successfully' });
       } else {
         // For new member, we'll upload after creation
-        // Store file temporarily
+        // Store file temporarily as base64
         const reader = new FileReader();
         reader.onload = (e) => {
           const result = e.target?.result as string;
@@ -177,7 +204,12 @@ export default function EditorialBoardPage() {
         toast.current?.show({ severity: 'info', summary: 'Info', detail: 'Photo will be uploaded when you save the member' });
       }
     } catch (error: any) {
-      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to upload photo' });
+      console.error('Error uploading photo:', error);
+      toast.current?.show({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: error.response?.data?.message || 'Failed to upload photo' 
+      });
     } finally {
       setUploading(false);
     }
@@ -239,7 +271,14 @@ export default function EditorialBoardPage() {
             const blob = new Blob([ab], { type: mimeString });
             const file = new File([blob], 'photo.jpg', { type: mimeString });
             
-            await adminAPI.uploadBoardMemberPhoto(newMember.id, file);
+            const uploadResponse = await adminAPI.uploadBoardMemberPhoto(newMember.id, file);
+            const uploadData = uploadResponse.data as { path?: string };
+            
+            // Update the newly created member with the uploaded image URL
+            if (uploadData.path) {
+              setSelectedMember({ ...newMember, imageUrl: uploadData.path });
+            }
+            
             await loadJournalAndMembers(); // Reload to get updated photo
           }
         } else {
@@ -266,7 +305,24 @@ export default function EditorialBoardPage() {
   const photoBodyTemplate = (rowData: BoardMember) => {
     const imageUrl = getImageUrl(rowData.imageUrl);
     return imageUrl ? (
-      <img src={imageUrl} alt={rowData.name} className="w-16 h-20 object-cover rounded" />
+      <img 
+        src={imageUrl} 
+        alt={rowData.name} 
+        className="w-16 h-20 object-cover rounded"
+        onError={(e) => {
+          console.error('Image load error in table:', rowData.imageUrl);
+          const target = e.target as HTMLImageElement;
+          target.style.display = 'none';
+          // Show placeholder instead
+          const placeholder = document.createElement('div');
+          placeholder.className = 'w-16 h-20 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs';
+          placeholder.textContent = 'No Photo';
+          target.parentNode?.replaceChild(placeholder, target);
+        }}
+        onLoad={() => {
+          console.log('Image loaded successfully in table:', rowData.imageUrl);
+        }}
+      />
     ) : (
       <div className="w-16 h-20 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">No Photo</div>
     );
@@ -446,7 +502,14 @@ export default function EditorialBoardPage() {
                 <img 
                   src={getImageUrl(selectedMember.imageUrl) || ''} 
                   alt="Preview" 
-                  className="mb-2 w-20 h-28 object-cover rounded border border-gray-200" 
+                  className="mb-2 w-20 h-28 object-cover rounded border border-gray-200"
+                  onError={(e) => {
+                    console.error('Image load error:', selectedMember.imageUrl);
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                  onLoad={() => {
+                    console.log('Image loaded successfully:', selectedMember.imageUrl);
+                  }}
                 />
               )}
               <FileUpload

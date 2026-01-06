@@ -49,6 +49,10 @@ interface Article {
   heading4Content?: string;
   heading5Title?: string;
   heading5Content?: string;
+  showInInpressCards?: boolean;
+  inPressMonth?: string;
+  inPressYear?: string;
+  issueId?: number;
 }
 
 export default function CurrentIssuePage() {
@@ -56,10 +60,7 @@ export default function CurrentIssuePage() {
   const [loading, setLoading] = useState(true);
   const [journalId, setJournalId] = useState<number | null>(null);
   const [journalTitle, setJournalTitle] = useState<string>('');
-  const [selectedMonth, setSelectedMonth] = useState<string>('');
-  const [selectedYear, setSelectedYear] = useState<string>('');
   const [selectedSpecialIssue, setSelectedSpecialIssue] = useState<string>('');
-  const [openMonthDropdown, setOpenMonthDropdown] = useState<string | null>(null);
   const [selectedArticles, setSelectedArticles] = useState<Set<number>>(new Set());
   const [showUploadPdfDialog, setShowUploadPdfDialog] = useState(false);
   const [showUploadImagesDialog, setShowUploadImagesDialog] = useState(false);
@@ -76,7 +77,6 @@ export default function CurrentIssuePage() {
   const [selectedMoveMonth, setSelectedMoveMonth] = useState<string>('');
   const [selectedMoveYear, setSelectedMoveYear] = useState<string>('');
   const [articlesToMove, setArticlesToMove] = useState<Article[]>([]);
-  const [shouldAutoSelectLatest, setShouldAutoSelectLatest] = useState(true);
   const toast = useRef<Toast>(null);
 
   const articleTypes = [
@@ -127,42 +127,10 @@ export default function CurrentIssuePage() {
   issueOptions.unshift({ label: 'Select Issue', value: '' });
 
   useEffect(() => {
+    setSelectedSpecialIssue('');
+    setSelectedArticles(new Set());
     loadJournalAndArticles();
   }, []);
-
-  // Auto-select the latest month/year when articles are loaded (current issue)
-  // Only do this on initial load, not after moving articles
-  useEffect(() => {
-    if (articles.length > 0 && !selectedMonth && !selectedYear && shouldAutoSelectLatest) {
-      // Find the latest month/year combination
-      const latestArticle = articles.reduce((latest, article) => {
-        if (!article.year || !article.issueMonth) return latest;
-        
-        const articleYear = parseInt(article.year);
-        const latestYear = latest ? parseInt(latest.year || '0') : 0;
-        
-        if (articleYear > latestYear) {
-          return article;
-        } else if (articleYear === latestYear && latest) {
-          // Same year, compare months
-          const monthOrder = ['January', 'February', 'March', 'April', 'May', 'June', 
-                             'July', 'August', 'September', 'October', 'November', 'December'];
-          const articleMonthIndex = monthOrder.indexOf(article.issueMonth);
-          const latestMonthIndex = monthOrder.indexOf(latest.issueMonth || '');
-          if (articleMonthIndex > latestMonthIndex) {
-            return article;
-          }
-        }
-        return latest;
-      }, null as Article | null);
-
-      if (latestArticle && latestArticle.year && latestArticle.issueMonth) {
-        setSelectedMonth(latestArticle.issueMonth);
-        setSelectedYear(latestArticle.year);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [articles, shouldAutoSelectLatest]);
 
   // Clear selected articles if they're no longer in the filtered list
   useEffect(() => {
@@ -177,24 +145,7 @@ export default function CurrentIssuePage() {
       });
       return newSet;
     });
-  }, [articles, selectedMonth, selectedYear, selectedSpecialIssue]);
-
-  // Close month dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (openMonthDropdown) {
-        const target = event.target as HTMLElement;
-        if (!target.closest('.month-dropdown-container')) {
-          setOpenMonthDropdown(null);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openMonthDropdown]);
+  }, [articles, selectedSpecialIssue]);
 
   const loadJournalAndArticles = async () => {
     try {
@@ -214,13 +165,22 @@ export default function CurrentIssuePage() {
       setJournalTitle(journalData.journalTitle);
       
       console.log('Loading articles for journal:', journalData.journalId);
-      // Fetch published articles for current issue
+      // Fetch articles with status CURRENT_ISSUE
       const articlesResponse = await adminAPI.getArticles({ 
         journalId: journalData.journalId, 
-        status: 'PUBLISHED' 
+        status: 'CURRENT_ISSUE' 
       });
       console.log('Articles response:', articlesResponse);
-      setArticles((articlesResponse.data as any[]) || []);
+      const allArticles = (articlesResponse.data as any[]) || [];
+      console.log('Total PUBLISHED articles loaded:', allArticles.length);
+      console.log('Articles details:', allArticles.map(a => ({
+        id: a.id,
+        title: a.title,
+        status: a.status,
+        issueMonth: a.issueMonth,
+        year: a.year
+      })));
+      setArticles(allArticles);
     } catch (error: any) {
       console.error('=== ERROR loading articles ===', error);
       console.error('Error details:', {
@@ -334,7 +294,7 @@ export default function CurrentIssuePage() {
         abstract: getPlainText(selectedArticle.abstract) || selectedArticle.title,
         authors: formattedAuthors,
         journalId: journalId,
-        status: selectedArticle.status || 'PUBLISHED',
+        status: selectedArticle.status || 'CURRENT_ISSUE',
         pdfUrl: selectedArticle.pdfUrl,
         articleType: selectedArticle.articleType,
         keywords: getPlainText(selectedArticle.keywords),
@@ -389,42 +349,26 @@ export default function CurrentIssuePage() {
     return [];
   };
 
-  // Filter articles by selected month/year
-  // Only show articles when BOTH month AND year are selected
-  // If only month is selected, show no articles (user must select year)
+  // Filter articles - show all articles with status CURRENT_ISSUE (STRICT RULE)
   const filteredArticles = articles.filter((article) => {
-    // Special issue filter (independent)
+    // Special issue filter (if selected)
     if (selectedSpecialIssue && article.specialIssue !== selectedSpecialIssue) return false;
     
-    // Month and year filtering - require BOTH to be selected
-    if (selectedMonth && selectedYear) {
-      // Both selected - filter by both (convert to strings for comparison)
-      const articleMonth = String(article.issueMonth || '').trim();
-      const articleYear = String(article.year || '').trim();
-      return articleMonth === selectedMonth && articleYear === selectedYear;
-    } else if (selectedMonth && !selectedYear) {
-      // Only month selected, no year - show no articles
-      return false;
-    } else if (!selectedMonth && selectedYear) {
-      // Only year selected, no month - show no articles
-      return false;
-    } else {
-      // No month or year selected - show no articles (user must select month/year or we auto-select latest)
+    // Only show articles with status CURRENT_ISSUE
+    if (article.status !== 'CURRENT_ISSUE') {
       return false;
     }
+    
+    return true;
   });
+  
+  // Debug logging
+  if (articles.length > 0) {
+    console.log('Filtered articles count:', filteredArticles.length, 'out of', articles.length);
+  }
 
   // Get unique special issues
   const specialIssues = Array.from(new Set(articles.map(a => a.specialIssue).filter(Boolean))) as string[];
-
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const currentYearForMonthDropdown = new Date().getFullYear();
-  const startYearForMonthDropdown = 2040;
-  const endYearForMonthDropdown = 2018;
-  const years = Array.from({ length: startYearForMonthDropdown - endYearForMonthDropdown + 1 }, (_, i) => {
-    const year = startYearForMonthDropdown - i;
-    return { label: year.toString(), value: year.toString() };
-  }).reverse();
 
   const toggleArticleSelection = (articleId: number) => {
     setSelectedArticles(prev => {
@@ -457,7 +401,7 @@ export default function CurrentIssuePage() {
       return;
     }
     confirmDialog({
-      message: `Are you sure you want to move ${selectedArticles.size} article(s) back to Articles in Press? This will change their status from PUBLISHED to ACCEPTED, unpublishing them from the Current Issue. They will appear in the Articles in Press section instead.`,
+      message: `Are you sure you want to move ${selectedArticles.size} article(s) back to Articles in Press? This will change their status from CURRENT_ISSUE to INPRESS. They will appear in the Articles in Press section instead.`,
       header: 'Confirm Move to Articles in Press',
       icon: 'pi pi-exclamation-triangle',
       accept: async () => {
@@ -473,17 +417,16 @@ export default function CurrentIssuePage() {
           // Clear selection immediately to prevent checkbox issues
           setSelectedArticles(new Set());
           
-          // Update each article - change status from PUBLISHED to ACCEPTED (unpublish)
+          // Move to Articles in Press: status=INPRESS, showInInpressCards=true
           for (const article of articlesToMove) {
             await adminAPI.updateArticle(article.id, {
-              status: 'ACCEPTED'
+              status: 'INPRESS',
+              showInInpressCards: true
             });
           }
           
           toast.current?.show({ severity: 'success', summary: 'Success', detail: `${articlesToMove.length} article(s) moved to Articles in Press successfully. They are no longer in the Current Issue.` });
           // Clear filters to show updated list
-          setSelectedMonth('');
-          setSelectedYear('');
           setSelectedSpecialIssue('');
           await loadJournalAndArticles();
         } catch (error: any) {
@@ -537,148 +480,12 @@ export default function CurrentIssuePage() {
       <Toast ref={toast} />
       <ConfirmDialog />
       
-      {/* Month Navigation Bar */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        {months.map((month) => {
-          const isSelected = selectedMonth === month;
-          return (
-            <div key={month} className="relative month-dropdown-container">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (isSelected) {
-                    // If already selected, toggle dropdown or deselect
-                    if (openMonthDropdown === month) {
-                      // Dropdown is open, close it and deselect
-                      setOpenMonthDropdown(null);
-                      setSelectedMonth('');
-                      setSelectedYear('');
-                    } else {
-                      // Dropdown is closed, open it
-                      setOpenMonthDropdown(month);
-                    }
-                  } else {
-                    // Select new month - IMPORTANT: Clear year and selected articles when changing month
-                    setSelectedYear(''); // Clear year first
-                    setSelectedMonth(month);
-                    setSelectedArticles(new Set()); // Clear selected articles when changing month
-                    setOpenMonthDropdown(month); // Open dropdown for new month
-                  }
-                }}
-                className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                  isSelected
-                    ? 'bg-blue-50 border-blue-600'
-                    : 'bg-white border-gray-300 hover:border-blue-400'
-                }`}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  color: isSelected ? '#1e40af' : '#374151',
-                  fontWeight: isSelected ? '600' : '500'
-                }}
-              >
-                <i className="pi pi-calendar" style={{ color: isSelected ? '#2563eb' : '#6b7280' }}></i>
-                <span style={{ color: isSelected ? '#1e40af' : '#374151' }}>{month}</span>
-                <i className="pi pi-chevron-down text-xs" style={{ color: isSelected ? '#2563eb' : '#6b7280' }}></i>
-              </button>
-              {isSelected && openMonthDropdown === month && (
-                <div 
-                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[200px] max-h-[300px] overflow-y-auto"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {years.map((yearOption) => (
-                    <button
-                      key={yearOption.value}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedYear(yearOption.value);
-                        setOpenMonthDropdown(null); // Close dropdown after selecting year
-                      }}
-                      className={`w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors ${
-                        selectedYear === yearOption.value ? 'bg-blue-100 font-semibold' : ''
-                      }`}
-                      style={{
-                        color: selectedYear === yearOption.value ? '#1e40af' : '#374151'
-                      }}
-                    >
-                      {month} {yearOption.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
-        
-        {/* Special Issue Dropdown */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => {
-              // Toggle special issue filter dropdown only if no specific issue is selected
-              if (selectedSpecialIssue && selectedSpecialIssue !== 'special' && specialIssues.includes(selectedSpecialIssue)) {
-                // If a specific issue is selected, clicking should just show/hide dropdown
-                setSelectedSpecialIssue(selectedSpecialIssue === 'special' ? selectedSpecialIssue : 'special');
-              } else {
-                setSelectedSpecialIssue(selectedSpecialIssue ? '' : 'special');
-              }
-            }}
-            className={`px-4 py-2 rounded-lg border-2 transition-all ${
-              selectedSpecialIssue && selectedSpecialIssue !== 'special' && specialIssues.includes(selectedSpecialIssue)
-                ? 'bg-blue-600 border-blue-600'
-                : 'bg-white border-gray-300 hover:border-gray-400'
-            }`}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              color: selectedSpecialIssue && selectedSpecialIssue !== 'special' && specialIssues.includes(selectedSpecialIssue) ? '#ffffff' : '#374151'
-            }}
-          >
-            <i className="pi pi-calendar"></i>
-            <span>specialissue</span>
-            <i className="pi pi-chevron-down text-xs"></i>
-          </button>
-          {(selectedSpecialIssue === 'special' || (selectedSpecialIssue && selectedSpecialIssue !== 'special' && specialIssues.includes(selectedSpecialIssue))) && specialIssues.length > 0 && (
-            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[200px] max-h-[300px] overflow-y-auto">
-              <button
-                type="button"
-                onClick={() => setSelectedSpecialIssue('')}
-                className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors"
-              >
-                All Issues
-              </button>
-              {specialIssues.map((issue) => (
-                <button
-                  key={issue}
-                  type="button"
-                  onClick={() => setSelectedSpecialIssue(issue)}
-                  className={`w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors ${
-                    selectedSpecialIssue === issue ? 'bg-blue-100 font-semibold' : ''
-                  }`}
-                >
-                  {issue}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* List of Articles Section */}
       <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="mb-6 flex items-center justify-between border-b-2 border-gray-200 pb-4">
           <div className="flex items-center gap-3">
             <i className="pi pi-list text-blue-600 text-2xl"></i>
             <h2 className="text-2xl font-bold text-gray-900">List of Articles</h2>
-            {selectedMonth && selectedYear && (
-              <span className="text-gray-600">
-                {selectedMonth} {selectedYear}
-              </span>
-            )}
           </div>
           <div className="flex items-center gap-4">
             {filteredArticles.length > 0 && (
@@ -832,8 +639,8 @@ export default function CurrentIssuePage() {
             <i className="pi pi-calendar text-6xl text-gray-300 mb-4"></i>
             <h3 className="text-xl font-semibold text-gray-600 mb-2">No Articles Found</h3>
             <p className="text-gray-500">
-              {selectedMonth || selectedYear || selectedSpecialIssue
-                ? 'No articles match the selected filters.'
+              {selectedSpecialIssue
+                ? 'No articles match the selected special issue filter.'
                 : 'There are currently no articles in the current issue.'}
             </p>
           </div>
@@ -1732,13 +1539,14 @@ export default function CurrentIssuePage() {
                   icon: 'pi pi-exclamation-triangle',
                   accept: async () => {
                     try {
-                      // Update each article with the selected month and year, keeping status as PUBLISHED
-                      // This moves them to archive (past issues) without unpublishing them
+                      // Move to Months: status=INPRESS, showInInpressCards=false, set inPressMonth/inPressYear, remove issueId
                       for (const article of articlesToMove) {
                         await adminAPI.updateArticle(article.id, {
-                          status: 'PUBLISHED',
-                          issueMonth: selectedMoveMonth,
-                          year: selectedMoveYear
+                          status: 'INPRESS',
+                          showInInpressCards: false,
+                          inPressMonth: selectedMoveMonth,
+                          inPressYear: selectedMoveYear,
+                          issueId: null // Remove issueId
                         });
                       }
                       
@@ -1753,11 +1561,7 @@ export default function CurrentIssuePage() {
                       setArticlesToMove([]);
                       // Clear selection and filters - this ensures no articles are shown after moving
                       setSelectedArticles(new Set());
-                      setSelectedMonth('');
-                      setSelectedYear('');
                       setSelectedSpecialIssue('');
-                      // Disable auto-select so no articles show after moving
-                      setShouldAutoSelectLatest(false);
                       await loadJournalAndArticles();
                       // After reload, filters remain clear so no articles show
                     } catch (error: any) {

@@ -26,11 +26,12 @@ let ArticlesController = class ArticlesController {
     create(createArticleDto) {
         return this.articlesService.create(createArticleDto);
     }
-    findAll(journalId, search, status, sortBy, sortOrder, page, limit) {
+    findAll(journalId, search, status, showInInpressCards, inPressMonth, inPressYear, sortBy, sortOrder, page, limit) {
         const journalIdNum = journalId ? parseInt(journalId, 10) : undefined;
         const pageNum = page ? parseInt(page, 10) : 1;
         const limitNum = limit ? parseInt(limit, 10) : 10;
-        return this.articlesService.findAll(journalIdNum, search, status, sortBy || 'publishedAt', sortOrder || 'desc', pageNum, limitNum);
+        const showInInpressCardsBool = showInInpressCards === 'true' ? true : showInInpressCards === 'false' ? false : undefined;
+        return this.articlesService.findAll(journalIdNum, search, status, showInInpressCardsBool, inPressMonth, inPressYear, sortBy || 'publishedAt', sortOrder || 'desc', pageNum, limitNum);
     }
     findOne(id) {
         return this.articlesService.findOne(id);
@@ -100,12 +101,15 @@ __decorate([
     __param(0, (0, common_1.Query)('journalId')),
     __param(1, (0, common_1.Query)('search')),
     __param(2, (0, common_1.Query)('status')),
-    __param(3, (0, common_1.Query)('sortBy')),
-    __param(4, (0, common_1.Query)('sortOrder')),
-    __param(5, (0, common_1.Query)('page')),
-    __param(6, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('showInInpressCards')),
+    __param(4, (0, common_1.Query)('inPressMonth')),
+    __param(5, (0, common_1.Query)('inPressYear')),
+    __param(6, (0, common_1.Query)('sortBy')),
+    __param(7, (0, common_1.Query)('sortOrder')),
+    __param(8, (0, common_1.Query)('page')),
+    __param(9, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String, String, String, String]),
+    __metadata("design:paramtypes", [String, String, String, String, String, String, String, String, String, String]),
     __metadata("design:returntype", void 0)
 ], ArticlesController.prototype, "findAll", null);
 __decorate([

@@ -57,13 +57,13 @@ const JournalCard = memo(function JournalCard({
     <article
       className={`journal-card ${viewMode === 'grid' ? 'journal-card--grid' : 'journal-card--list'}`}
     >
-      <Link href={journalUrl} className="journal-card__link">
-        {/* Image Container - Side in list view (before title), Top in grid view */}
+      <div className="journal-card__wrapper">
+        {/* Image Container - Left side in grid view */}
         <div className="journal-card__image-container">
           {imageUrl ? (
             <img
               src={imageUrl}
-              alt={`${journal.title} ${viewMode === 'list' ? 'cover' : 'banner'}`}
+              alt={`${journal.title} cover`}
               className="journal-card__image"
               loading="lazy"
               onError={(e) => {
@@ -91,85 +91,57 @@ const JournalCard = memo(function JournalCard({
 
         <div className="journal-card__content">
           <header className="journal-card__header">
-            {subjectLabel && (
-              <span
-                className={`journal-card__category ${
-                  subjectClass ? `journal-card__category--${subjectClass}` : ''
-                }`.trim()}
-              >
-                {subjectLabel}
-              </span>
-            )}
-
             <h2 className="journal-card__title">
               {journal.title}
             </h2>
             
-            {/* Display journal name alongside title only if it's different from title */}
-            {(journal as any).journalName && 
-             (journal as any).journalName.trim().toLowerCase() !== journal.title?.trim().toLowerCase() && (
-              <h3 className="journal-card__name" style={{ 
-                fontSize: '0.95em', 
-                fontWeight: '400', 
-                color: '#555', 
-                marginTop: '0.25rem',
-                marginBottom: '0.5rem',
-                fontStyle: 'italic'
-              }}>
-                {(journal as any).journalName}
-              </h3>
-            )}
-
-            <p className="journal-card__meta">
-              {journal.publisher && <span>{journal.publisher}</span>}
+            <div className="journal-card__info">
               {journal.issn && (
-                <>
-                  {journal.publisher && ' • '}
-                  <span>ISSN: {journal.issn}</span>
-                </>
+                <div className="journal-card__info-item">
+                  <span className="journal-card__info-label">ISSN:</span>
+                  <span className="journal-card__info-value">{journal.issn}</span>
+                </div>
               )}
-              {journal.accessType && (
-                <>
-                  {(journal.publisher || journal.issn) && ' • '}
-                  <span>{journal.accessType}</span>
-                </>
+              {(journal as any).doi && (
+                <div className="journal-card__info-item">
+                  <span className="journal-card__info-label">DOI:</span>
+                  <span className="journal-card__info-value">{(journal as any).doi}</span>
+                </div>
               )}
-            </p>
-          </header>
-
-          {journal.description && (
-            <p className="journal-card__description">{journal.description}</p>
-          )}
-
-          <footer className="journal-card__footer">
-            <div className="journal-card__stats">
-              {(journal.impactFactor || (journal as any).journalImpactFactor) && (
-                <span title="Impact Factor">
-                  <i className="pi pi-chart-line" aria-hidden="true" />
-                  IF: {(journal as any).journalImpactFactor || journal.impactFactor}
-                </span>
-              )}
-              {journal._count?.articles !== undefined && (
-                <span title="Number of articles">
-                  <i className="pi pi-file" aria-hidden="true" />
-                  {journal._count.articles} article{journal._count.articles !== 1 ? 's' : ''}
-                </span>
+              {((journal as any).email || (journal as any).contactEmail || (journal as any).editorEmail) && (
+                <div className="journal-card__info-item">
+                  <span className="journal-card__info-label">Email:</span>
+                  <span className="journal-card__info-value">
+                    <i className="pi pi-envelope journal-card__info-icon"></i>
+                    {(journal as any).email || (journal as any).contactEmail || (journal as any).editorEmail}
+                  </span>
+                </div>
               )}
             </div>
-            {hasContent && (
-              <button
-                onClick={handleExpandClick}
-                className="journal-card__expand-btn"
-                aria-label={isExpanded ? 'Collapse content' : 'Expand content'}
-                title={isExpanded ? 'Collapse content' : 'View homepage, aims & scope, and guidelines'}
+          </header>
+
+          <footer className="journal-card__footer">
+            <div className="journal-card__actions">
+              <Link 
+                href={`/submit-manuscript${shortcode ? `?journal=${shortcode}` : ''}`}
+                className="journal-card__action-btn journal-card__action-btn--submit"
+                onClick={(e) => e.stopPropagation()}
               >
-                <i className={`pi ${isExpanded ? 'pi-chevron-up' : 'pi-chevron-down'}`}></i>
-                <span>{isExpanded ? 'Less' : 'More Info'}</span>
-              </button>
-            )}
+                <i className="pi pi-pencil"></i>
+                <span>Submit Manuscript</span>
+              </Link>
+              <Link 
+                href={journalUrl}
+                className="journal-card__action-btn journal-card__action-btn--read"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <i className="pi pi-external-link"></i>
+                <span>Read More...</span>
+              </Link>
+            </div>
           </footer>
         </div>
-      </Link>
+      </div>
 
       {/* Expandable Content Section */}
       {isExpanded && hasContent && (

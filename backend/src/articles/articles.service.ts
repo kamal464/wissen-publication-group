@@ -12,6 +12,9 @@ export class ArticlesService {
     journalId?: number,
     search?: string,
     status?: string,
+    showInInpressCards?: boolean,
+    inPressMonth?: string,
+    inPressYear?: string,
     sortBy: string = 'publishedAt',
     sortOrder: 'asc' | 'desc' = 'desc',
     page: number = 1,
@@ -25,6 +28,18 @@ export class ArticlesService {
 
     if (status) {
       where.status = status;
+    }
+
+    if (showInInpressCards !== undefined) {
+      where.showInInpressCards = showInInpressCards;
+    }
+
+    if (inPressMonth) {
+      where.inPressMonth = inPressMonth;
+    }
+
+    if (inPressYear) {
+      where.inPressYear = inPressYear;
     }
 
     if (search) {
@@ -138,7 +153,8 @@ export class ArticlesService {
       'firstPageNumber', 'lastPageNumber', 'doi', 'correspondingAuthorDetails', 'citeAs',
       'country', 'receivedAt', 'acceptedAt', 'fulltextImages', 'heading1Title', 'heading1Content',
       'heading2Title', 'heading2Content', 'heading3Title', 'heading3Content', 'heading4Title',
-      'heading4Content', 'heading5Title', 'heading5Content'
+      'heading4Content', 'heading5Title', 'heading5Content', 'showInInpressCards', 'inPressMonth',
+      'inPressYear', 'issueId'
     ];
     const filteredData: any = {};
     
@@ -176,13 +192,18 @@ export class ArticlesService {
       'firstPageNumber', 'lastPageNumber', 'doi', 'correspondingAuthorDetails', 'citeAs',
       'country', 'fulltextImages', 'heading1Title', 'heading1Content', 'heading2Title',
       'heading2Content', 'heading3Title', 'heading3Content', 'heading4Title', 'heading4Content',
-      'heading5Title', 'heading5Content'
+      'heading5Title', 'heading5Content', 'showInInpressCards', 'inPressMonth', 'inPressYear', 'issueId'
     ];
     const filteredData: any = {};
     
     for (const key of validFields) {
-      if (articleData[key] !== undefined && articleData[key] !== null) {
-        filteredData[key] = articleData[key];
+      // Allow null for publishedAt to support clearing it when moving articles from Current Issue
+      if (articleData[key] !== undefined) {
+        if (key === 'publishedAt' && articleData[key] === null) {
+          filteredData[key] = null;
+        } else if (articleData[key] !== null) {
+          filteredData[key] = articleData[key];
+        }
       }
     }
 

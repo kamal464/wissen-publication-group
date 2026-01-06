@@ -43,11 +43,11 @@ export default function Header() {
         <div className="header__container">
           {!isSearchOpen && (
             <Link href="/" className="header__logo" aria-label="Wissen Publication Group homepage">
-              <div className="header__logo-icon">WPG</div>
-              <div className="header__logo-text">
-                <span className="primary">WISSEN</span>
-                <span className="secondary">PUBLICATION GROUP</span>
-              </div>
+              <img 
+                src="/wissen-logo.png" 
+                alt="Wissen Publication Group" 
+                className="header__logo-image"
+              />
             </Link>
           )}
 

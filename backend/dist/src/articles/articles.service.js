@@ -17,13 +17,22 @@ let ArticlesService = class ArticlesService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async findAll(journalId, search, status, sortBy = 'publishedAt', sortOrder = 'desc', page = 1, limit = 10) {
+    async findAll(journalId, search, status, showInInpressCards, inPressMonth, inPressYear, sortBy = 'publishedAt', sortOrder = 'desc', page = 1, limit = 10) {
         const where = {};
         if (journalId) {
             where.journalId = journalId;
         }
         if (status) {
             where.status = status;
+        }
+        if (showInInpressCards !== undefined) {
+            where.showInInpressCards = showInInpressCards;
+        }
+        if (inPressMonth) {
+            where.inPressMonth = inPressMonth;
+        }
+        if (inPressYear) {
+            where.inPressYear = inPressYear;
         }
         if (search) {
             where.OR = [
@@ -123,7 +132,8 @@ let ArticlesService = class ArticlesService {
             'firstPageNumber', 'lastPageNumber', 'doi', 'correspondingAuthorDetails', 'citeAs',
             'country', 'receivedAt', 'acceptedAt', 'fulltextImages', 'heading1Title', 'heading1Content',
             'heading2Title', 'heading2Content', 'heading3Title', 'heading3Content', 'heading4Title',
-            'heading4Content', 'heading5Title', 'heading5Content'
+            'heading4Content', 'heading5Title', 'heading5Content', 'showInInpressCards', 'inPressMonth',
+            'inPressYear', 'issueId'
         ];
         const filteredData = {};
         for (const key of validFields) {
@@ -156,12 +166,17 @@ let ArticlesService = class ArticlesService {
             'firstPageNumber', 'lastPageNumber', 'doi', 'correspondingAuthorDetails', 'citeAs',
             'country', 'fulltextImages', 'heading1Title', 'heading1Content', 'heading2Title',
             'heading2Content', 'heading3Title', 'heading3Content', 'heading4Title', 'heading4Content',
-            'heading5Title', 'heading5Content'
+            'heading5Title', 'heading5Content', 'showInInpressCards', 'inPressMonth', 'inPressYear', 'issueId'
         ];
         const filteredData = {};
         for (const key of validFields) {
-            if (articleData[key] !== undefined && articleData[key] !== null) {
-                filteredData[key] = articleData[key];
+            if (articleData[key] !== undefined) {
+                if (key === 'publishedAt' && articleData[key] === null) {
+                    filteredData[key] = null;
+                }
+                else if (articleData[key] !== null) {
+                    filteredData[key] = articleData[key];
+                }
             }
         }
         const updateData = {

@@ -286,7 +286,7 @@ function SubmissionSuccessContent() {
   <title>Manuscript Submission Receipt</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Times New Roman', Times, serif;
       padding: 40px;
       max-width: 800px;
       margin: 0 auto;

@@ -1,4 +1,4 @@
-'use client';
+        'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter, usePathname, useSearchParams } from 'next/navigation';
@@ -404,11 +404,12 @@ export default function JournalDetailPage() {
           }
           break;
         case 'in-press':
-          // Load articles in press
+          // Load articles in press - show articles with status INPRESS and showInInpressCards=true
           try {
             const articlesResponse = await adminAPI.getArticles({ 
               journalId: journalData.id, 
-              status: 'ACCEPTED' 
+              status: 'INPRESS',
+              showInInpressCards: 'true'
             });
             const inPressArticles = (articlesResponse.data as any[]) || [];
             setArticles(inPressArticles);
@@ -420,11 +421,11 @@ export default function JournalDetailPage() {
           }
           break;
         case 'current-issue':
-          // Load current issue articles
+          // Load current issue articles - show articles with status CURRENT_ISSUE
           try {
             const articlesResponse = await adminAPI.getArticles({ 
               journalId: journalData.id, 
-              status: 'PUBLISHED' 
+              status: 'CURRENT_ISSUE' 
             });
             const currentArticles = (articlesResponse.data as any[]) || [];
             setArticles(currentArticles);
@@ -437,9 +438,9 @@ export default function JournalDetailPage() {
           break;
         case 'archive':
           // Load archive articles and organize by year
+          // Show articles that have inPressMonth and inPressYear set (moved to months/archive)
           try {
-            // Fetch all articles, then filter to show only PUBLISHED and ACCEPTED
-            // This allows articles to appear immediately after acceptance, matching admin archive behavior
+            // Fetch all articles, then filter to show only those with month/year set
             // Set a high limit to get all articles (or fetch in batches if needed)
             const articlesResponse = await adminAPI.getArticles({ 
               journalId: journalData.id,
@@ -448,19 +449,24 @@ export default function JournalDetailPage() {
               // No status filter - get all articles, then filter client-side
             });
             const allArticles = (articlesResponse.data as any[]) || [];
-            // Filter to only show PUBLISHED and ACCEPTED articles in public archive
-            const filteredArticles = allArticles.filter((article: any) => 
-              article.status === 'PUBLISHED' || article.status === 'ACCEPTED'
-            );
+            // Filter to show articles that have inPressMonth and inPressYear set (archived articles)
+            const filteredArticles = allArticles.filter((article: any) => {
+              const hasMonth = article.inPressMonth && String(article.inPressMonth).trim() !== '';
+              const hasYear = article.inPressYear && String(article.inPressYear).trim() !== '';
+              return hasMonth && hasYear;
+            });
             setArticles(filteredArticles);
             
             console.log('Loading archive articles for journal:', journalData.id, 'Total articles:', filteredArticles.length);
             
             const issuesByYear = new Map<number, any[]>();
             filteredArticles.forEach((article: any) => {
-              // Use year from article, or derive from publishedAt or acceptedAt
+              // Use inPressYear from article (archived articles use inPressYear)
               let year: number;
-              if (article.year) {
+              if (article.inPressYear) {
+                year = parseInt(String(article.inPressYear));
+              } else if (article.year) {
+                // Fallback to year if inPressYear not set
                 year = parseInt(String(article.year));
               } else if (article.publishedAt) {
                 const publishedDate = new Date(article.publishedAt);
@@ -986,23 +992,47 @@ export default function JournalDetailPage() {
                       <i className="pi pi-spin pi-spinner text-4xl text-blue-600"></i>
                     </div>
                   ) : boardMembers.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6">
                       {boardMembers.map((member) => {
-                        const imageUrl = member.imageUrl ? getFileUrl(member.imageUrl) : null;
+                        const getMemberImageUrl = (imagePath: string | undefined) => {
+                          if (!imagePath) return null;
+                          
+                          // If it's already a data URI, return as is
+                          if (imagePath.startsWith('data:')) {
+                            return imagePath;
+                          }
+                          
+                          // If it's already a full URL, return as is
+                          if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+                            return imagePath;
+                          }
+                          
+                          // Otherwise, use getFileUrl to construct the full URL
+                          // Ensure the path starts with /uploads/ for proper server routing
+                          const normalizedPath = imagePath.startsWith('/uploads/') ? imagePath : `/uploads/${imagePath.replace(/^\/?uploads\//, '')}`;
+                          return getFileUrl(normalizedPath);
+                        };
+                        
+                        const imageUrl = getMemberImageUrl(member.imageUrl);
                         
                         return (
                           <div 
                             key={member.id} 
-                            className="border-l-4 border-blue-500 bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow"
+                            className="border-l-4 border-blue-500 bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow w-full"
                           >
-                            <div className="flex gap-4 items-start">
+                            <div className="flex gap-4 items-start w-full">
                               {imageUrl ? (
                                 <img 
                                   src={imageUrl} 
                                   alt={member.name}
                                   className="w-24 h-32 object-cover rounded-lg flex-shrink-0"
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
+                                    console.error('Image load error in viewer:', member.imageUrl);
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                  }}
+                                  onLoad={() => {
+                                    console.log('Image loaded successfully in viewer:', member.imageUrl);
                                   }}
                                 />
                               ) : (
@@ -1013,35 +1043,38 @@ export default function JournalDetailPage() {
                                 </div>
                               )}
                               
-                              <div className="flex-1 min-w-0">
-                                <h3 className="text-xl font-bold text-gray-900 mb-1">{member.name}</h3>
-                                <p className="text-sm font-semibold text-blue-600 mb-2">{member.memberType || member.position}</p>
+                              <div className="flex-1 min-w-0 flex-grow">
+                                <h3 className="text-xl font-bold text-gray-900 mb-1 break-words">{member.name}</h3>
+                                <p className="text-sm font-semibold text-blue-600 mb-2 break-words">{member.memberType || member.position}</p>
                                 {member.editorType && (
-                                  <p className="text-xs text-gray-500 mb-2">{member.editorType}</p>
+                                  <p className="text-xs text-gray-500 mb-2 break-words">{member.editorType}</p>
                                 )}
                                 {member.affiliation && (
                                   <p className="text-sm text-gray-700 mb-2 flex items-center gap-1">
-                                    <i className="pi pi-building text-gray-400"></i>
-                                    <span>{member.affiliation}</span>
+                                    <i className="pi pi-building text-gray-400 flex-shrink-0"></i>
+                                    <span className="break-words">{member.affiliation}</span>
                                   </p>
                                 )}
                                 {member.email && (
                                   <p className="text-sm text-gray-700 mb-2 flex items-center gap-1">
-                                    <i className="pi pi-envelope text-gray-400"></i>
-                                    <a href={`mailto:${member.email}`} className="text-blue-600 hover:underline">
+                                    <i className="pi pi-envelope text-gray-400 flex-shrink-0"></i>
+                                    <a 
+                                      href={`mailto:${member.email}`} 
+                                      className="text-blue-600 hover:underline whitespace-nowrap"
+                                    >
                                       {member.email}
                                     </a>
                                   </p>
                                 )}
                                 {member.description && (
                                   <div 
-                                    className="text-sm text-gray-600 mb-2 prose prose-sm max-w-none"
+                                    className="text-sm text-gray-600 mb-2 prose prose-sm max-w-none break-words overflow-wrap-anywhere"
                                     dangerouslySetInnerHTML={{ __html: member.description }}
                                   />
                                 )}
                                 {member.biography && (
                                   <div 
-                                    className="text-sm text-gray-600 mb-2 prose prose-sm max-w-none"
+                                    className="text-sm text-gray-600 mb-2 prose prose-sm max-w-none break-words overflow-wrap-anywhere"
                                     dangerouslySetInnerHTML={{ __html: member.biography }}
                                   />
                                 )}
@@ -1331,14 +1364,12 @@ export default function JournalDetailPage() {
                                           <span>View Articles</span>
                                         </button>
                                         
-                                        {/* Action Buttons - Same as dialog (View Full Text + PDF) */}
+                                        {/* Action Buttons - Same as dialog (View Full Text + PDF)
                                         {issue.articles && issue.articles.length > 0 && (
                                           <div className="flex items-center justify-center gap-3">
-                                            {/* View Full Text Button */}
                                             <button
                                               type="button"
                                               onClick={() => {
-                                                // Open first article's full text view
                                                 const firstArticle = issue.articles[0];
                                                 if (firstArticle?.id) {
                                                   window.open(`/articles/${firstArticle.id}`, '_blank');
@@ -1350,7 +1381,6 @@ export default function JournalDetailPage() {
                                               <i className="pi pi-file text-gray-600 text-sm"></i>
                                             </button>
                                             
-                                            {/* PDF Download Button */}
                                             {articleWithPdf?.pdfUrl && (
                                               <a
                                                 href={getImageUrl(articleWithPdf.pdfUrl)}
@@ -1363,7 +1393,7 @@ export default function JournalDetailPage() {
                                               </a>
                                             )}
                                           </div>
-                                        )}
+                                        )} */}
                                       </div>
                                     );
                                   })}
@@ -1555,17 +1585,6 @@ export default function JournalDetailPage() {
                         <span className="inline-block px-3 py-1 text-xs font-bold text-white bg-orange-500 rounded-full">
                           doi
                         </span>
-                      )}
-                      {article.pdfUrl && (
-                        <a
-                          href={getImageUrl(article.pdfUrl)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-10 h-10 rounded-full border-2 border-red-500 bg-white hover:bg-red-50 flex items-center justify-center transition-colors shadow-sm"
-                          title="Download PDF"
-                        >
-                          <i className="pi pi-file-pdf text-red-600 text-sm"></i>
-                        </a>
                       )}
                     </div>
                   </div>

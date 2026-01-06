@@ -156,7 +156,6 @@
   // Logo section
   &__logo {
     @include flex-center;
-    gap: get-spacing(3);
     text-decoration: none;
     
     &:hover {
@@ -164,6 +163,15 @@
     }
   }
   
+  &__logo-image {
+    height: 120px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+    padding-top: 8px;
+  }
+  
+  // Legacy styles - kept for backward compatibility if needed elsewhere
   &__logo-icon {
     width: 48px;
     height: 48px;
@@ -440,6 +448,14 @@
 
 // Header animations
 .header {
+  &__logo-image {
+    transition: transform map.get($transitions, fast);
+    
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+  
   &__logo-icon {
   transition: transform map.get($transitions, fast);
     

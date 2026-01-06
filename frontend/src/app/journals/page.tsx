@@ -126,7 +126,7 @@ export default function JournalsPage() {
   const [isClient, setIsClient] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [sortBy, setSortBy] = useState<string>('title-asc');
   const [first, setFirst] = useState(0);
   const [rows, setRows] = useState(9);
@@ -337,28 +337,8 @@ export default function JournalsPage() {
     fetchJournals();
   }, [fetchJournals]);
 
-  // Refresh data when user returns to the page (e.g., after making changes in admin panel)
-  useEffect(() => {
-    const handleFocus = () => {
-      // Refresh journals when window regains focus (user might have made changes in another tab)
-      fetchJournals();
-    };
-
-    const handleVisibilityChange = () => {
-      // Refresh when tab becomes visible
-      if (!document.hidden) {
-        fetchJournals();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [fetchJournals]);
+  // Removed auto-refresh on focus/visibility change to prevent unwanted refreshes
+  // If you need to refresh data, use the manual "Refresh" button instead
 
   const subjectOptions = useMemo(() => {
     const uniqueSubjects = new Set<string>();
@@ -558,16 +538,16 @@ export default function JournalsPage() {
   return (
     <>
       <Header />
+      {/* Blue Header Banner */}
+      <div className="journals-hero-banner">
+        <div className="journals-hero-banner__content">
+          <h1 className="journals-hero-banner__title">Journals</h1>
+          <p className="journals-hero-banner__subtitle">Leading list of journals</p>
+        </div>
+      </div>
+      
       <main className="journals-page px-4 py-12 md:px-8 lg:px-12 flex justify-center">
         <section className="journal-list w-full">
-          <div className="journal-list__header">
-            <span className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-500">Journals</span>
-            <h1 className="journal-list__title">Explore our library of peer-reviewed journals</h1>
-            <p className="mt-2 max-w-2xl text-base text-neutral-600">
-              Browse journals across multiple disciplines, apply filters to focus on the subjects that matter
-              to you, and jump into detailed insights for each publication.
-            </p>
-          </div>
 
           <div className="journal-list__controls">
             <div className="flex w-full flex-col gap-4 md:flex-row">
@@ -708,7 +688,7 @@ export default function JournalsPage() {
 
           <div
             className={`mt-8 journal-list__grid ${
-              viewMode === 'grid' ? 'journal-list__grid--cards-5' : 'journal-list__grid--list'
+              viewMode === 'grid' ? 'journal-list__grid--cards-2' : 'journal-list__grid--list'
             }`}
           >
             {loading && !items.length &&

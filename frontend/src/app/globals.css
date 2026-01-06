@@ -14,9 +14,40 @@
   --primary-900: #1e3a8a;
 }
 
-/* Base styles */
+/* Base styles - Times New Roman */
+html,
 body {
-  font-family: var(--font-inter), sans-serif;
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Override all elements to use Times New Roman, but exclude icons */
+* {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Preserve PrimeIcons font - icons should not use Times New Roman */
+.pi,
+[class^="pi-"],
+[class*=" pi-"],
+[class*="-icon"],
+.p-icon,
+.p-icon-wrapper,
+i[class*="pi"],
+i.pi,
+span.pi,
+.p-component .pi,
+.p-component [class*="pi-"] {
+  font-family: 'primeicons' !important;
+}
+
+/* Preserve icon fonts in pseudo-elements for PrimeIcons */
+.pi::before,
+[class^="pi-"]::before,
+[class*=" pi-"]::before,
+[class*="-icon"]::before,
+i.pi::before,
+span.pi::before {
+  font-family: 'primeicons' !important;
 }
 
 /* Utility classes */
@@ -39,4 +70,618 @@ body {
 .p-menubar-root-list > .p-menuitem > .p-menuitem-link {
   padding: 0.75rem 1rem;
   font-weight: 500;
+}
+
+/* PrimeReact Font Overrides - Times New Roman */
+/* Buttons - exclude icons */
+.p-button,
+.p-button-label,
+.p-button-text {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Preserve icon font in button icons */
+.p-button-icon,
+.p-button .pi {
+  font-family: 'primeicons' !important;
+}
+
+/* Inputs */
+.p-inputtext,
+.p-inputtextarea,
+.p-inputnumber-input,
+.p-calendar-input,
+.p-dropdown-label,
+.p-dropdown-trigger,
+.p-multiselect-label,
+.p-multiselect-trigger {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Tables */
+.p-datatable,
+.p-datatable-header,
+.p-datatable-footer,
+.p-datatable-thead > tr > th,
+.p-datatable-tbody > tr > td,
+.p-datatable-tfoot > tr > td,
+.p-column-header-content {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Preserve icon font in table sort icons */
+.p-sortable-column-icon,
+.p-datatable .pi {
+  font-family: 'primeicons' !important;
+}
+
+/* Dialogs */
+.p-dialog,
+.p-dialog-header,
+.p-dialog-title,
+.p-dialog-content,
+.p-dialog-footer {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Dropdowns */
+.p-dropdown,
+.p-dropdown-panel,
+.p-dropdown-item,
+.p-dropdown-items-wrapper,
+.p-dropdown-filter-container,
+.p-dropdown-filter {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Forms */
+.p-field-label,
+.p-field-required,
+.p-fieldset-legend,
+.p-checkbox-label,
+.p-radiobutton-label,
+.p-inputgroup-addon {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Headings in PrimeReact components */
+.p-component,
+.p-component *,
+h1, h2, h3, h4, h5, h6,
+.p-dialog-title,
+.p-panel-title,
+.p-accordion-header-text,
+.p-tabview-title {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Menus */
+.p-menu,
+.p-menu-list,
+.p-menuitem-link,
+.p-menuitem-text,
+.p-submenu-header {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Preserve icon font in menu icons */
+.p-menuitem-icon,
+.p-menu .pi,
+.p-menuitem-link .pi {
+  font-family: 'primeicons' !important;
+}
+
+/* Messages/Toasts */
+.p-message,
+.p-message-text,
+.p-message-summary,
+.p-message-detail,
+.p-toast,
+.p-toast-message,
+.p-toast-summary,
+.p-toast-detail {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Overlay Panels */
+.p-overlaypanel,
+.p-overlaypanel-content {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Tooltips */
+.p-tooltip,
+.p-tooltip-text {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* File Upload */
+.p-fileupload,
+.p-fileupload-buttonbar,
+.p-fileupload-content {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Calendar/DatePicker */
+.p-calendar,
+.p-datepicker,
+.p-datepicker-header,
+.p-datepicker-title,
+.p-datepicker-calendar,
+.p-datepicker-month,
+.p-datepicker-year {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Paginator */
+.p-paginator,
+.p-paginator-pages,
+.p-paginator-page,
+.p-paginator-first,
+.p-paginator-prev,
+.p-paginator-next,
+.p-paginator-last {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Tree */
+.p-tree,
+.p-treenode-label,
+.p-treenode-content {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Panel */
+.p-panel,
+.p-panel-header,
+.p-panel-title,
+.p-panel-content,
+.p-panel-footer {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Accordion */
+.p-accordion,
+.p-accordion-tab,
+.p-accordion-header,
+.p-accordion-header-link,
+.p-accordion-content {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* TabView */
+.p-tabview,
+.p-tabview-nav,
+.p-tabview-nav-link,
+.p-tabview-panel {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Card */
+.p-card,
+.p-card-header,
+.p-card-title,
+.p-card-subtitle,
+.p-card-content,
+.p-card-footer {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* DataView */
+.p-dataview,
+.p-dataview-header,
+.p-dataview-content {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Splitter */
+.p-splitter,
+.p-splitter-panel {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Sidebar */
+.p-sidebar,
+.p-sidebar-header,
+.p-sidebar-content,
+.p-sidebar-footer {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Breadcrumb */
+.p-breadcrumb,
+.p-breadcrumb-list,
+.p-breadcrumb-item {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Steps */
+.p-steps,
+.p-steps-item,
+.p-steps-title {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Rating */
+.p-rating {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Preserve icon font in rating icons */
+.p-rating-icon,
+.p-rating .pi {
+  font-family: 'primeicons' !important;
+}
+
+/* Slider */
+.p-slider,
+.p-slider-handle {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* ProgressBar */
+.p-progressbar,
+.p-progressbar-label {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Badge */
+.p-badge {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Tag */
+.p-tag {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Chip */
+.p-chip,
+.p-chip-text {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Avatar */
+.p-avatar {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Skeleton */
+.p-skeleton {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Divider */
+.p-divider,
+.p-divider-content {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* ScrollPanel */
+.p-scrollpanel {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Carousel */
+.p-carousel,
+.p-carousel-header,
+.p-carousel-content,
+.p-carousel-footer {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Galleria */
+.p-galleria,
+.p-galleria-header,
+.p-galleria-content,
+.p-galleria-footer {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Image */
+.p-image {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* AvatarGroup */
+.p-avatargroup {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* BlockUI */
+.p-blockui {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* ProgressSpinner */
+.p-progressspinner {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* InlineMessage */
+.p-inline-message,
+.p-inline-message-text {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* ConfirmDialog */
+.p-confirm-dialog,
+.p-confirm-dialog-message {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* ContextMenu */
+.p-contextmenu,
+.p-contextmenu-list,
+.p-contextmenu-item {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* TieredMenu */
+.p-tieredmenu,
+.p-tieredmenu-list,
+.p-tieredmenu-item {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* MegaMenu */
+.p-megamenu,
+.p-megamenu-list,
+.p-megamenu-item {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Bar */
+.p-bar {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Dock */
+.p-dock,
+.p-dock-list,
+.p-dock-item {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* SpeedDial */
+.p-speeddial,
+.p-speeddial-button,
+.p-speeddial-action {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Terminal */
+.p-terminal,
+.p-terminal-content,
+.p-terminal-prompt {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* CodeHighlighter */
+.p-codehighlighter {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* OrganizationChart */
+.p-organizationchart,
+.p-organizationchart-node-content {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* PickList */
+.p-picklist,
+.p-picklist-list,
+.p-picklist-item {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* OrderList */
+.p-orderlist,
+.p-orderlist-list,
+.p-orderlist-item {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* DataScroller */
+.p-datascroller,
+.p-datascroller-list,
+.p-datascroller-item {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Timeline */
+.p-timeline,
+.p-timeline-event,
+.p-timeline-event-content,
+.p-timeline-event-opposite {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Chart */
+.p-chart {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Knob */
+.p-knob {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* ColorPicker */
+.p-colorpicker,
+.p-colorpicker-preview {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Editor */
+.p-editor-container,
+.p-editor-content {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* InputSwitch */
+.p-inputswitch {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* ToggleButton */
+.p-togglebutton,
+.p-togglebutton-label {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* SelectButton */
+.p-selectbutton,
+.p-selectbutton-button,
+.p-selectbutton-button-label {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* TriStateCheckbox */
+.p-tristatecheckbox,
+.p-tristatecheckbox-label {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* AutoComplete */
+.p-autocomplete,
+.p-autocomplete-input,
+.p-autocomplete-panel,
+.p-autocomplete-item {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Chips */
+.p-chips,
+.p-chips-input-token,
+.p-chips-token,
+.p-chips-token-label {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* CascadeSelect */
+.p-cascadeselect,
+.p-cascadeselect-label,
+.p-cascadeselect-panel,
+.p-cascadeselect-item {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Listbox */
+.p-listbox,
+.p-listbox-list,
+.p-listbox-item {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* MultiSelect */
+.p-multiselect,
+.p-multiselect-label,
+.p-multiselect-panel,
+.p-multiselect-item {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Password */
+.p-password,
+.p-password-input {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* InputMask */
+.p-inputmask {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* KeyFilter */
+.p-keyfilter {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* InputGroup */
+.p-inputgroup,
+.p-inputgroup-addon {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* InputGroupAddon */
+.p-inputgroup-addon {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* FloatLabel */
+.p-float-label,
+.p-float-label-label {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Textarea */
+.p-inputtextarea {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* InputNumber */
+.p-inputnumber,
+.p-inputnumber-input,
+.p-inputnumber-button {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* InputOtp */
+.p-inputotp,
+.p-inputotp-input {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Mention */
+.p-mention,
+.p-mention-panel,
+.p-mention-item {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* VirtualScroller */
+.p-virtualscroller,
+.p-virtualscroller-content {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* DeferredContent */
+.p-deferred-content {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Ripple */
+.p-ripple {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* FocusTrap */
+.p-focustrap {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* StyleClass */
+.p-styleclass {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* AnimateOnScroll */
+.p-animateonscroll {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* FocusTrap */
+.p-focustrap {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* StyleClass */
+.p-styleclass {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* AnimateOnScroll */
+.p-animateonscroll {
+  font-family: 'Times New Roman', Times, serif !important;
 }

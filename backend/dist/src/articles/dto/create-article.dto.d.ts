@@ -29,5 +29,9 @@ export declare class CreateArticleDto {
     submitterEmail?: string;
     submitterAddress?: string;
     submitterCountry?: string;
+    inPressMonth?: string;
+    inPressYear?: string;
+    showInInpressCards?: boolean;
+    issueId?: number;
 }
 export {};

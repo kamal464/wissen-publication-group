@@ -5,7 +5,7 @@ import { SubmitManuscriptDto } from './dto/submit-manuscript.dto';
 export declare class ArticlesService {
     private prisma;
     constructor(prisma: PrismaService);
-    findAll(journalId?: number, search?: string, status?: string, sortBy?: string, sortOrder?: 'asc' | 'desc', page?: number, limit?: number): Promise<{
+    findAll(journalId?: number, search?: string, status?: string, showInInpressCards?: boolean, inPressMonth?: string, inPressYear?: string, sortBy?: string, sortOrder?: 'asc' | 'desc', page?: number, limit?: number): Promise<{
         data: ({
             journal: {
                 id: number;
@@ -18,6 +18,7 @@ export declare class ArticlesService {
                 name: string;
                 email: string;
                 affiliation: string | null;
+                affiliationNumber: number | null;
             }[];
         } & {
             id: number;
@@ -41,6 +42,10 @@ export declare class ArticlesService {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
+            issueId: number | null;
+            showInInpressCards: boolean;
+            inPressMonth: string | null;
+            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -81,6 +86,7 @@ export declare class ArticlesService {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -104,6 +110,10 @@ export declare class ArticlesService {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -135,6 +145,7 @@ export declare class ArticlesService {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -158,6 +169,10 @@ export declare class ArticlesService {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -239,6 +254,7 @@ export declare class ArticlesService {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -262,6 +278,10 @@ export declare class ArticlesService {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -343,6 +363,7 @@ export declare class ArticlesService {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -366,6 +387,10 @@ export declare class ArticlesService {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -408,6 +433,10 @@ export declare class ArticlesService {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -444,6 +473,7 @@ export declare class ArticlesService {
                 name: string;
                 email: string;
                 affiliation: string | null;
+                affiliationNumber: number | null;
             }[];
         } & {
             id: number;
@@ -467,6 +497,10 @@ export declare class ArticlesService {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
+            issueId: number | null;
+            showInInpressCards: boolean;
+            inPressMonth: string | null;
+            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;

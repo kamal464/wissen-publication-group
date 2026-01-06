@@ -13,7 +13,16 @@ import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { adminAPI } from '@/lib/api';
 import { loadJournalData } from '@/lib/journalAdminUtils';
 import { getFileUrl, getApiUrl } from '@/lib/apiConfig';
-import 'quill/dist/quill.snow.css';
+import 'quill/dist/quill.snow.css'
+
+// Superscript conversion function
+const convertToSuperscript = (text: string): string => {
+  const superscriptMap: { [key: string]: string } = {
+    '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+    '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
+  };
+  return text.replace(/[0-9]/g, (match) => superscriptMap[match] || match);
+};
 
 interface Article {
   id: number;
@@ -36,6 +45,7 @@ interface Article {
   receivedAt?: string;
   acceptedAt?: string;
   publishedAt?: string;
+  submittedAt?: string;
   authors?: Array<{ name: string; email?: string; affiliation?: string }>;
   pdfUrl?: string;
   fulltextImages?: string[];
@@ -49,6 +59,10 @@ interface Article {
   heading4Content?: string;
   heading5Title?: string;
   heading5Content?: string;
+  showInInpressCards?: boolean;
+  inPressMonth?: string;
+  inPressYear?: string;
+  issueId?: number;
 }
 
 export default function ArticlesInPressPage() {
@@ -81,6 +95,9 @@ export default function ArticlesInPressPage() {
   const [journalId, setJournalId] = useState<number | null>(null);
   const [journalTitle, setJournalTitle] = useState<string>('');
   const [currentMonth, setCurrentMonth] = useState<string>('');
+  const [superscriptMode, setSuperscriptMode] = useState<{ [key: string]: boolean }>({});
+  const authorNamesEditorRef = useRef<any>(null);
+  const authorAffiliationsEditorRef = useRef<any>(null);
   const toast = useRef<Toast>(null);
 
   const articleTypes = [
@@ -185,10 +202,11 @@ export default function ArticlesInPressPage() {
       setJournalTitle(journalData.journalTitle);
       
       console.log('Loading articles for journal:', journalData.journalId);
-      // Fetch articles with status IN_PRESS or ACCEPTED
+      // Fetch ALL articles for calendar view (no filters)
+      // Cards will be filtered by showInInpressCards on frontend
+      // Calendar will be filtered by inPressMonth/inPressYear on frontend
       const articlesResponse = await adminAPI.getArticles({ 
-        journalId: journalData.journalId, 
-        status: 'ACCEPTED' 
+        journalId: journalData.journalId
       });
       console.log('Articles response:', articlesResponse);
       const loadedArticles = (articlesResponse.data as any[]) || [];
@@ -225,7 +243,7 @@ export default function ArticlesInPressPage() {
       id: 0,
       title: '',
       abstract: '',
-      status: 'ACCEPTED',
+      status: 'INPRESS',
       articleType: 'Research Article',
       volumeNo: '',
       issueNo: '',
@@ -253,6 +271,9 @@ export default function ArticlesInPressPage() {
       heading4Content: '',
       heading5Title: '',
       heading5Content: '',
+      showInInpressCards: true,
+      inPressMonth: '',
+      inPressYear: '',
     });
     setShowAddDialog(true);
   };
@@ -396,12 +417,12 @@ export default function ArticlesInPressPage() {
       console.log('Original publishedAt:', selectedArticle.publishedAt);
       console.log('Converted publishedAt:', publishedAtISO);
 
-      const articleData = {
+      const articleData: any = {
         title: selectedArticle.title,
         abstract: getPlainText(selectedArticle.abstract) || selectedArticle.title, // Use title as fallback if abstract is empty
         authors: formattedAuthors,
         journalId: journalId,
-        status: selectedArticle.status || 'ACCEPTED',
+        status: selectedArticle.status || 'INPRESS',
         pdfUrl: selectedArticle.pdfUrl,
         articleType: selectedArticle.articleType,
         keywords: getPlainText(selectedArticle.keywords),
@@ -421,6 +442,27 @@ export default function ArticlesInPressPage() {
         acceptedAt: acceptedAtISO,
         publishedAt: publishedAtISO,
       };
+
+      // For new articles: Set showInInpressCards=true and set inPressMonth/inPressYear from issueMonth/year
+      if (selectedArticle.id === 0) {
+        articleData.showInInpressCards = true;
+        articleData.inPressMonth = selectedArticle.issueMonth ? String(selectedArticle.issueMonth).trim() : '';
+        articleData.inPressYear = selectedArticle.year ? String(selectedArticle.year).trim() : '';
+      } else {
+        // For updates: Preserve existing values if not explicitly set
+        if (selectedArticle.showInInpressCards !== undefined) {
+          articleData.showInInpressCards = selectedArticle.showInInpressCards;
+        }
+        if (selectedArticle.inPressMonth !== undefined) {
+          articleData.inPressMonth = selectedArticle.inPressMonth;
+        }
+        if (selectedArticle.inPressYear !== undefined) {
+          articleData.inPressYear = selectedArticle.inPressYear;
+        }
+        if (selectedArticle.issueId !== undefined) {
+          articleData.issueId = selectedArticle.issueId;
+        }
+      }
       
       console.log('Article data being sent:', articleData);
 
@@ -567,6 +609,85 @@ export default function ArticlesInPressPage() {
     return authors.map(a => a.name).join(', ');
   };
 
+  // Effect to set up Quill text-change listener for real-time conversion
+  useEffect(() => {
+    if (authorNamesEditorRef.current && superscriptMode['authorNames']) {
+      const timer = setTimeout(() => {
+        try {
+          const editor = authorNamesEditorRef.current as any;
+          const quill = editor?.getQuill?.() || editor?.quill;
+          if (quill && quill.on) {
+            const handler = () => {
+              const text = quill.getText();
+              const converted = convertToSuperscript(text);
+              if (text !== converted) {
+                const selection = quill.getSelection(true);
+                const cursorPos = selection ? selection.index : text.length;
+                quill.setText(converted);
+                const newPos = Math.min(cursorPos, converted.length);
+                quill.setSelection(newPos, 0);
+              }
+            };
+            quill.on('text-change', handler);
+            return () => {
+              quill.off('text-change', handler);
+            };
+          }
+        } catch (err) {
+          // Editor not ready yet
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [superscriptMode['authorNames'], authorNamesEditorRef.current]);
+
+  useEffect(() => {
+    if (authorAffiliationsEditorRef.current && superscriptMode['authorAffiliations']) {
+      const timer = setTimeout(() => {
+        try {
+          const editor = authorAffiliationsEditorRef.current as any;
+          const quill = editor?.getQuill?.() || editor?.quill;
+          if (quill && quill.on) {
+            const handler = () => {
+              const text = quill.getText();
+              const converted = convertToSuperscript(text);
+              if (text !== converted) {
+                const selection = quill.getSelection(true);
+                const cursorPos = selection ? selection.index : text.length;
+                quill.setText(converted);
+                const newPos = Math.min(cursorPos, converted.length);
+                quill.setSelection(newPos, 0);
+              }
+            };
+            quill.on('text-change', handler);
+            return () => {
+              quill.off('text-change', handler);
+            };
+          }
+        } catch (err) {
+          // Editor not ready yet
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [superscriptMode['authorAffiliations'], authorAffiliationsEditorRef.current]);
+
+  // Filter articles for card display
+  // STRICT RULE: Only show articles where showInInpressCards = true
+  // For backward compatibility: Also show articles with status INPRESS that don't have showInInpressCards set yet
+  const filteredArticlesForCards = articles.filter((article) => {
+    // New rule: showInInpressCards must be true
+    if (article.showInInpressCards === true) {
+      return true;
+    }
+    // Backward compatibility: Show articles with status INPRESS that don't have showInInpressCards set
+    // This helps during migration - existing articles will show until they're updated
+    if (article.status === 'INPRESS' && (article.showInInpressCards === undefined || article.showInInpressCards === null)) {
+      return true;
+    }
+    return false;
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 p-8 flex items-center justify-center">
@@ -671,9 +792,9 @@ export default function ArticlesInPressPage() {
       </div>
 
       {/* Articles List - Sortable Cards */}
-      {articles.length > 0 ? (
+      {filteredArticlesForCards.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {articles.map((article, index) => (
+          {filteredArticlesForCards.map((article, index) => (
             <div
               key={article.id}
               draggable
@@ -694,28 +815,49 @@ export default function ArticlesInPressPage() {
               onDrop={(e) => {
                 e.preventDefault();
                 e.currentTarget.style.borderColor = '#e5e7eb';
-                const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                if (draggedIndex !== index) {
-                  const newArticles = [...articles];
-                  const [removed] = newArticles.splice(draggedIndex, 1);
-                  newArticles.splice(index, 0, removed);
-                  setArticles(newArticles);
-                  // Optionally save order to backend
-                }
+                  const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                  if (draggedIndex !== index) {
+                    const newFilteredArticles = [...filteredArticlesForCards];
+                    const [removed] = newFilteredArticles.splice(draggedIndex, 1);
+                    newFilteredArticles.splice(index, 0, removed);
+                    // Update the full articles list maintaining the order
+                    const articleIds = newFilteredArticles.map(a => a.id);
+                    const reorderedArticles = [...articles].sort((a, b) => {
+                      const aIndex = articleIds.indexOf(a.id);
+                      const bIndex = articleIds.indexOf(b.id);
+                      if (aIndex === -1) return 1;
+                      if (bIndex === -1) return -1;
+                      return aIndex - bIndex;
+                    });
+                    setArticles(reorderedArticles);
+                    // Optionally save order to backend
+                  }
               }}
               className="bg-white rounded-lg shadow-md p-4 border-2 border-gray-200 cursor-move hover:shadow-lg transition-all"
               style={{ minHeight: '200px' }}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
-                  {/* Article Type Badge */}
-                  {article.articleType && (
-                    <div className="mb-2">
+                  {/* Badges Row */}
+                  <div className="mb-2 flex flex-wrap gap-2 items-center">
+                    {/* Status Badge */}
+                    <span className={`inline-block px-2 py-0.5 text-xs font-bold text-white rounded-full ${
+                      article.status === 'PUBLISHED' ? 'bg-green-600' :
+                      article.status === 'ACCEPTED' ? 'bg-blue-600' :
+                      article.status === 'PENDING' ? 'bg-yellow-600' :
+                      article.status === 'UNDER_REVIEW' ? 'bg-orange-600' :
+                      'bg-gray-600'
+                    }`}>
+                      {article.status || 'UNKNOWN'}
+                    </span>
+                    
+                    {/* Article Type Badge */}
+                    {article.articleType && (
                       <span className="inline-block px-2 py-0.5 text-xs font-bold text-white bg-gray-700 rounded-full">
                         {article.articleType}
                       </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
                   {/* Article Title */}
                   <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2" style={{
@@ -958,11 +1100,52 @@ export default function ArticlesInPressPage() {
               <TabPanel header="Authors">
                 <div className="space-y-4">
                   <div className="flex flex-col">
-                    <label className="block mb-2 text-sm font-medium text-gray-700">Enter Author Names *</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">Enter Author Names *</label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSuperscriptMode(prev => ({
+                            ...prev,
+                            authorNames: !prev['authorNames']
+                          }));
+                        }}
+                        style={{
+                          backgroundColor: superscriptMode['authorNames'] ? '#3b82f6' : '#f1f5f9',
+                          color: superscriptMode['authorNames'] ? 'white' : '#475569',
+                          border: '1px solid #cbd5e1',
+                          padding: '0.375rem 0.75rem',
+                          borderRadius: '6px',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          fontWeight: '500',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem'
+                        }}
+                        title={superscriptMode['authorNames'] ? 'Superscript mode ON - Numbers will be converted' : 'Click to enable superscript mode'}
+                      >
+                        <span>¹²³</span>
+                        <span>{superscriptMode['authorNames'] ? 'ON' : 'OFF'}</span>
+                      </button>
+                    </div>
                     <Editor
-                      value={selectedArticle.authors ? selectedArticle.authors.map(a => a.name).join(', ') : ''}
+                      ref={authorNamesEditorRef}
+                      value={(() => {
+                        const text = selectedArticle.authors ? selectedArticle.authors.map(a => a.name).join(', ') : '';
+                        return superscriptMode['authorNames'] ? convertToSuperscript(text) : text;
+                      })()}
                       onTextChange={(e) => {
-                        const authorNames = e.htmlValue?.replace(/<[^>]*>/g, '').split(',').map(name => name.trim()).filter(Boolean) || [];
+                        // Extract plain text preserving Unicode superscript characters (¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁰)
+                        // Strip HTML tags but preserve all Unicode characters including superscripts
+                        let plainText = e.htmlValue?.replace(/<[^>]*>/g, '') || '';
+                        
+                        // If superscript mode is enabled, convert numbers to superscript
+                        if (superscriptMode['authorNames']) {
+                          plainText = convertToSuperscript(plainText);
+                        }
+                        
+                        const authorNames = plainText.split(',').map(name => name.trim()).filter(Boolean);
                         setSelectedArticle({
                           ...selectedArticle,
                           authors: authorNames.map(name => ({ 
@@ -973,15 +1156,61 @@ export default function ArticlesInPressPage() {
                         });
                       }}
                       style={{ height: '200px' }}
-                      placeholder="Enter author names..."
+                      placeholder="Enter author names (e.g., Bharath1, Vinay2) - Numbers will convert to superscript if enabled..."
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {superscriptMode['authorNames'] 
+                        ? '✓ Superscript mode ON: Numbers will automatically convert to superscript (1→¹, 2→², 3→³)'
+                        : 'Tip: Click ¹²³ button above to enable superscript mode - then type numbers normally'}
+                    </p>
                   </div>
                   <div className="flex flex-col">
-                    <label className="block mb-2 text-sm font-medium text-gray-700">Enter Author Affiliations *</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">Enter Author Affiliations *</label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSuperscriptMode(prev => ({
+                            ...prev,
+                            authorAffiliations: !prev['authorAffiliations']
+                          }));
+                        }}
+                        style={{
+                          backgroundColor: superscriptMode['authorAffiliations'] ? '#3b82f6' : '#f1f5f9',
+                          color: superscriptMode['authorAffiliations'] ? 'white' : '#475569',
+                          border: '1px solid #cbd5e1',
+                          padding: '0.375rem 0.75rem',
+                          borderRadius: '6px',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          fontWeight: '500',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem'
+                        }}
+                        title={superscriptMode['authorAffiliations'] ? 'Superscript mode ON - Numbers will be converted' : 'Click to enable superscript mode'}
+                      >
+                        <span>¹²³</span>
+                        <span>{superscriptMode['authorAffiliations'] ? 'ON' : 'OFF'}</span>
+                      </button>
+                    </div>
                     <Editor
-                      value={selectedArticle.authors ? selectedArticle.authors.map(a => a.affiliation || '').join(', ') : ''}
+                      ref={authorAffiliationsEditorRef}
+                      value={(() => {
+                        const text = selectedArticle.authors ? selectedArticle.authors.map(a => a.affiliation || '').join(', ') : '';
+                        return superscriptMode['authorAffiliations'] ? convertToSuperscript(text) : text;
+                      })()}
                       onTextChange={(e) => {
-                        const affiliations = e.htmlValue?.replace(/<[^>]*>/g, '').split(',').map(aff => aff.trim()) || [];
+                        // Extract plain text preserving Unicode superscript characters (¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁰)
+                        // Strip HTML tags but preserve all Unicode characters including superscripts
+                        let plainText = e.htmlValue?.replace(/<[^>]*>/g, '') || '';
+                        
+                        // If superscript mode is enabled, convert numbers to superscript
+                        if (superscriptMode['authorAffiliations']) {
+                          plainText = convertToSuperscript(plainText);
+                        }
+                        
+                        const affiliations = plainText.split(',').map(aff => aff.trim());
                         setSelectedArticle({
                           ...selectedArticle,
                           authors: selectedArticle.authors?.map((a, i) => ({ 
@@ -991,8 +1220,13 @@ export default function ArticlesInPressPage() {
                         });
                       }}
                       style={{ height: '200px' }}
-                      placeholder="Enter author affiliations..."
+                      placeholder="Enter author affiliations (e.g., 1 Department of Computer Science, 2 Department of AI) - Numbers will convert to superscript if enabled..."
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {superscriptMode['authorAffiliations'] 
+                        ? '✓ Superscript mode ON: Numbers will automatically convert to superscript (1→¹, 2→², 3→³)'
+                        : 'Tip: Click ¹²³ button above to enable superscript mode - then type numbers normally'}
+                    </p>
                   </div>
                   <div className="flex flex-col">
                     <label className="block mb-2 text-sm font-medium text-gray-700">Enter Author Emails</label>
@@ -1190,9 +1424,15 @@ export default function ArticlesInPressPage() {
               type="button"
               onClick={() => {
                 // Use selected articles from checkboxes, or all filtered articles if none selected
-                const filteredArticles = previewMonth && previewYear
-                  ? articles.filter(a => a.issueMonth === previewMonth && a.year === previewYear)
-                  : articles;
+                // Default: Show only newly created articles (status='INPRESS' AND showInInpressCards=true)
+                // Calendar selected: Show articles filtered by inPressMonth/inPressYear
+                let filteredArticles: Article[] = [];
+                if (previewMonth && previewYear) {
+                  filteredArticles = articles.filter(a => a.inPressMonth === previewMonth && a.inPressYear === previewYear);
+                } else {
+                  // Default: Only newly created articles
+                  filteredArticles = articles.filter(a => a.status === 'INPRESS' && a.showInInpressCards === true);
+                }
                 
                 const articlesToMove = previewSelectedArticles.size > 0
                   ? filteredArticles.filter(a => previewSelectedArticles.has(a.id))
@@ -1213,10 +1453,11 @@ export default function ArticlesInPressPage() {
                   icon: 'pi pi-exclamation-triangle',
                   accept: async () => {
                     try {
-                      // Update each article status to PUBLISHED (for current issue)
+                      // Move to Current Issue: status=CURRENT_ISSUE, showInInpressCards=false
                       for (const article of articlesToMove) {
                         await adminAPI.updateArticle(article.id, {
-                          status: 'PUBLISHED'
+                          status: 'CURRENT_ISSUE',
+                          showInInpressCards: false
                         });
                       }
                       
@@ -1260,9 +1501,15 @@ export default function ArticlesInPressPage() {
               type="button"
               onClick={() => {
                 // Use selected articles from checkboxes, or all filtered articles if none selected
-                const filteredArticles = previewMonth && previewYear
-                  ? articles.filter(a => a.issueMonth === previewMonth && a.year === previewYear)
-                  : articles;
+                // Default: Show only newly created articles (status='INPRESS' AND showInInpressCards=true)
+                // Calendar selected: Show articles filtered by inPressMonth/inPressYear
+                let filteredArticles: Article[] = [];
+                if (previewMonth && previewYear) {
+                  filteredArticles = articles.filter(a => a.inPressMonth === previewMonth && a.inPressYear === previewYear);
+                } else {
+                  // Default: Only newly created articles
+                  filteredArticles = articles.filter(a => a.status === 'INPRESS' && a.showInInpressCards === true);
+                }
                 
                 const articlesToMoveList = previewSelectedArticles.size > 0
                   ? filteredArticles.filter(a => previewSelectedArticles.has(a.id))
@@ -1446,24 +1693,28 @@ export default function ArticlesInPressPage() {
               </thead>
               <tbody>
                 {(() => {
-                  // Filter articles by selected month/year
-                  // Only show articles when BOTH month AND year are selected
-                  // If only month is selected, show no articles (user must select year)
+                  // Filter articles for preview dialog
+                  // STRICT RULES:
+                  // - Default (no calendar selected): Show ONLY newly created articles (status='INPRESS' AND showInInpressCards=true)
+                  // - Calendar selected: Show articles filtered by inPressMonth/inPressYear
                   let filteredArticles: Article[] = [];
                   
                   if (previewMonth && previewYear) {
-                    // Both month and year selected - filter by both
+                    // Calendar month/year selected - filter by inPressMonth/inPressYear (STRICT RULE)
                     filteredArticles = articles.filter(a => {
-                      const articleMonth = String(a.issueMonth || '').trim();
-                      const articleYear = String(a.year || '').trim();
+                      const articleMonth = String(a.inPressMonth || '').trim();
+                      const articleYear = String(a.inPressYear || '').trim();
                       return articleMonth === previewMonth && articleYear === previewYear;
                     });
                   } else if (previewMonth && !previewYear) {
                     // Only month selected, no year - show no articles (user needs to select year)
                     filteredArticles = [];
                   } else {
-                    // No month selected - show all articles
-                    filteredArticles = articles;
+                    // Default: No month/year selected - show ONLY newly created articles
+                    // Filter: status = 'INPRESS' AND showInInpressCards = true
+                    filteredArticles = articles.filter(a => {
+                      return a.status === 'INPRESS' && a.showInInpressCards === true;
+                    });
                   }
                   
                   return filteredArticles.length > 0 ? (
@@ -1489,9 +1740,21 @@ export default function ArticlesInPressPage() {
                       </td>
                       <td className="px-4 py-4">
                         <div>
-                          <a href="#" className="text-blue-600 hover:underline font-medium text-lg mb-2 block">
-                            {article.title}
-                          </a>
+                          <div className="flex items-center gap-2 mb-2">
+                            <a href="#" className="text-blue-600 hover:underline font-medium text-lg">
+                              {article.title}
+                            </a>
+                            {/* Status Badge */}
+                            <span className={`inline-block px-2 py-0.5 text-xs font-bold text-white rounded-full ${
+                              article.status === 'PUBLISHED' ? 'bg-green-600' :
+                              article.status === 'ACCEPTED' ? 'bg-blue-600' :
+                              article.status === 'PENDING' ? 'bg-yellow-600' :
+                              article.status === 'UNDER_REVIEW' ? 'bg-orange-600' :
+                              'bg-gray-600'
+                            }`}>
+                              {article.status || 'UNKNOWN'}
+                            </span>
+                          </div>
                           {article.authors && article.authors.length > 0 && (
                             <div className="flex items-center gap-2 text-gray-600 mb-3">
                               <i className="pi pi-user text-sm"></i>
@@ -1553,7 +1816,7 @@ export default function ArticlesInPressPage() {
                       <td colSpan={3} className="px-4 py-8 text-center text-gray-500">
                         {previewMonth && previewYear
                           ? `No articles found for ${previewMonth} ${previewYear}`
-                          : 'No articles available'}
+                          : 'No newly created articles available'}
                       </td>
                     </tr>
                   );
@@ -2264,12 +2527,14 @@ export default function ArticlesInPressPage() {
                   icon: 'pi pi-exclamation-triangle',
                   accept: async () => {
                     try {
-                      // Update each article with the selected month and year, and keep status as ACCEPTED
+                      // Move to Months: status=INPRESS, showInInpressCards=false, set inPressMonth/inPressYear
                       for (const article of articlesToMove) {
                         await adminAPI.updateArticle(article.id, {
-                          status: 'ACCEPTED',
-                          issueMonth: selectedMoveMonth,
-                          year: selectedMoveYear
+                          status: 'INPRESS',
+                          showInInpressCards: false,
+                          inPressMonth: selectedMoveMonth,
+                          inPressYear: selectedMoveYear,
+                          issueId: null // Remove issueId
                         });
                       }
                       
@@ -2365,3 +2630,5 @@ export default function ArticlesInPressPage() {
     </div>
   );
 }
+
+

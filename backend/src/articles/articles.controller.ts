@@ -32,6 +32,9 @@ export class ArticlesController {
     @Query('journalId') journalId?: string,
     @Query('search') search?: string,
     @Query('status') status?: string,
+    @Query('showInInpressCards') showInInpressCards?: string,
+    @Query('inPressMonth') inPressMonth?: string,
+    @Query('inPressYear') inPressYear?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
     @Query('page') page?: string,
@@ -40,11 +43,15 @@ export class ArticlesController {
     const journalIdNum = journalId ? parseInt(journalId, 10) : undefined;
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
+    const showInInpressCardsBool = showInInpressCards === 'true' ? true : showInInpressCards === 'false' ? false : undefined;
 
     return this.articlesService.findAll(
       journalIdNum,
       search,
       status,
+      showInInpressCardsBool,
+      inPressMonth,
+      inPressYear,
       sortBy || 'publishedAt',
       sortOrder || 'desc',
       pageNum,

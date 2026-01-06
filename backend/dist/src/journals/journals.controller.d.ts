@@ -238,6 +238,7 @@ export declare class JournalsController {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -261,6 +262,10 @@ export declare class JournalsController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;

@@ -56,6 +56,10 @@ class CreateArticleDto {
     submitterEmail;
     submitterAddress;
     submitterCountry;
+    inPressMonth;
+    inPressYear;
+    showInInpressCards;
+    issueId;
 }
 exports.CreateArticleDto = CreateArticleDto;
 __decorate([
@@ -180,4 +184,22 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateArticleDto.prototype, "submitterCountry", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateArticleDto.prototype, "inPressMonth", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateArticleDto.prototype, "inPressYear", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], CreateArticleDto.prototype, "showInInpressCards", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateArticleDto.prototype, "issueId", void 0);
 //# sourceMappingURL=create-article.dto.js.map

@@ -65,6 +65,7 @@ export declare class ArticlesController {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -88,6 +89,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -108,7 +113,7 @@ export declare class ArticlesController {
         heading5Content: string | null;
         schemaSyncTest: string | null;
     }>;
-    findAll(journalId?: string, search?: string, status?: string, sortBy?: string, sortOrder?: 'asc' | 'desc', page?: string, limit?: string): Promise<{
+    findAll(journalId?: string, search?: string, status?: string, showInInpressCards?: string, inPressMonth?: string, inPressYear?: string, sortBy?: string, sortOrder?: 'asc' | 'desc', page?: string, limit?: string): Promise<{
         data: ({
             journal: {
                 id: number;
@@ -121,6 +126,7 @@ export declare class ArticlesController {
                 name: string;
                 email: string;
                 affiliation: string | null;
+                affiliationNumber: number | null;
             }[];
         } & {
             id: number;
@@ -144,6 +150,10 @@ export declare class ArticlesController {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
+            issueId: number | null;
+            showInInpressCards: boolean;
+            inPressMonth: string | null;
+            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -184,6 +194,7 @@ export declare class ArticlesController {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -207,6 +218,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -238,6 +253,7 @@ export declare class ArticlesController {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -261,6 +277,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -342,6 +362,7 @@ export declare class ArticlesController {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -365,6 +386,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -401,6 +426,7 @@ export declare class ArticlesController {
                 name: string;
                 email: string;
                 affiliation: string | null;
+                affiliationNumber: number | null;
             }[];
         } & {
             id: number;
@@ -424,6 +450,10 @@ export declare class ArticlesController {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
+            issueId: number | null;
+            showInInpressCards: boolean;
+            inPressMonth: string | null;
+            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -507,6 +537,7 @@ export declare class ArticlesController {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -530,6 +561,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -611,6 +646,7 @@ export declare class ArticlesController {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -634,6 +670,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -676,6 +716,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
