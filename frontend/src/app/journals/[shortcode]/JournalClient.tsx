@@ -1,4 +1,4 @@
-        'use client';
+'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter, usePathname, useSearchParams } from 'next/navigation';
@@ -438,24 +438,28 @@ export default function JournalDetailPage() {
           break;
         case 'archive':
           // Load archive articles and organize by year
-          // Show articles that have inPressMonth and inPressYear set (moved to months/archive)
+          // Show ALL articles with volume/issue/year data (same behavior as archive admin page)
+          // Include articles from INPRESS, CURRENT_ISSUE, and PUBLISHED status
           try {
-            // Fetch all articles, then filter to show only those with month/year set
-            // Set a high limit to get all articles (or fetch in batches if needed)
+            // Fetch all articles with volume/issue info (no status filter)
             const articlesResponse = await adminAPI.getArticles({ 
               journalId: journalData.id,
               limit: 1000, // Get all articles (adjust if you have more than 1000)
               page: 1
-              // No status filter - get all articles, then filter client-side
+              // No status filter - get all articles with volume/issue info (same as admin page)
             });
             const allArticles = (articlesResponse.data as any[]) || [];
-            // Filter to show articles that have inPressMonth and inPressYear set (archived articles)
+            // Filter to show articles that have volume, issue, and year data
+            // Include all statuses (INPRESS, CURRENT_ISSUE, PUBLISHED) - same behavior as admin
             const filteredArticles = allArticles.filter((article: any) => {
-              const hasMonth = article.inPressMonth && String(article.inPressMonth).trim() !== '';
-              const hasYear = article.inPressYear && String(article.inPressYear).trim() !== '';
-              // Exclude articles that are currently in In Press; only show archived/current issue
-              const notInPress = article.status !== 'INPRESS';
-              return hasMonth && hasYear && notInPress;
+              // Check for volume and issue (required fields)
+              const hasVolume = article.volumeNo && String(article.volumeNo).trim() !== '';
+              const hasIssue = article.issueNo && String(article.issueNo).trim() !== '';
+              // Check for year (can be from year field, inPressYear, or date fields)
+              const hasYear = (article.year && String(article.year).trim() !== '') ||
+                             (article.inPressYear && String(article.inPressYear).trim() !== '') ||
+                             article.publishedAt || article.acceptedAt;
+              return hasVolume && hasIssue && hasYear;
             });
             setArticles(filteredArticles);
             
@@ -463,13 +467,12 @@ export default function JournalDetailPage() {
             
             const issuesByYear = new Map<number, any[]>();
             filteredArticles.forEach((article: any) => {
-              // Use inPressYear from article (archived articles use inPressYear)
+              // Determine year - prioritize year field, then inPressYear, then dates
               let year: number;
-              if (article.inPressYear) {
-                year = parseInt(String(article.inPressYear));
-              } else if (article.year) {
-                // Fallback to year if inPressYear not set
+              if (article.year) {
                 year = parseInt(String(article.year));
+              } else if (article.inPressYear) {
+                year = parseInt(String(article.inPressYear));
               } else if (article.publishedAt) {
                 const publishedDate = new Date(article.publishedAt);
                 year = publishedDate.getFullYear();
@@ -480,7 +483,7 @@ export default function JournalDetailPage() {
                 return; // Skip articles without year info
               }
               
-              // Volume and Issue are now required fields, but provide fallback for existing articles
+              // Volume and Issue are required fields
               // Ensure they are strings (handle numbers from dropdowns)
               const volume = article.volumeNo ? String(article.volumeNo) : '1';
               const issue = article.issueNo ? String(article.issueNo) : '1';

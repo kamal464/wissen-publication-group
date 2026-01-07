@@ -24,6 +24,15 @@ const convertToSuperscript = (text: string): string => {
   return text.replace(/[0-9]/g, (match) => superscriptMap[match] || match);
 };
 
+// Convert superscript back to normal numbers
+const convertSuperscriptToNumber = (text: string): string => {
+  const superscriptToNumber: { [key: string]: string } = {
+    '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4',
+    '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9'
+  };
+  return text.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, (match) => superscriptToNumber[match] || match);
+};
+
 interface Article {
   id: number;
   title: string;
@@ -98,6 +107,14 @@ export default function ArticlesInPressPage() {
   const [superscriptMode, setSuperscriptMode] = useState<{ [key: string]: boolean }>({});
   const authorNamesEditorRef = useRef<any>(null);
   const authorAffiliationsEditorRef = useRef<any>(null);
+  const authorNamesPlainTextRef = useRef<string>('');
+  const authorAffiliationsPlainTextRef = useRef<string>('');
+  const authorNamesPrevTextRef = useRef<string>('');
+  const authorAffiliationsPrevTextRef = useRef<string>('');
+  const isUpdatingAuthorNamesRef = useRef<boolean>(false);
+  const isUpdatingAuthorAffiliationsRef = useRef<boolean>(false);
+  const authorNamesHandlerRef = useRef<((delta: any, oldDelta: any, source: string) => void) | null>(null);
+  const authorAffiliationsHandlerRef = useRef<((delta: any, oldDelta: any, source: string) => void) | null>(null);
   const toast = useRef<Toast>(null);
 
   const articleTypes = [
@@ -609,67 +626,240 @@ export default function ArticlesInPressPage() {
     return authors.map(a => a.name).join(', ');
   };
 
-  // Effect to set up Quill text-change listener for real-time conversion
+  // Effect to set up Quill text-change listener for real-time conversion of ONLY newly typed numbers
+  // Only active when toggle is ON
   useEffect(() => {
-    if (authorNamesEditorRef.current && superscriptMode['authorNames']) {
-      const timer = setTimeout(() => {
-        try {
-          const editor = authorNamesEditorRef.current as any;
-          const quill = editor?.getQuill?.() || editor?.quill;
-          if (quill && quill.on) {
-            const handler = () => {
-              const text = quill.getText();
-              const converted = convertToSuperscript(text);
-              if (text !== converted) {
-                const selection = quill.getSelection(true);
-                const cursorPos = selection ? selection.index : text.length;
-                quill.setText(converted);
-                const newPos = Math.min(cursorPos, converted.length);
-                quill.setSelection(newPos, 0);
-              }
-            };
-            quill.on('text-change', handler);
-            return () => {
-              quill.off('text-change', handler);
-            };
-          }
-        } catch (err) {
-          // Editor not ready yet
+    const timer = setTimeout(() => {
+      try {
+        const editor = authorNamesEditorRef.current as any;
+        const quill = editor?.getQuill?.() || editor?.quill;
+        if (!quill) return;
+        
+        // First, remove any existing handler
+        if (authorNamesHandlerRef.current && quill.off) {
+          quill.off('text-change', authorNamesHandlerRef.current);
+          authorNamesHandlerRef.current = null;
         }
-      }, 100);
-      return () => clearTimeout(timer);
-    }
+        
+        // Only attach handler if toggle is ON
+        if (superscriptMode['authorNames'] === true && quill.on) {
+          const handler = (delta: any, oldDelta: any, source: string) => {
+            // CRITICAL: Check toggle state at the time of handler execution
+            // If toggle is OFF, immediately exit without any conversion
+            if (superscriptMode['authorNames'] !== true) {
+              authorNamesPrevTextRef.current = quill.getText();
+              return;
+            }
+            
+            // Skip if we're in the middle of a programmatic update
+            if (isUpdatingAuthorNamesRef.current) {
+              authorNamesPrevTextRef.current = quill.getText();
+              return;
+            }
+            
+            // Only process user input, not programmatic changes
+            if (source !== 'user') {
+              const currentText = quill.getText();
+              authorNamesPrevTextRef.current = currentText;
+              return;
+            }
+            
+            // Find what was inserted by examining the delta
+            if (delta.ops) {
+              let insertIndex = 0;
+              
+              for (const op of delta.ops) {
+                if (op.retain) {
+                  insertIndex += op.retain;
+                } else if (op.insert && typeof op.insert === 'string') {
+                  const insertedText = op.insert;
+                  // Check if inserted text contains numbers
+                  if (/[0-9]/.test(insertedText)) {
+                    // Convert only the numbers in the newly inserted text
+                    const converted = convertToSuperscript(insertedText);
+                    if (insertedText !== converted) {
+                      // Double-check toggle is still ON before converting
+                      if (superscriptMode['authorNames'] !== true) {
+                        authorNamesPrevTextRef.current = quill.getText();
+                        return;
+                      }
+                      
+                      isUpdatingAuthorNamesRef.current = true;
+                      const actualPosition = insertIndex;
+                      
+                      const replaceDelta = {
+                        ops: [
+                          ...(actualPosition > 0 ? [{ retain: actualPosition }] : []),
+                          { delete: insertedText.length },
+                          { insert: converted }
+                        ]
+                      };
+                      
+                      quill.updateContents(replaceDelta, 'api');
+                      
+                      const newCursorPos = actualPosition + converted.length;
+                      setTimeout(() => {
+                        quill.setSelection(newCursorPos, 0);
+                        isUpdatingAuthorNamesRef.current = false;
+                      }, 0);
+                      
+                      break;
+                    }
+                  }
+                  insertIndex += insertedText.length;
+                } else if (op.delete) {
+                  insertIndex -= op.delete;
+                }
+              }
+            }
+            
+            if (!isUpdatingAuthorNamesRef.current) {
+              authorNamesPrevTextRef.current = quill.getText();
+            }
+          };
+          
+          authorNamesHandlerRef.current = handler;
+          quill.on('text-change', handler);
+        } else {
+          // Toggle is OFF - just update reference
+          authorNamesPrevTextRef.current = quill.getText();
+        }
+      } catch (err) {
+        // Editor not ready yet
+      }
+    }, 100);
+    
+    return () => {
+      clearTimeout(timer);
+      // Cleanup: Remove handler when component unmounts or toggle changes
+      try {
+        const editor = authorNamesEditorRef.current as any;
+        const quill = editor?.getQuill?.() || editor?.quill;
+        if (quill && authorNamesHandlerRef.current && quill.off) {
+          quill.off('text-change', authorNamesHandlerRef.current);
+          authorNamesHandlerRef.current = null;
+        }
+      } catch (err) {
+        // Ignore
+      }
+    };
   }, [superscriptMode['authorNames'], authorNamesEditorRef.current]);
 
   useEffect(() => {
-    if (authorAffiliationsEditorRef.current && superscriptMode['authorAffiliations']) {
-      const timer = setTimeout(() => {
-        try {
-          const editor = authorAffiliationsEditorRef.current as any;
-          const quill = editor?.getQuill?.() || editor?.quill;
-          if (quill && quill.on) {
-            const handler = () => {
-              const text = quill.getText();
-              const converted = convertToSuperscript(text);
-              if (text !== converted) {
-                const selection = quill.getSelection(true);
-                const cursorPos = selection ? selection.index : text.length;
-                quill.setText(converted);
-                const newPos = Math.min(cursorPos, converted.length);
-                quill.setSelection(newPos, 0);
-              }
-            };
-            quill.on('text-change', handler);
-            return () => {
-              quill.off('text-change', handler);
-            };
-          }
-        } catch (err) {
-          // Editor not ready yet
+    const timer = setTimeout(() => {
+      try {
+        const editor = authorAffiliationsEditorRef.current as any;
+        const quill = editor?.getQuill?.() || editor?.quill;
+        if (!quill) return;
+        
+        // First, remove any existing handler
+        if (authorAffiliationsHandlerRef.current && quill.off) {
+          quill.off('text-change', authorAffiliationsHandlerRef.current);
+          authorAffiliationsHandlerRef.current = null;
         }
-      }, 100);
-      return () => clearTimeout(timer);
-    }
+        
+        // Only attach handler if toggle is ON
+        if (superscriptMode['authorAffiliations'] === true && quill.on) {
+          const handler = (delta: any, oldDelta: any, source: string) => {
+            // CRITICAL: Check toggle state at the time of handler execution
+            // If toggle is OFF, immediately exit without any conversion
+            if (superscriptMode['authorAffiliations'] !== true) {
+              authorAffiliationsPrevTextRef.current = quill.getText();
+              return;
+            }
+            
+            // Skip if we're in the middle of a programmatic update
+            if (isUpdatingAuthorAffiliationsRef.current) {
+              authorAffiliationsPrevTextRef.current = quill.getText();
+              return;
+            }
+            
+            // Only process user input, not programmatic changes
+            if (source !== 'user') {
+              const currentText = quill.getText();
+              authorAffiliationsPrevTextRef.current = currentText;
+              return;
+            }
+            
+            // Find what was inserted by examining the delta
+            if (delta.ops) {
+              let insertIndex = 0;
+              
+              for (const op of delta.ops) {
+                if (op.retain) {
+                  insertIndex += op.retain;
+                } else if (op.insert && typeof op.insert === 'string') {
+                  const insertedText = op.insert;
+                  // Check if inserted text contains numbers
+                  if (/[0-9]/.test(insertedText)) {
+                    // Convert only the numbers in the newly inserted text
+                    const converted = convertToSuperscript(insertedText);
+                    if (insertedText !== converted) {
+                      // Double-check toggle is still ON before converting
+                      if (superscriptMode['authorAffiliations'] !== true) {
+                        authorAffiliationsPrevTextRef.current = quill.getText();
+                        return;
+                      }
+                      
+                      isUpdatingAuthorAffiliationsRef.current = true;
+                      const actualPosition = insertIndex;
+                      
+                      const replaceDelta = {
+                        ops: [
+                          ...(actualPosition > 0 ? [{ retain: actualPosition }] : []),
+                          { delete: insertedText.length },
+                          { insert: converted }
+                        ]
+                      };
+                      
+                      quill.updateContents(replaceDelta, 'api');
+                      
+                      const newCursorPos = actualPosition + converted.length;
+                      setTimeout(() => {
+                        quill.setSelection(newCursorPos, 0);
+                        isUpdatingAuthorAffiliationsRef.current = false;
+                      }, 0);
+                      
+                      break;
+                    }
+                  }
+                  insertIndex += insertedText.length;
+                } else if (op.delete) {
+                  insertIndex -= op.delete;
+                }
+              }
+            }
+            
+            if (!isUpdatingAuthorAffiliationsRef.current) {
+              authorAffiliationsPrevTextRef.current = quill.getText();
+            }
+          };
+          
+          authorAffiliationsHandlerRef.current = handler;
+          quill.on('text-change', handler);
+        } else {
+          // Toggle is OFF - just update reference
+          authorAffiliationsPrevTextRef.current = quill.getText();
+        }
+      } catch (err) {
+        // Editor not ready yet
+      }
+    }, 100);
+    
+    return () => {
+      clearTimeout(timer);
+      // Cleanup: Remove handler when component unmounts or toggle changes
+      try {
+        const editor = authorAffiliationsEditorRef.current as any;
+        const quill = editor?.getQuill?.() || editor?.quill;
+        if (quill && authorAffiliationsHandlerRef.current && quill.off) {
+          quill.off('text-change', authorAffiliationsHandlerRef.current);
+          authorAffiliationsHandlerRef.current = null;
+        }
+      } catch (err) {
+        // Ignore
+      }
+    };
   }, [superscriptMode['authorAffiliations'], authorAffiliationsEditorRef.current]);
 
   // Filter articles for card display
@@ -1105,14 +1295,30 @@ export default function ArticlesInPressPage() {
                       <button
                         type="button"
                         onClick={() => {
+                          const newMode = !(superscriptMode['authorNames'] ?? false);
                           setSuperscriptMode(prev => ({
                             ...prev,
-                            authorNames: !prev['authorNames']
+                            authorNames: newMode
                           }));
+                          // When toggle is turned OFF, just update the prev text reference
+                          // Don't convert existing superscripts back - they should stay as superscripts
+                          if (!newMode && authorNamesEditorRef.current) {
+                            setTimeout(() => {
+                              try {
+                                const editor = authorNamesEditorRef.current as any;
+                                const quill = editor?.getQuill?.() || editor?.quill;
+                                if (quill) {
+                                  authorNamesPrevTextRef.current = quill.getText();
+                                }
+                              } catch (err) {
+                                // Ignore
+                              }
+                            }, 50);
+                          }
                         }}
                         style={{
-                          backgroundColor: superscriptMode['authorNames'] ? '#3b82f6' : '#f1f5f9',
-                          color: superscriptMode['authorNames'] ? 'white' : '#475569',
+                          backgroundColor: (superscriptMode['authorNames'] ?? false) ? '#3b82f6' : '#f1f5f9',
+                          color: (superscriptMode['authorNames'] ?? false) ? 'white' : '#475569',
                           border: '1px solid #cbd5e1',
                           padding: '0.375rem 0.75rem',
                           borderRadius: '6px',
@@ -1123,43 +1329,63 @@ export default function ArticlesInPressPage() {
                           alignItems: 'center',
                           gap: '0.25rem'
                         }}
-                        title={superscriptMode['authorNames'] ? 'Superscript mode ON - Numbers will be converted' : 'Click to enable superscript mode'}
+                        title={(superscriptMode['authorNames'] ?? false) ? 'Superscript mode ON - Numbers will be converted' : 'Click to enable superscript mode'}
                       >
                         <span>¹²³</span>
-                        <span>{superscriptMode['authorNames'] ? 'ON' : 'OFF'}</span>
+                        <span>{(superscriptMode['authorNames'] ?? false) ? 'ON' : 'OFF'}</span>
                       </button>
                     </div>
                     <Editor
                       ref={authorNamesEditorRef}
                       value={(() => {
                         const text = selectedArticle.authors ? selectedArticle.authors.map(a => a.name).join(', ') : '';
-                        return superscriptMode['authorNames'] ? convertToSuperscript(text) : text;
+                        // Store plain text reference and initialize prev text
+                        authorNamesPlainTextRef.current = text;
+                        // Initialize prev text when value changes (e.g., when dialog opens or article changes)
+                        setTimeout(() => {
+                          try {
+                            const editor = authorNamesEditorRef.current as any;
+                            const quill = editor?.getQuill?.() || editor?.quill;
+                            if (quill) {
+                              authorNamesPrevTextRef.current = quill.getText();
+                            }
+                          } catch (err) {
+                            // Ignore
+                          }
+                        }, 50);
+                        // When toggle is ON, we'll convert only new input via the text-change handler
+                        // For display, show the text as-is (the handler will handle conversion)
+                        return text;
                       })()}
                       onTextChange={(e) => {
-                        // Extract plain text preserving Unicode superscript characters (¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁰)
-                        // Strip HTML tags but preserve all Unicode characters including superscripts
-                        let plainText = e.htmlValue?.replace(/<[^>]*>/g, '') || '';
+                        // Extract text - preserve superscripts in storage (don't convert back)
+                        // Users want superscripts to remain as superscripts
+                        let text = e.htmlValue?.replace(/<[^>]*>/g, '') || '';
                         
-                        // If superscript mode is enabled, convert numbers to superscript
-                        if (superscriptMode['authorNames']) {
-                          plainText = convertToSuperscript(plainText);
-                        }
+                        // Update plain text reference (keep superscripts as-is)
+                        authorNamesPlainTextRef.current = text;
                         
-                        const authorNames = plainText.split(',').map(name => name.trim()).filter(Boolean);
+                        const authorNames = text.split(',').map(name => name.trim()).filter(Boolean);
+                        // Preserve existing author data (email, affiliation) when updating names
+                        const existingAuthors = selectedArticle.authors || [];
                         setSelectedArticle({
                           ...selectedArticle,
-                          authors: authorNames.map(name => ({ 
-                            name, 
-                            email: '', 
-                            affiliation: '' 
-                          }))
+                          authors: authorNames.map((name, index) => {
+                            // Try to preserve existing author data if available
+                            const existingAuthor = existingAuthors[index];
+                            return { 
+                              name, 
+                              email: existingAuthor?.email || '', 
+                              affiliation: existingAuthor?.affiliation || '' 
+                            };
+                          })
                         });
                       }}
                       style={{ height: '200px' }}
                       placeholder="Enter author names (e.g., Bharath1, Vinay2) - Numbers will convert to superscript if enabled..."
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      {superscriptMode['authorNames'] 
+                      {(superscriptMode['authorNames'] ?? false)
                         ? '✓ Superscript mode ON: Numbers will automatically convert to superscript (1→¹, 2→², 3→³)'
                         : 'Tip: Click ¹²³ button above to enable superscript mode - then type numbers normally'}
                     </p>
@@ -1170,14 +1396,30 @@ export default function ArticlesInPressPage() {
                       <button
                         type="button"
                         onClick={() => {
+                          const newMode = !(superscriptMode['authorAffiliations'] ?? false);
                           setSuperscriptMode(prev => ({
                             ...prev,
-                            authorAffiliations: !prev['authorAffiliations']
+                            authorAffiliations: newMode
                           }));
+                          // When toggle is turned OFF, just update the prev text reference
+                          // Don't convert existing superscripts back - they should stay as superscripts
+                          if (!newMode && authorAffiliationsEditorRef.current) {
+                            setTimeout(() => {
+                              try {
+                                const editor = authorAffiliationsEditorRef.current as any;
+                                const quill = editor?.getQuill?.() || editor?.quill;
+                                if (quill) {
+                                  authorAffiliationsPrevTextRef.current = quill.getText();
+                                }
+                              } catch (err) {
+                                // Ignore
+                              }
+                            }, 50);
+                          }
                         }}
                         style={{
-                          backgroundColor: superscriptMode['authorAffiliations'] ? '#3b82f6' : '#f1f5f9',
-                          color: superscriptMode['authorAffiliations'] ? 'white' : '#475569',
+                          backgroundColor: (superscriptMode['authorAffiliations'] ?? false) ? '#3b82f6' : '#f1f5f9',
+                          color: (superscriptMode['authorAffiliations'] ?? false) ? 'white' : '#475569',
                           border: '1px solid #cbd5e1',
                           padding: '0.375rem 0.75rem',
                           borderRadius: '6px',
@@ -1188,42 +1430,63 @@ export default function ArticlesInPressPage() {
                           alignItems: 'center',
                           gap: '0.25rem'
                         }}
-                        title={superscriptMode['authorAffiliations'] ? 'Superscript mode ON - Numbers will be converted' : 'Click to enable superscript mode'}
+                        title={(superscriptMode['authorAffiliations'] ?? false) ? 'Superscript mode ON - Numbers will be converted' : 'Click to enable superscript mode'}
                       >
                         <span>¹²³</span>
-                        <span>{superscriptMode['authorAffiliations'] ? 'ON' : 'OFF'}</span>
+                        <span>{(superscriptMode['authorAffiliations'] ?? false) ? 'ON' : 'OFF'}</span>
                       </button>
                     </div>
                     <Editor
                       ref={authorAffiliationsEditorRef}
                       value={(() => {
                         const text = selectedArticle.authors ? selectedArticle.authors.map(a => a.affiliation || '').join(', ') : '';
-                        return superscriptMode['authorAffiliations'] ? convertToSuperscript(text) : text;
+                        // Store plain text reference and initialize prev text
+                        authorAffiliationsPlainTextRef.current = text;
+                        // Initialize prev text when value changes (e.g., when dialog opens or article changes)
+                        setTimeout(() => {
+                          try {
+                            const editor = authorAffiliationsEditorRef.current as any;
+                            const quill = editor?.getQuill?.() || editor?.quill;
+                            if (quill) {
+                              authorAffiliationsPrevTextRef.current = quill.getText();
+                            }
+                          } catch (err) {
+                            // Ignore
+                          }
+                        }, 50);
+                        // When toggle is ON, we'll convert only new input via the text-change handler
+                        // For display, show the text as-is (the handler will handle conversion)
+                        return text;
                       })()}
                       onTextChange={(e) => {
-                        // Extract plain text preserving Unicode superscript characters (¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁰)
-                        // Strip HTML tags but preserve all Unicode characters including superscripts
-                        let plainText = e.htmlValue?.replace(/<[^>]*>/g, '') || '';
+                        // Extract text - preserve superscripts in storage (don't convert back)
+                        // Users want superscripts to remain as superscripts
+                        let text = e.htmlValue?.replace(/<[^>]*>/g, '') || '';
                         
-                        // If superscript mode is enabled, convert numbers to superscript
-                        if (superscriptMode['authorAffiliations']) {
-                          plainText = convertToSuperscript(plainText);
-                        }
+                        // Update plain text reference (keep superscripts as-is)
+                        authorAffiliationsPlainTextRef.current = text;
                         
-                        const affiliations = plainText.split(',').map(aff => aff.trim());
+                        const affiliations = text.split(',').map(aff => aff.trim());
+                        // Ensure we have the same number of authors as affiliations
+                        const currentAuthors = selectedArticle.authors || [];
+                        const maxLength = Math.max(currentAuthors.length, affiliations.length);
+                        
                         setSelectedArticle({
                           ...selectedArticle,
-                          authors: selectedArticle.authors?.map((a, i) => ({ 
-                            ...a, 
-                            affiliation: affiliations[i] || '' 
-                          })) || []
+                          authors: Array.from({ length: maxLength }, (_, i) => {
+                            const existingAuthor = currentAuthors[i] || { name: '', email: '', affiliation: '' };
+                            return { 
+                              ...existingAuthor, 
+                              affiliation: affiliations[i] || existingAuthor.affiliation || '' 
+                            };
+                          })
                         });
                       }}
                       style={{ height: '200px' }}
                       placeholder="Enter author affiliations (e.g., 1 Department of Computer Science, 2 Department of AI) - Numbers will convert to superscript if enabled..."
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      {superscriptMode['authorAffiliations'] 
+                      {(superscriptMode['authorAffiliations'] ?? false)
                         ? '✓ Superscript mode ON: Numbers will automatically convert to superscript (1→¹, 2→², 3→³)'
                         : 'Tip: Click ¹²³ button above to enable superscript mode - then type numbers normally'}
                     </p>
