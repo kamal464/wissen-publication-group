@@ -12,10 +12,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ArticlesService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const s3_service_1 = require("../aws/s3.service");
 let ArticlesService = class ArticlesService {
     prisma;
-    constructor(prisma) {
+    s3Service;
+    constructor(prisma, s3Service) {
         this.prisma = prisma;
+        this.s3Service = s3Service;
     }
     async findAll(journalId, search, status, showInInpressCards, inPressMonth, inPressYear, sortBy = 'publishedAt', sortOrder = 'desc', page = 1, limit = 10) {
         const where = {};
@@ -211,12 +214,24 @@ let ArticlesService = class ArticlesService {
         console.log('Journal ID:', journalId);
         console.log('Authors:', authors);
         console.log('Manuscript Data:', manuscriptData);
+        let pdfUrl = manuscriptData.pdfUrl;
+        if (file) {
+            try {
+                const uploadResult = await this.s3Service.uploadFile(file, 'articles');
+                pdfUrl = uploadResult.url;
+                console.log('✅ File uploaded to S3:', pdfUrl);
+            }
+            catch (error) {
+                console.error('❌ Error uploading file to S3:', error);
+                throw new Error('Failed to upload file to S3');
+            }
+        }
         const firstAuthor = authors && authors.length > 0 ? authors[0] : null;
         const article = await this.prisma.article.create({
             data: {
                 title: manuscriptData.title,
                 abstract: manuscriptData.abstract,
-                pdfUrl: manuscriptData.pdfUrl,
+                pdfUrl: pdfUrl,
                 keywords: manuscriptData.keywords,
                 articleType: manuscriptData.articleType || null,
                 status: 'PENDING',
@@ -259,6 +274,7 @@ let ArticlesService = class ArticlesService {
 exports.ArticlesService = ArticlesService;
 exports.ArticlesService = ArticlesService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        s3_service_1.S3Service])
 ], ArticlesService);
 //# sourceMappingURL=articles.service.js.map

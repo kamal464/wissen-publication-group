@@ -16,12 +16,15 @@ exports.ArticlesController = void 0;
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const articles_service_1 = require("./articles.service");
+const s3_service_1 = require("../aws/s3.service");
 const create_article_dto_1 = require("./dto/create-article.dto");
 const update_article_dto_1 = require("./dto/update-article.dto");
 let ArticlesController = class ArticlesController {
     articlesService;
-    constructor(articlesService) {
+    s3Service;
+    constructor(articlesService, s3Service) {
         this.articlesService = articlesService;
+        this.s3Service = s3Service;
     }
     create(createArticleDto) {
         return this.articlesService.create(createArticleDto);
@@ -73,14 +76,16 @@ let ArticlesController = class ArticlesController {
         if (!file) {
             throw new Error('No file uploaded');
         }
-        const pdfUrl = `/uploads/${file.filename}`;
-        return this.articlesService.update(id, { pdfUrl });
+        const uploadResult = await this.s3Service.uploadFile(file, 'articles');
+        return this.articlesService.update(id, { pdfUrl: uploadResult.url });
     }
     async uploadImages(id, files) {
         if (!files || files.length === 0) {
             throw new Error('No files uploaded');
         }
-        const imagePaths = files.map(file => `/uploads/${file.filename}`);
+        const uploadPromises = files.map(file => this.s3Service.uploadFile(file, 'articles/images'));
+        const uploadResults = await Promise.all(uploadPromises);
+        const imagePaths = uploadResults.map(result => result.url);
         const fulltextImages = JSON.stringify(imagePaths);
         return this.articlesService.update(id, { fulltextImages });
     }
@@ -175,6 +180,7 @@ __decorate([
 ], ArticlesController.prototype, "remove", null);
 exports.ArticlesController = ArticlesController = __decorate([
     (0, common_1.Controller)('articles'),
-    __metadata("design:paramtypes", [articles_service_1.ArticlesService])
+    __metadata("design:paramtypes", [articles_service_1.ArticlesService,
+        s3_service_1.S3Service])
 ], ArticlesController);
 //# sourceMappingURL=articles.controller.js.map

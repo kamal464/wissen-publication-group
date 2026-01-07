@@ -7,10 +7,12 @@ import { ArticlesModule } from './articles/articles.module';
 import { AdminModule } from './admin/admin.module';
 import { FilesModule } from './files/files.module';
 import { NewsModule } from './news/news.module';
+import { AwsModule } from './aws/aws.module';
 
 @Module({
   imports: [
     PrismaModule,
+    AwsModule,
     JournalsModule,
     ArticlesModule,
     AdminModule,

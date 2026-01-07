@@ -16,10 +16,13 @@ exports.AdminController = void 0;
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const admin_service_1 = require("./admin.service");
+const s3_service_1 = require("../aws/s3.service");
 let AdminController = class AdminController {
     adminService;
-    constructor(adminService) {
+    s3Service;
+    constructor(adminService, s3Service) {
         this.adminService = adminService;
+        this.s3Service = s3Service;
     }
     async login(credentials) {
         return await this.adminService.login(credentials.username, credentials.password);
@@ -111,7 +114,8 @@ let AdminController = class AdminController {
         if (!file) {
             throw new Error('No file uploaded');
         }
-        const fileUrl = `/uploads/${file.filename}`;
+        const uploadResult = await this.s3Service.uploadFile(file, 'journals');
+        const fileUrl = uploadResult.url;
         const updateData = {};
         if (field === 'bannerImage')
             updateData.bannerImage = fileUrl;
@@ -397,6 +401,7 @@ __decorate([
 ], AdminController.prototype, "uploadBoardMemberPhoto", null);
 exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
-    __metadata("design:paramtypes", [admin_service_1.AdminService])
+    __metadata("design:paramtypes", [admin_service_1.AdminService,
+        s3_service_1.S3Service])
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map
