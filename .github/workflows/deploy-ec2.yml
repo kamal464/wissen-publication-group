@@ -77,7 +77,9 @@ jobs:
             
             # Build frontend with deployment timestamp
             echo "🔨 Building frontend..."
-            NEXT_PUBLIC_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ") npm run build
+            export NEXT_PUBLIC_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            echo "📅 Build timestamp: $NEXT_PUBLIC_BUILD_TIME"
+            NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME npm run build
             
             # Restart services with PM2
             echo "🔄 Restarting services..."
