@@ -1,10 +1,14 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminService } from './admin.service';
+import { S3Service } from '../aws/s3.service';
 
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly s3Service: S3Service,
+  ) {}
 
   @Post('login')
   async login(@Body() credentials: { username: string; password: string }) {
@@ -168,7 +172,9 @@ export class AdminController {
       throw new Error('No file uploaded');
     }
 
-    const fileUrl = `/uploads/${file.filename}`;
+    // Upload to S3
+    const uploadResult = await this.s3Service.uploadFile(file, 'journals');
+    const fileUrl = uploadResult.url;
     
     // Update the specific image field in the journal
     const updateData: any = {};

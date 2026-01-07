@@ -1,0 +1,74 @@
+# AWS CLI Commands to Create IAM User with S3 and CloudFront Permissions
+# Copy and paste these commands into AWS CloudShell
+
+# ============================================
+# Step 1: Create the IAM User
+# ============================================
+aws iam create-user --user-name s3-cloudfront-user
+
+# ============================================
+# Step 2: Create Custom Policy for S3 and CloudFront
+# ============================================
+# Create policy document
+cat > /tmp/s3-cloudfront-policy.json << 'EOF'
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:*",
+                "cloudfront:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+EOF
+
+# Create the policy
+aws iam create-policy \
+    --policy-name S3CloudFrontFullAccess \
+    --policy-document file:///tmp/s3-cloudfront-policy.json \
+    --description "Full access to S3 and CloudFront services"
+
+# ============================================
+# Step 3: Get Your Account ID and Attach Policy
+# ============================================
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+POLICY_ARN="arn:aws:iam::${ACCOUNT_ID}:policy/S3CloudFrontFullAccess"
+
+# Attach policy to user
+aws iam attach-user-policy \
+    --user-name s3-cloudfront-user \
+    --policy-arn $POLICY_ARN
+
+# ============================================
+# Step 4: Set Console Password
+# ============================================
+# Replace 'YourSecurePassword123!' with your desired password
+aws iam create-login-profile \
+    --user-name s3-cloudfront-user \
+    --password 'YourSecurePassword123!' \
+    --password-reset-required
+
+# ============================================
+# Step 5: Create Access Keys (for programmatic access)
+# ============================================
+aws iam create-access-key --user-name s3-cloudfront-user
+
+# ============================================
+# Verification Commands
+# ============================================
+# List user policies
+aws iam list-attached-user-policies --user-name s3-cloudfront-user
+
+# Get user info
+aws iam get-user --user-name s3-cloudfront-user
+
+# ============================================
+# Sign-in URL
+# ============================================
+echo "User can sign in at: https://${ACCOUNT_ID}.signin.aws.amazon.com/console"
+
+

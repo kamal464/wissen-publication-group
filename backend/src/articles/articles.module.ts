@@ -1,25 +1,17 @@
 import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { memoryStorage } from 'multer';
 import { ArticlesController } from './articles.controller';
 import { ArticlesService } from './articles.service';
 import { PrismaModule } from '../prisma/prisma.module';
+import { AwsModule } from '../aws/aws.module';
 
 @Module({
   imports: [
     PrismaModule,
+    AwsModule,
     MulterModule.register({
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const randomName = Array(32)
-            .fill(null)
-            .map(() => Math.round(Math.random() * 16).toString(16))
-            .join('');
-          cb(null, `${randomName}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(), // Use memory storage for S3 uploads
       fileFilter: (req, file, cb) => {
         const allowedMimeTypes = [
           'application/pdf',

@@ -10,10 +10,10 @@ exports.AdminModule = void 0;
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const multer_1 = require("multer");
-const path_1 = require("path");
 const admin_controller_1 = require("./admin.controller");
 const admin_service_1 = require("./admin.service");
 const prisma_module_1 = require("../prisma/prisma.module");
+const aws_module_1 = require("../aws/aws.module");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
@@ -21,17 +21,9 @@ exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
         imports: [
             prisma_module_1.PrismaModule,
+            aws_module_1.AwsModule,
             platform_express_1.MulterModule.register({
-                storage: (0, multer_1.diskStorage)({
-                    destination: './uploads',
-                    filename: (req, file, cb) => {
-                        const randomName = Array(32)
-                            .fill(null)
-                            .map(() => Math.round(Math.random() * 16).toString(16))
-                            .join('');
-                        cb(null, `${randomName}${(0, path_1.extname)(file.originalname)}`);
-                    },
-                }),
+                storage: (0, multer_1.memoryStorage)(),
                 fileFilter: (req, file, cb) => {
                     const allowedMimeTypes = [
                         'application/pdf',

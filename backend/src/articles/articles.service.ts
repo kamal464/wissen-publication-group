@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { S3Service } from '../aws/s3.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { SubmitManuscriptDto } from './dto/submit-manuscript.dto';
 
 @Injectable()
 export class ArticlesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private s3Service: S3Service,
+  ) {}
 
   async findAll(
     journalId?: number,
@@ -247,6 +251,19 @@ export class ArticlesService {
     console.log('Authors:', authors);
     console.log('Manuscript Data:', manuscriptData);
 
+    // Upload file to S3 if provided
+    let pdfUrl = manuscriptData.pdfUrl;
+    if (file) {
+      try {
+        const uploadResult = await this.s3Service.uploadFile(file, 'articles');
+        pdfUrl = uploadResult.url;
+        console.log('✅ File uploaded to S3:', pdfUrl);
+      } catch (error) {
+        console.error('❌ Error uploading file to S3:', error);
+        throw new Error('Failed to upload file to S3');
+      }
+    }
+
     // Extract submitter info from first author or manuscriptData
     const firstAuthor = authors && authors.length > 0 ? authors[0] : null;
 
@@ -255,7 +272,7 @@ export class ArticlesService {
       data: {
         title: manuscriptData.title,
         abstract: manuscriptData.abstract,
-        pdfUrl: manuscriptData.pdfUrl,
+        pdfUrl: pdfUrl,
         keywords: manuscriptData.keywords,
         articleType: manuscriptData.articleType || null,
         status: 'PENDING',

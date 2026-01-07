@@ -262,6 +262,11 @@ jobs:
           DATABASE_URL: "${{ secrets.DATABASE_URL }}"
           NODE_ENV: "production"
           CORS_ORIGIN: "https://wissen-frontend-285326281784.us-central1.run.app,http://localhost:3000,http://localhost:3002"
+          AWS_REGION: "${{ secrets.AWS_REGION }}"
+          AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          S3_BUCKET_NAME: "${{ secrets.S3_BUCKET_NAME }}"
+          CLOUDFRONT_URL: "${{ secrets.CLOUDFRONT_URL }}"
           EOF
           gcloud run deploy wissen-api \
             --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wissen-api/wissen-api:${{ github.sha }} \

@@ -14,13 +14,17 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ArticlesService } from './articles.service';
+import { S3Service } from '../aws/s3.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { SubmitManuscriptDto } from './dto/submit-manuscript.dto';
 
 @Controller('articles')
 export class ArticlesController {
-  constructor(private readonly articlesService: ArticlesService) {}
+  constructor(
+    private readonly articlesService: ArticlesService,
+    private readonly s3Service: S3Service,
+  ) {}
 
   @Post()
   create(@Body() createArticleDto: CreateArticleDto) {
@@ -130,8 +134,9 @@ export class ArticlesController {
     if (!file) {
       throw new Error('No file uploaded');
     }
-    const pdfUrl = `/uploads/${file.filename}`;
-    return this.articlesService.update(id, { pdfUrl });
+    // Upload to S3
+    const uploadResult = await this.s3Service.uploadFile(file, 'articles');
+    return this.articlesService.update(id, { pdfUrl: uploadResult.url });
   }
 
   @Post(':id/upload-images')
@@ -143,7 +148,10 @@ export class ArticlesController {
     if (!files || files.length === 0) {
       throw new Error('No files uploaded');
     }
-    const imagePaths = files.map(file => `/uploads/${file.filename}`);
+    // Upload to S3
+    const uploadPromises = files.map(file => this.s3Service.uploadFile(file, 'articles/images'));
+    const uploadResults = await Promise.all(uploadPromises);
+    const imagePaths = uploadResults.map(result => result.url);
     const fulltextImages = JSON.stringify(imagePaths);
     return this.articlesService.update(id, { fulltextImages });
   }

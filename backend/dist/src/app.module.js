@@ -16,6 +16,7 @@ const articles_module_1 = require("./articles/articles.module");
 const admin_module_1 = require("./admin/admin.module");
 const files_module_1 = require("./files/files.module");
 const news_module_1 = require("./news/news.module");
+const aws_module_1 = require("./aws/aws.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -23,6 +24,7 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             prisma_module_1.PrismaModule,
+            aws_module_1.AwsModule,
             journals_module_1.JournalsModule,
             articles_module_1.ArticlesModule,
             admin_module_1.AdminModule,
