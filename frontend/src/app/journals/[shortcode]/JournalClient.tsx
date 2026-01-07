@@ -1162,17 +1162,6 @@ export default function JournalDetailPage() {
                                     {article.articleType}
                                   </span>
                                 )}
-                                {article.pdfUrl && (
-                                  <a
-                                    href={getImageUrl(article.pdfUrl)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-10 h-10 rounded-full border-2 border-red-500 bg-white hover:bg-red-50 flex items-center justify-center transition-colors shadow-sm"
-                                    title="Download PDF"
-                                  >
-                                    <i className="pi pi-file-pdf text-red-600 text-sm"></i>
-                                  </a>
-                                )}
                               </div>
 
                               {/* Article Title */}
