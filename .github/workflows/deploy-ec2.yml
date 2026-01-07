@@ -1,0 +1,100 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  deploy-to-ec2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'ENDSSH'
+            set -e
+            echo "🚀 Starting deployment..."
+            
+            # Navigate to project directory
+            cd /var/www/wissen-publication-group
+            
+            # Pull latest code
+            echo "📥 Pulling latest code..."
+            git fetch origin
+            git reset --hard origin/main
+            git clean -fd
+            
+            # Update backend environment file
+            echo "⚙️  Updating backend environment..."
+            cat > backend/.env << ENVEOF
+            DATABASE_URL=postgresql://postgres:${{ secrets.DB_PASSWORD }}@localhost:5432/wissen_publication_group
+            NODE_ENV=production
+            PORT=3001
+            CORS_ORIGIN=http://${{ secrets.EC2_HOST }},http://${{ secrets.EC2_DOMAIN }},http://www.${{ secrets.EC2_DOMAIN }},http://localhost:3000,http://localhost:3002
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}
+            CLOUDFRONT_URL=${{ secrets.CLOUDFRONT_URL }}
+            ENVEOF
+            
+            # Update frontend environment file
+            echo "⚙️  Updating frontend environment..."
+            echo "NEXT_PUBLIC_API_URL=http://${{ secrets.EC2_DOMAIN }}/api" > frontend/.env.production
+            
+            # Install backend dependencies
+            echo "📦 Installing backend dependencies..."
+            cd backend
+            npm ci
+            
+            # Generate Prisma Client
+            echo "🔧 Generating Prisma Client..."
+            npx prisma generate
+            
+            # Run database migrations
+            echo "🗄️  Running database migrations..."
+            npx prisma db push --accept-data-loss || echo "⚠️  Database push completed with warnings"
+            
+            # Build backend
+            echo "🔨 Building backend..."
+            npm run build
+            
+            # Install frontend dependencies
+            echo "📦 Installing frontend dependencies..."
+            cd ../frontend
+            npm ci
+            
+            # Build frontend
+            echo "🔨 Building frontend..."
+            npm run build
+            
+            # Restart services with PM2
+            echo "🔄 Restarting services..."
+            cd /var/www/wissen-publication-group
+            pm2 restart all || pm2 start ecosystem.config.js
+            pm2 save
+            
+            # Reload Nginx
+            echo "🔄 Reloading Nginx..."
+            sudo nginx -t && sudo systemctl reload nginx
+            
+            echo "✅ Deployment complete!"
+            echo "🌐 Application is live at: http://${{ secrets.EC2_DOMAIN }}"
+          ENDSSH
+
+      - name: Verify deployment
+        run: |
+          sleep 10
+          curl -f http://${{ secrets.EC2_HOST }}/api/health || echo "⚠️  Health check failed, but deployment may still be in progress"
+

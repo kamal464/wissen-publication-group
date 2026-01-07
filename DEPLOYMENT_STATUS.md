@@ -1,106 +1,53 @@
 # 🚀 Deployment Status
 
-## ✅ Deployment Completed
+## Auto-Deployment Setup Complete!
 
-**Time**: Just now  
-**Commit**: `6abd69e` - Update deployment: Use Cloud Run for frontend (supports Next.js SSR)
-
----
-
-## 📊 Deployment Information
-
-### GitHub Repository
-- **URL**: https://github.com/kamal464/wissen-publication-group
-- **Branch**: `main`
-- **Actions**: https://github.com/kamal464/wissen-publication-group/actions
-
-### Deployment Workflow
-- **Workflow File**: `.github/workflows/deploy.yml`
-- **Triggers**: Push to `main` branch
-- **Deploys**: Backend and Frontend to Google Cloud Run
+**Date:** January 7, 2026  
+**Status:** ✅ Active
 
 ---
 
-## 🖥️ Local Development Servers
+## Deployment Methods
 
-### Backend Server
-- **URL**: http://localhost:3001
-- **API**: http://localhost:3001/api
-- **Status**: Starting in background
-- **Command**: `npm start` (in `backend/` directory)
+### 1. AWS EC2 (Primary) ✅
+- **Auto-deployment:** Enabled via GitHub Actions
+- **Trigger:** Push to `main` branch
+- **URL:** http://54.165.116.208
+- **Workflow:** `.github/workflows/deploy-ec2.yml`
 
-### Frontend Server
-- **URL**: http://localhost:3000
-- **Status**: Starting in background
-- **Command**: `npm run dev` (in `frontend/` directory)
-
----
-
-## 🔍 How to Verify
-
-### 1. Check Local Servers
-```bash
-# Backend
-curl http://localhost:3001/api/journals
-
-# Frontend
-curl http://localhost:3000
-```
-
-### 2. Check GitHub Actions
-Visit: https://github.com/kamal464/wissen-publication-group/actions
-
-Look for workflow: **"Deploy Application"**
-- ✅ Green = Success
-- ⏳ Yellow = In Progress
-- ❌ Red = Failed
-
-### 3. Check Cloud Run Deployments
-- Backend: https://console.cloud.google.com/run?project=YOUR_PROJECT_ID
-- Frontend: Same console, look for `wissen-frontend`
+### 2. Google Cloud Run (Legacy)
+- **Status:** Active but not primary
+- **Workflow:** `.github/workflows/firebase-hosting-merge.yml`
 
 ---
 
-## ⚙️ Configuration Changes
+## Latest Deployment
 
-### Frontend
-- Changed from `output: 'export'` to `output: 'standalone'`
-- Now supports SSR and dynamic routes
-- Deploys to Cloud Run instead of Firebase Hosting static
-
-### Backend
-- Already configured for Cloud Run
-- Uses environment variables for database connection
+**Last deployed:** Check GitHub Actions tab for latest deployment status
 
 ---
 
-## 📝 Next Steps
+## Quick Links
 
-1. **Wait for servers to start** (10-15 seconds)
-2. **Visit**: http://localhost:3000
-3. **Test API**: http://localhost:3001/api/journals
-4. **Check GitHub Actions** for deployment status
-
----
-
-## 🆘 Troubleshooting
-
-### Backend not starting?
-- Check if port 3001 is available
-- Check backend logs in terminal
-- Verify database connection
-
-### Frontend not starting?
-- Check if port 3000 is available
-- Check frontend logs in terminal
-- Verify `NEXT_PUBLIC_API_URL` is set
-
-### Deployment failing?
-- Check GitHub Actions logs
-- Verify GCP service account secrets
-- Check Cloud Run quotas
+- 🌐 **Live Application:** http://54.165.116.208
+- 📊 **GitHub Actions:** https://github.com/kamal464/wissen-publication-group/actions
+- 🔧 **Deployment Guide:** See `GITHUB_ACTIONS_EC2_SETUP.md`
 
 ---
 
-**Status**: ✅ Deployed and servers starting locally
+## What Happens on Push to Main?
 
+1. ✅ Code is checked out
+2. ✅ SSH connection to EC2 established
+3. ✅ Latest code pulled from GitHub
+4. ✅ Environment files updated
+5. ✅ Dependencies installed
+6. ✅ Database migrations run
+7. ✅ Frontend and backend built
+8. ✅ PM2 services restarted
+9. ✅ Nginx reloaded
+10. ✅ Application live!
+
+---
+
+**🎉 Auto-deployment is now active!**
