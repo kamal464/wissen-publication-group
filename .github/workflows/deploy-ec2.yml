@@ -17,25 +17,28 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          # Write SSH private key (preserve formatting)
-          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          # Write SSH private key using printf to preserve exact formatting
+          printf '%s\n' "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          # Remove any Windows line endings (CRLF -> LF)
+          sed -i 's/\r$//' ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           # Verify key exists and has content
           if [ ! -s ~/.ssh/id_rsa ]; then
             echo "❌ SSH key file is empty"
             exit 1
           fi
-          # Check key format (support both OpenSSH and RSA formats)
+          # Check key format
           if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/id_rsa; then
-            echo "⚠️  Warning: SSH key format may be incorrect"
-            echo "First line of key:"
-            head -1 ~/.ssh/id_rsa
-          else
-            echo "✅ SSH key format looks valid"
+            echo "❌ Invalid SSH key format"
+            echo "First 3 lines of key file:"
+            head -3 ~/.ssh/id_rsa
+            exit 1
           fi
+          echo "✅ SSH key file created successfully"
           # Add EC2 host to known_hosts
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
           chmod 644 ~/.ssh/known_hosts
+          echo "✅ SSH setup complete"
 
       - name: Deploy to EC2
         run: |
