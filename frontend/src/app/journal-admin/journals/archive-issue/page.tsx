@@ -144,7 +144,11 @@ export default function ArchiveIssuePage() {
       const allArticles = (articlesResponse.data as any[]) || [];
       
       // Filter articles by volume, issue, and year
+      // Show articles that have volume/issue/year set, regardless of status (INPRESS, PUBLISHED, CURRENT_ISSUE)
       const filteredArticles = allArticles.filter((article: any) => {
+        // Only show articles that have volume, issue, and year set (not empty)
+        if (!article.volumeNo || !article.issueNo || !article.year) return false;
+        // Match URL params
         if (volume && article.volumeNo !== volume) return false;
         if (issue && article.issueNo !== issue) return false;
         if (year && article.year !== year) return false;
@@ -219,16 +223,25 @@ export default function ArchiveIssuePage() {
     }
 
     confirmDialog({
-      message: `Are you sure you want to move ${articlesToMove.length} selected article(s) to Inpress? This will change their status from PUBLISHED to ACCEPTED.`,
+      message: `Are you sure you want to move ${articlesToMove.length} selected article(s) to Inpress? This will remove them from the archive and make them appear in Inpress.`,
       header: 'Confirm Move to Inpress',
       icon: 'pi pi-exclamation-triangle',
       accept: async () => {
         try {
           setMovingToInpress(true);
-          // Update each selected article status to ACCEPTED (for inpress)
+          // Update each selected article: set status to INPRESS, showInInpressCards to true, and clear archive fields
           for (const article of articlesToMove) {
             await adminAPI.updateArticle(article.id, {
-              status: 'ACCEPTED'
+              status: 'INPRESS',
+              showInInpressCards: true,
+              // Clear volume/issue/year so article doesn't appear in archive filter
+              volumeNo: '',
+              issueNo: '',
+              year: '',
+              // Preserve month/year in inPressMonth/inPressYear for calendar
+              inPressMonth: article.issueMonth || '',
+              inPressYear: article.year || '',
+              issueId: null
             });
           }
           
