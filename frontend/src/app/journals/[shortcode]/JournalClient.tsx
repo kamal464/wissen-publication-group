@@ -453,7 +453,9 @@ export default function JournalDetailPage() {
             const filteredArticles = allArticles.filter((article: any) => {
               const hasMonth = article.inPressMonth && String(article.inPressMonth).trim() !== '';
               const hasYear = article.inPressYear && String(article.inPressYear).trim() !== '';
-              return hasMonth && hasYear;
+              // Exclude articles that are currently in In Press; only show archived/current issue
+              const notInPress = article.status !== 'INPRESS';
+              return hasMonth && hasYear && notInPress;
             });
             setArticles(filteredArticles);
             
