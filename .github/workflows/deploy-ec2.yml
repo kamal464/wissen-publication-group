@@ -130,12 +130,27 @@ jobs:
             pm2 status
             echo "✅ Services restarted"
             
+            # Verify services are running with new code
+            echo "🔍 Verifying deployment..."
+            sleep 3
+            echo "Backend process info:"
+            pm2 describe wissen-backend | grep -E "status|pid|uptime|restarts" || echo "Backend not found"
+            echo "Frontend process info:"
+            pm2 describe wissen-frontend | grep -E "status|pid|uptime|restarts" || echo "Frontend not found"
+            
+            # Test if services are responding
+            echo "Testing backend health..."
+            curl -s http://localhost:3001/api/health || echo "Backend not responding yet"
+            echo "Testing frontend..."
+            curl -s http://localhost:3000 | head -5 || echo "Frontend not responding yet"
+            
             # Reload Nginx
             echo "🔄 Reloading Nginx..."
             sudo nginx -t && sudo systemctl reload nginx
             
             echo "✅ Deployment complete!"
             echo "🌐 Application is live at: http://${{ secrets.EC2_DOMAIN }}"
+            echo "📅 Deployment timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
           ENDSSH
 
       - name: Verify deployment
