@@ -75,9 +75,9 @@ jobs:
             cd ../frontend
             npm ci
             
-            # Build frontend
+            # Build frontend with deployment timestamp
             echo "🔨 Building frontend..."
-            npm run build
+            NEXT_PUBLIC_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ") npm run build
             
             # Restart services with PM2
             echo "🔄 Restarting services..."
