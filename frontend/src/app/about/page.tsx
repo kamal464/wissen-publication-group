@@ -1,11 +1,62 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Breadcrumb from '@/components/Breadcrumb';
 import { Card } from 'primereact/card';
 
 export default function AboutPage() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const imagesPerView = 4;
+  
+  // Create 10 image placeholders using wissen-logo.jpeg
+  const imagePlaceholders = Array.from({ length: 10 }, (_, i) => ({
+    id: i + 1,
+    placeholder: '/wissen-logo.jpeg'
+  }));
+
+  // Duplicate images multiple times for seamless infinite scroll
+  // Add enough duplicates to ensure smooth looping
+  const extendedImages = [...imagePlaceholders, ...imagePlaceholders, ...imagePlaceholders];
+  const totalOriginalImages = imagePlaceholders.length;
+
+  // Auto-scroll - move one image at a time for smooth continuous scrolling
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) => {
+        const nextIndex = prevIndex + 1;
+        // When we reach the end of first set, continue seamlessly
+        // Since we duplicated images, we can loop infinitely
+        if (nextIndex >= totalOriginalImages) {
+          // Reset to 0 for seamless loop (images are duplicated so it looks continuous)
+          return 0;
+        }
+        return nextIndex;
+      });
+    }, 3000); // Change every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [totalOriginalImages]);
+
+  const handlePrevious = () => {
+    setCurrentIndex((prevIndex) => {
+      if (prevIndex === 0) {
+        return totalOriginalImages - 1;
+      }
+      return prevIndex - 1;
+    });
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prevIndex) => {
+      const nextIndex = prevIndex + 1;
+      if (nextIndex >= totalOriginalImages) {
+        return 0;
+      }
+      return nextIndex;
+    });
+  };
   return (
     <>
       <Header />
@@ -194,41 +245,145 @@ export default function AboutPage() {
             </div>
           </section>
 
-          {/* Statistics */}
+          {/* Image Carousel */}
           <section className="stats-section">
             <h2 className="section-title">Our Impact</h2>
-            <div className="stats-grid">
-              <Card className="stat-card">
-                <div className="stat-icon">
-                  <i className="pi pi-file-edit"></i>
-                </div>
-                <div className="stat-number">15,000+</div>
-                <div className="stat-label">Published Articles</div>
-              </Card>
+            <div className="image-carousel-container" style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '1200px',
+              margin: '0 auto',
+              padding: '2rem 0'
+            }}>
+              {/* Navigation Arrow - Left */}
+              <button
+                type="button"
+                onClick={handlePrevious}
+                className="carousel-arrow carousel-arrow-left"
+                style={{
+                  position: 'absolute',
+                  left: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  border: '2px solid #3b82f6',
+                  backgroundColor: 'white',
+                  color: '#3b82f6',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                  zIndex: 10,
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#3b82f6';
+                  e.currentTarget.style.color = 'white';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'white';
+                  e.currentTarget.style.color = '#3b82f6';
+                }}
+                aria-label="Previous images"
+              >
+                <i className="pi pi-chevron-left"></i>
+              </button>
 
-              <Card className="stat-card">
-                <div className="stat-icon">
-                  <i className="pi pi-book"></i>
-                </div>
-                <div className="stat-number">50+</div>
-                <div className="stat-label">Active Journals</div>
-              </Card>
+              {/* Navigation Arrow - Right */}
+              <button
+                type="button"
+                onClick={handleNext}
+                className="carousel-arrow carousel-arrow-right"
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  border: '2px solid #3b82f6',
+                  backgroundColor: 'white',
+                  color: '#3b82f6',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                  zIndex: 10,
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#3b82f6';
+                  e.currentTarget.style.color = 'white';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'white';
+                  e.currentTarget.style.color = '#3b82f6';
+                }}
+                aria-label="Next images"
+              >
+                <i className="pi pi-chevron-right"></i>
+              </button>
 
-              <Card className="stat-card">
-                <div className="stat-icon">
-                  <i className="pi pi-users"></i>
+              <div className="image-carousel-wrapper" style={{
+                position: 'relative',
+                width: '100%',
+                overflow: 'hidden',
+                padding: '1rem 60px'
+              }}>
+                <div className="carousel-track" style={{
+                  display: 'flex',
+                  gap: '15px',
+                  transform: `translateX(calc(-${currentIndex} * ((100% - 45px) / ${imagesPerView} + 15px)))`,
+                  transition: 'transform 0.6s ease-in-out'
+                }}>
+                  {/* Render all images in a continuous row - duplicate enough for seamless loop */}
+                  {extendedImages.slice(0, totalOriginalImages + imagesPerView).map((image, index) => {
+                    // Use modulo to get the correct image from original set for seamless loop
+                    const imageIndex = index % totalOriginalImages;
+                    const actualImage = imagePlaceholders[imageIndex];
+                    return (
+                      <div
+                        key={`${actualImage.id}-${index}`}
+                        className="carousel-image-item"
+                        style={{
+                          flex: '0 0 calc(25% - 11.25px)',
+                          width: 'calc(25% - 11.25px)',
+                          backgroundColor: '#fff',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                          transition: 'transform 0.3s ease',
+                          cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        <img
+                          src={actualImage.placeholder}
+                          alt={`Placeholder ${actualImage.id}`}
+                          style={{
+                            width: '100%',
+                            height: '150px',
+                            objectFit: 'cover',
+                            display: 'block'
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="stat-number">120+</div>
-                <div className="stat-label">Countries Reached</div>
-              </Card>
-
-              <Card className="stat-card">
-                <div className="stat-icon">
-                  <i className="pi pi-star"></i>
-                </div>
-                <div className="stat-number">95%</div>
-                <div className="stat-label">Author Satisfaction</div>
-              </Card>
+              </div>
             </div>
           </section>
 
