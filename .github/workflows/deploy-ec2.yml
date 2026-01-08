@@ -420,6 +420,37 @@ jobs:
             echo "  - Backend uptime: $(pm2 describe wissen-backend 2>/dev/null | grep 'uptime' || echo 'N/A')"
             echo "  - Frontend uptime: $(pm2 describe wissen-frontend 2>/dev/null | grep 'uptime' || echo 'N/A')"
             echo ""
+            
+            # CRITICAL: Verify the actual HTML being served contains our changes
+            echo "🔍 CRITICAL: Verifying served HTML contains changes..."
+            sleep 5
+            FRONTEND_HTML=$(curl -s http://localhost:3000 2>/dev/null || echo "")
+            if echo "$FRONTEND_HTML" | grep -q "Contact Us"; then
+              echo "✅ VERIFIED: Frontend HTML contains 'Contact Us'"
+            else
+              echo "❌ ERROR: Frontend HTML does NOT contain 'Contact Us'!"
+              echo "This means the new code is NOT being served!"
+              echo "Checking PM2 logs..."
+              pm2 logs wissen-frontend --lines 20 --nostream
+              echo ""
+              echo "Checking if .next directory exists and has correct structure..."
+              ls -la frontend/.next/ 2>/dev/null | head -20
+              exit 1
+            fi
+            
+            if echo "$FRONTEND_HTML" | grep -q "AWS Deployed v2"; then
+              echo "✅ VERIFIED: Frontend HTML contains 'AWS Deployed v2'"
+            else
+              echo "⚠️  WARNING: Frontend HTML does NOT contain 'AWS Deployed v2'"
+            fi
+            
+            # Check Next.js build ID
+            if [ -f "frontend/.next/BUILD_ID" ]; then
+              BUILD_ID=$(cat frontend/.next/BUILD_ID)
+              echo "📦 Next.js BUILD_ID: $BUILD_ID"
+            fi
+            
+            echo ""
             echo "=========================================="
           ENDSSH
 
