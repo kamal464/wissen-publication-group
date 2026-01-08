@@ -49,7 +49,7 @@ const baseUrlInterceptor = api.interceptors.request.use((config) => {
   }
   
   return config;
-}, undefined, { synchronous: true, runWhen: () => true });
+});
 
 // Request interceptor
 api.interceptors.request.use(
