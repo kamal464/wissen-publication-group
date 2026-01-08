@@ -70,7 +70,12 @@ jobs:
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
           CLOUDFRONT_URL: ${{ secrets.CLOUDFRONT_URL }}
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} bash -s << ENDSSH
+          ssh -o StrictHostKeyChecking=no \
+              -o ServerAliveInterval=60 \
+              -o ServerAliveCountMax=30 \
+              -o ConnectTimeout=30 \
+              -o TCPKeepAlive=yes \
+              ubuntu@${EC2_HOST} bash -s << ENDSSH
             export DB_PASSWORD="$DB_PASSWORD"
             export EC2_HOST="$EC2_HOST"
             export AWS_REGION="$AWS_REGION"
