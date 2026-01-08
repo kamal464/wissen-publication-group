@@ -249,7 +249,7 @@ jobs:
               echo "   DB_PASSWORD length: ${#DB_PASSWORD}"
               
               # Simple approach: Build connection string directly, encoding @ as %40
-              # This avoids all the variable assignment issues
+              # Use printf and sed to handle the encoding more reliably
               echo "   Building connection string..."
               
               # Verify DB_PASSWORD is still set
@@ -258,19 +258,25 @@ jobs:
                 exit 1
               fi
               
-              # Replace @ with %40 in the password for URL encoding (bash string replacement)
-              # Use a temporary variable to avoid any issues
-              TEMP_PASS="${DB_PASSWORD}"
-              TEMP_PASS="${TEMP_PASS//@/%40}"
+              # Use printf to build the connection string with @ replaced by %40
+              # This avoids variable assignment issues
+              ENCODED_PASS=$(printf '%s' "$DB_PASSWORD" | sed 's/@/%40/g')
               
-              # Build the connection string directly in one step
-              FINAL_DATABASE_URL="postgresql://postgres:${TEMP_PASS}@localhost:5432/wissen_publication_group"
+              # Verify encoding worked
+              if [ -z "$ENCODED_PASS" ] || [ "$ENCODED_PASS" = "" ]; then
+                echo "   ❌ ERROR: Password encoding failed!"
+                echo "   DB_PASSWORD was: $([ -n "$DB_PASSWORD" ] && echo "SET (length: ${#DB_PASSWORD})" || echo "NOT SET")"
+                exit 1
+              fi
+              
+              # Build the connection string
+              FINAL_DATABASE_URL="postgresql://postgres:${ENCODED_PASS}@localhost:5432/wissen_publication_group"
               
               # Verify it was created and is not empty
               if [ -z "$FINAL_DATABASE_URL" ] || [ "$FINAL_DATABASE_URL" = "" ]; then
                 echo "   ❌ ERROR: Failed to create FINAL_DATABASE_URL!"
                 echo "   DB_PASSWORD was: $([ -n "$DB_PASSWORD" ] && echo "SET (length: ${#DB_PASSWORD})" || echo "NOT SET")"
-                echo "   TEMP_PASS was: $([ -n "$TEMP_PASS" ] && echo "SET (length: ${#TEMP_PASS})" || echo "NOT SET")"
+                echo "   ENCODED_PASS was: $([ -n "$ENCODED_PASS" ] && echo "SET (length: ${#ENCODED_PASS})" || echo "NOT SET")"
                 exit 1
               fi
               
