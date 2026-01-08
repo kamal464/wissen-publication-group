@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
   deploy-to-ec2:
@@ -17,778 +17,190 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          # Write SSH private key using printf to preserve exact formatting
           printf '%s\n' "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          # Remove any Windows line endings (CRLF -> LF)
           sed -i 's/\r$//' ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          # Verify key exists and has content
           if [ ! -s ~/.ssh/id_rsa ]; then
             echo "❌ SSH key file is empty"
             exit 1
           fi
-          # Check key format
           if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/id_rsa; then
             echo "❌ Invalid SSH key format"
-            echo "First 3 lines of key file:"
-            head -3 ~/.ssh/id_rsa
             exit 1
           fi
-          echo "✅ SSH key file created successfully"
-          # Add EC2 host to known_hosts
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
           chmod 644 ~/.ssh/known_hosts
-          echo "✅ SSH setup complete"
 
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'ENDSSH'
-            set -x  # Enable debug mode to see all commands
-            # Don't use set -e initially - we want to see all errors
+            set -x
+            cd /var/www/wissen-publication-group || { echo "❌ Directory not found"; exit 1; }
+            
             echo "=========================================="
             echo "🚀 STARTING DEPLOYMENT"
             echo "=========================================="
-            echo "Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
-            echo ""
             
-            # Navigate to project directory
-            cd /var/www/wissen-publication-group
-            echo "📁 Current directory: $(pwd)"
-            echo ""
-            
-            # Pull latest code
-            echo "=========================================="
-            echo "📥 STEP 1: PULLING LATEST CODE"
-            echo "=========================================="
-            echo "Previous commit: $(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
-            
-            # Kill PM2 processes FIRST to ensure they're not holding files
-            echo "🛑 Stopping PM2 processes before git pull..."
+            # Stop PM2 processes
             pm2 delete all 2>/dev/null || true
             sleep 2
             
+            # Pull latest code
+            echo "📥 Pulling latest code..."
             git fetch origin
-            echo "✅ Fetched from origin"
             git reset --hard origin/main
-            echo "✅ Reset to origin/main"
             git clean -fd
-            echo "✅ Cleaned untracked files"
-            
-            # Show current commit to verify
             NEW_COMMIT=$(git rev-parse --short HEAD)
-            COMMIT_MSG=$(git log -1 --pretty=%B)
-            echo ""
-            echo "📌 NEW COMMIT: $NEW_COMMIT"
-            echo "📌 COMMIT MESSAGE: $COMMIT_MSG"
-            echo "📌 COMMIT DATE: $(git log -1 --pretty=%cd)"
-            echo ""
+            echo "📌 Deployed commit: $NEW_COMMIT"
             
-            # VERIFY: Check that Header.tsx actually has "Contact Us"
-            echo "🔍 VERIFYING: Checking Header.tsx for 'Contact Us'..."
-            if grep -q "Contact Us" frontend/src/components/layout/Header.tsx; then
-              echo "✅ Header.tsx contains 'Contact Us'"
-              grep -A 2 -B 2 "Contact Us" frontend/src/components/layout/Header.tsx | head -5
-            else
-              echo "❌ ERROR: Header.tsx does NOT contain 'Contact Us'!"
-              echo "File content:"
-              cat frontend/src/components/layout/Header.tsx | grep -A 5 "menuItems"
-              exit 1
-            fi
-            echo ""
-            
-            # Update backend environment file
-            echo "⚙️  Updating backend environment..."
+            # Update environment files
             cat > backend/.env << ENVEOF
-            DATABASE_URL=postgresql://postgres:${{ secrets.DB_PASSWORD }}@localhost:5432/wissen_publication_group
-            NODE_ENV=production
-            PORT=3001
-            CORS_ORIGIN=http://${{ secrets.EC2_HOST }},http://${{ secrets.EC2_DOMAIN }},http://www.${{ secrets.EC2_DOMAIN }},http://localhost:3000,http://localhost:3002
-            AWS_REGION=${{ secrets.AWS_REGION }}
-            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}
-            CLOUDFRONT_URL=${{ secrets.CLOUDFRONT_URL }}
-            ENVEOF
+DATABASE_URL=postgresql://postgres:${{ secrets.DB_PASSWORD }}@localhost:5432/wissen_publication_group
+NODE_ENV=production
+PORT=3001
+CORS_ORIGIN=http://${{ secrets.EC2_HOST }},http://${{ secrets.EC2_DOMAIN }},http://www.${{ secrets.EC2_DOMAIN }},http://localhost:3000,http://localhost:3002
+AWS_REGION=${{ secrets.AWS_REGION }}
+AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}
+CLOUDFRONT_URL=${{ secrets.CLOUDFRONT_URL }}
+ENVEOF
             
-            # Update frontend environment file
-            echo "⚙️  Updating frontend environment..."
             echo "NEXT_PUBLIC_API_URL=http://${{ secrets.EC2_DOMAIN }}/api" > frontend/.env.production
-            
-            # Install backend dependencies
-            echo "=========================================="
-            echo "📦 STEP 2: BACKEND SETUP"
-            echo "=========================================="
-            cd backend
-            echo "📁 Backend directory: $(pwd)"
-            echo "Installing dependencies..."
-            npm ci
-            echo "✅ Backend dependencies installed"
-            
-            # Generate Prisma Client
-            echo "🔧 Generating Prisma Client..."
-            npx prisma generate
-            
-            # Run database migrations
-            echo "🗄️  Running database migrations..."
-            npx prisma db push --accept-data-loss || echo "⚠️  Database push completed with warnings"
-            
-            # Clean backend build directory
-            echo "🧹 Cleaning backend build..."
-            rm -rf dist 2>/dev/null || true
+            export NEXT_PUBLIC_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            echo "NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME" >> frontend/.env.production
             
             # Build backend
-            echo ""
             echo "🔨 Building backend..."
-            npm run build
-            if [ -f "dist/main.js" ]; then
-              echo "✅ Backend built successfully"
-              echo "📦 Build file size: $(du -h dist/main.js | cut -f1)"
-              echo "📅 Build time: $(date)"
-            else
-              echo "❌ ERROR: Backend build file not found!"
-              exit 1
-            fi
-            echo ""
-            
-            # Install frontend dependencies
-            echo "=========================================="
-            echo "📦 STEP 3: FRONTEND SETUP"
-            echo "=========================================="
-            cd ../frontend
-            echo "📁 Frontend directory: $(pwd)"
-            echo "Installing dependencies..."
+            cd backend
             npm ci
-            echo "✅ Frontend dependencies installed"
-            
-            # Clean Next.js cache before building
-            echo "🧹 Cleaning Next.js cache..."
-            rm -rf .next 2>/dev/null || true
-            rm -rf node_modules/.cache 2>/dev/null || true
-            rm -rf .swc 2>/dev/null || true
-            rm -rf .next/cache 2>/dev/null || true
-            rm -rf out 2>/dev/null || true
-            # Also clear standalone if it exists
-            rm -rf standalone 2>/dev/null || true
-            echo "✅ All caches cleared"
-            
-            # Verify cache is cleared
-            if [ -d ".next" ]; then
-              echo "⚠️  WARNING: .next directory still exists after cleanup!"
-              ls -la .next | head -10
-            else
-              echo "✅ Verified: .next directory is completely removed"
-            fi
-            echo ""
-            
-            # Build frontend with deployment timestamp
-            echo ""
-            echo "🔨 Building frontend..."
-            export NEXT_PUBLIC_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-            echo "📅 Build timestamp: $NEXT_PUBLIC_BUILD_TIME"
-            echo "📅 Setting NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME"
-            # Set it in .env.production as well for Next.js to pick up
-            echo "NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME" >> .env.production
-            echo "📋 .env.production contents:"
-            cat .env.production
-            echo ""
-            NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME npm run build
-            if [ -d ".next" ]; then
-              echo "✅ Frontend built successfully"
-              echo "📦 Build directory size: $(du -sh .next | cut -f1)"
-              echo "📅 Build time: $(date)"
-            else
-              echo "❌ ERROR: Frontend build directory not found!"
+            npx prisma generate
+            npx prisma db push --accept-data-loss || true
+            rm -rf dist
+            npm run build
+            if [ ! -f "dist/src/main.js" ]; then
+              echo "❌ Backend build failed"
               exit 1
             fi
-            echo ""
+            cd ..
             
-            # Restart services with PM2 (force restart to ensure changes are loaded)
-            echo "=========================================="
-            echo "🔄 STEP 4: RESTARTING SERVICES"
-            echo "=========================================="
-            cd /var/www/wissen-publication-group
-            echo "📁 Project root: $(pwd)"
-            echo ""
+            # Build frontend
+            echo "🔨 Building frontend..."
+            cd frontend
+            npm ci
+            rm -rf .next node_modules/.cache .swc
+            NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME npm run build
+            if [ ! -d ".next" ]; then
+              echo "❌ Frontend build failed"
+              exit 1
+            fi
+            cd ..
             
-            # Show PM2 status before restart
-            echo "📊 PM2 Status BEFORE restart:"
-            pm2 status || echo "PM2 not running"
-            echo ""
-            
-            # Stop all PM2 processes first (don't kill daemon)
-            echo "🛑 Stopping all PM2 processes..."
-            pm2 delete all 2>/dev/null || echo "No processes to delete"
+            # Start services with PM2
+            echo "🚀 Starting services..."
+            mkdir -p logs
+            pm2 delete all 2>/dev/null || true
             sleep 2
             
-            # Ensure PM2 daemon is running
-            echo "🔧 Ensuring PM2 daemon is running..."
-            if ! pm2 ping 2>/dev/null; then
-              echo "⚠️  PM2 daemon not responding, starting it..."
-              pm2 kill 2>/dev/null || true
-              sleep 2
-            fi
-            pm2 ping || echo "⚠️  PM2 daemon check failed, but continuing..."
-            sleep 1
-            
-            # Clear PM2 logs
-            echo "🧹 Clearing PM2 logs..."
-            pm2 flush 2>/dev/null || echo "No logs to clear"
-            
-            # Verify ecosystem.config.js exists and is readable
-            echo "📋 Checking ecosystem.config.js..."
-            if [ -f "ecosystem.config.js" ]; then
-              echo "✅ ecosystem.config.js found"
-              cat ecosystem.config.js | head -20
-            else
-              echo "❌ ERROR: ecosystem.config.js not found!"
-              exit 1
-            fi
-            echo ""
-            
-            # Start services fresh
-            echo "🚀 Starting services with PM2..."
-            
-            # Ensure we're in the right directory
-            pwd
-            ls -la ecosystem.config.js
-            
-            # Create logs directory if it doesn't exist
-            mkdir -p logs
-            
-            # Start backend first
-            echo "Starting backend..."
+            # Start backend
             cd backend
-            pm2 start ecosystem.config.js --only wissen-backend --update-env || {
-              echo "⚠️  Ecosystem config failed, trying direct start..."
-              pm2 start node --name wissen-backend -- dist/src/main.js || {
-                echo "❌ Backend start failed, trying npm start..."
-                pm2 start npm --name wissen-backend -- start
-              }
+            pm2 start node --name wissen-backend -- dist/src/main.js || {
+              echo "❌ Backend start failed"
+              pm2 logs wissen-backend --lines 20 --nostream 2>/dev/null || true
+              exit 1
             }
             cd ..
             
             # Start frontend
-            echo "Starting frontend..."
             cd frontend
-            pm2 start ecosystem.config.js --only wissen-frontend --update-env || {
-              echo "⚠️  Ecosystem config failed, trying direct start..."
-              pm2 start npm --name wissen-frontend -- start
+            pm2 start npm --name wissen-frontend -- start || {
+              echo "❌ Frontend start failed"
+              pm2 logs wissen-frontend --lines 20 --nostream 2>/dev/null || true
+              exit 1
             }
             cd ..
             
-            echo "✅ PM2 start commands executed"
-            
-            # Wait a moment for processes to initialize
-            sleep 5
-            
-            # Check if processes started
-            PM2_INITIAL=$(pm2 list)
-            echo "📊 PM2 Status immediately after start:"
-            echo "$PM2_INITIAL"
-            
             pm2 save
-            echo "✅ PM2 save executed"
             
-            # Verify processes started
-            echo "🔍 Verifying processes started..."
-            sleep 3
-            PM2_LIST=$(pm2 list)
-            echo "📊 PM2 List Output:"
-            echo "$PM2_LIST"
-            echo ""
+            # Wait for services
+            echo "⏳ Waiting for services to start..."
+            sleep 30
             
-            if ! echo "$PM2_LIST" | grep -q "wissen-backend"; then
-              echo "❌ ERROR: wissen-backend not found in PM2!"
-              echo "PM2 status:"
-              pm2 status
-              echo ""
-              echo "PM2 logs:"
-              pm2 logs --lines 30 --nostream
-              exit 1
-            fi
-            
-            if ! echo "$PM2_LIST" | grep -q "wissen-frontend"; then
-              echo "❌ ERROR: wissen-frontend not found in PM2!"
-              echo "PM2 status:"
-              pm2 status
-              echo ""
-              echo "PM2 logs:"
-              pm2 logs --lines 30 --nostream
-              exit 1
-            fi
-            
-            echo "✅ Both processes found in PM2"
-            
-            # Check process status
+            # Verify services
+            echo "🔍 Verifying services..."
             BACKEND_STATUS=$(pm2 jlist | jq -r '.[] | select(.name=="wissen-backend") | .pm2_env.status' 2>/dev/null || echo "unknown")
             FRONTEND_STATUS=$(pm2 jlist | jq -r '.[] | select(.name=="wissen-frontend") | .pm2_env.status' 2>/dev/null || echo "unknown")
-            echo "  Backend status: $BACKEND_STATUS"
-            echo "  Frontend status: $FRONTEND_STATUS"
+            
+            echo "Backend status: $BACKEND_STATUS"
+            echo "Frontend status: $FRONTEND_STATUS"
             
             if [ "$BACKEND_STATUS" != "online" ]; then
-              echo "❌ ERROR: Backend status is '$BACKEND_STATUS', not 'online'"
-              echo "Backend logs:"
-              pm2 logs wissen-backend --lines 50 --nostream
-              echo ""
-              echo "Attempting to restart backend..."
-              pm2 restart wissen-backend
-              sleep 5
-              pm2 logs wissen-backend --lines 20 --nostream
-              # Check status again
-              BACKEND_STATUS=$(pm2 jlist | jq -r '.[] | select(.name=="wissen-backend") | .pm2_env.status' 2>/dev/null || echo "unknown")
-              if [ "$BACKEND_STATUS" != "online" ]; then
-                echo "❌ Backend still not online after restart. Deployment will fail."
-                exit 1
-              fi
+              echo "❌ Backend not online"
+              pm2 logs wissen-backend --lines 30 --nostream
+              exit 1
             fi
             
             if [ "$FRONTEND_STATUS" != "online" ]; then
-              echo "❌ ERROR: Frontend status is '$FRONTEND_STATUS', not 'online'"
-              echo "Frontend logs:"
-              pm2 logs wissen-frontend --lines 50 --nostream
-              echo ""
-              echo "Attempting to restart frontend..."
-              pm2 restart wissen-frontend
-              sleep 5
-              pm2 logs wissen-frontend --lines 20 --nostream
-              # Check status again
-              FRONTEND_STATUS=$(pm2 jlist | jq -r '.[] | select(.name=="wissen-frontend") | .pm2_env.status' 2>/dev/null || echo "unknown")
-              if [ "$FRONTEND_STATUS" != "online" ]; then
-                echo "❌ Frontend still not online after restart. Deployment will fail."
-                exit 1
-              fi
-            fi
-            echo ""
-            
-            # Wait for services to start and verify they're listening
-            echo "⏳ Waiting for services to start (30 seconds)..."
-            sleep 30
-            
-            # Check PM2 status again after wait
-            echo "📊 PM2 Status after wait:"
-            pm2 status
-            echo ""
-            
-            # Check if processes are still running (they might have crashed)
-            PM2_AFTER_WAIT=$(pm2 list)
-            if ! echo "$PM2_AFTER_WAIT" | grep -q "wissen-backend"; then
-              echo "❌ ERROR: Backend process disappeared after start!"
-              echo "This usually means it crashed. Checking logs..."
-              pm2 logs wissen-backend --lines 50 --nostream 2>/dev/null || echo "No logs available"
-              exit 1
-            fi
-            
-            if ! echo "$PM2_AFTER_WAIT" | grep -q "wissen-frontend"; then
-              echo "❌ ERROR: Frontend process disappeared after start!"
-              echo "This usually means it crashed. Checking logs..."
-              pm2 logs wissen-frontend --lines 50 --nostream 2>/dev/null || echo "No logs available"
-              exit 1
-            fi
-            
-            # CRITICAL: Verify services are actually listening on ports
-            echo "🔍 Verifying services are listening on ports..."
-            BACKEND_LISTENING=$(netstat -tln 2>/dev/null | grep -c ":3001 " || echo "0")
-            FRONTEND_LISTENING=$(netstat -tln 2>/dev/null | grep -c ":3000 " || echo "0")
-            
-            if [ "$BACKEND_LISTENING" -eq "0" ]; then
-              echo "❌ ERROR: Backend is NOT listening on port 3001!"
-              echo "PM2 status:"
-              pm2 status
-              echo "Backend logs:"
-              pm2 logs wissen-backend --lines 30 --nostream
-              exit 1
-            else
-              echo "✅ Backend is listening on port 3001"
-            fi
-            
-            if [ "$FRONTEND_LISTENING" -eq "0" ]; then
-              echo "❌ ERROR: Frontend is NOT listening on port 3000!"
-              echo "PM2 status:"
-              pm2 status
-              echo "Frontend logs:"
+              echo "❌ Frontend not online"
               pm2 logs wissen-frontend --lines 30 --nostream
               exit 1
-            else
-              echo "✅ Frontend is listening on port 3000"
-            fi
-            echo ""
-            
-            # VERIFY: Check that the running process is using the new code
-            echo "🔍 VERIFYING: Checking if running code matches deployment..."
-            BACKEND_PID=$(pm2 pid wissen-backend 2>/dev/null || echo "")
-            FRONTEND_PID=$(pm2 pid wissen-frontend 2>/dev/null || echo "")
-            
-            if [ -n "$BACKEND_PID" ]; then
-              BACKEND_CWD=$(pwdx $BACKEND_PID 2>/dev/null | awk '{print $2}' || readlink -f /proc/$BACKEND_PID/cwd 2>/dev/null || echo "unknown")
-              echo "  Backend PID: $BACKEND_PID"
-              echo "  Backend CWD: $BACKEND_CWD"
             fi
             
-            if [ -n "$FRONTEND_PID" ]; then
-              FRONTEND_CWD=$(pwdx $FRONTEND_PID 2>/dev/null | awk '{print $2}' || readlink -f /proc/$FRONTEND_PID/cwd 2>/dev/null || echo "unknown")
-              echo "  Frontend PID: $FRONTEND_PID"
-              echo "  Frontend CWD: $FRONTEND_CWD"
-              
-              # Check if frontend is actually using the new .next directory
-              if [ -d "frontend/.next" ]; then
-                NEXT_BUILD_TIME=$(stat -c %Y frontend/.next/BUILD_ID 2>/dev/null || echo "0")
-                CURRENT_TIME=$(date +%s)
-                BUILD_AGE=$((CURRENT_TIME - NEXT_BUILD_TIME))
-                echo "  Frontend .next build age: $BUILD_AGE seconds"
-                if [ "$BUILD_AGE" -gt 600 ]; then
-                  echo "  ⚠️  WARNING: Frontend build is more than 10 minutes old!"
-                fi
-              fi
-            fi
-            echo ""
+            # Check ports
+            BACKEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3001 " || echo "0")
+            FRONTEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3000 " || echo "0")
             
-            # Show PM2 status
-            echo ""
-            echo "📊 PM2 Status AFTER restart:"
-            pm2 status
-            echo ""
-            
-            # Verify services are running with new code
-            echo "=========================================="
-            echo "🔍 STEP 5: VERIFYING DEPLOYMENT"
-            echo "=========================================="
-            
-            echo "Backend process details:"
-            pm2 describe wissen-backend 2>/dev/null | grep -E "status|pid|uptime|restarts|pm2 env" || echo "❌ Backend not found in PM2"
-            echo ""
-            
-            echo "Frontend process details:"
-            pm2 describe wissen-frontend 2>/dev/null | grep -E "status|pid|uptime|restarts|pm2 env" || echo "❌ Frontend not found in PM2"
-            echo ""
-            
-            # Test if services are responding
-            echo "Testing backend health endpoint..."
-            BACKEND_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health || echo "000")
-            if [ "$BACKEND_HEALTH" = "200" ]; then
-              echo "✅ Backend is responding (HTTP $BACKEND_HEALTH)"
-              curl -s http://localhost:3001/api/health | head -3
-            else
-              echo "❌ Backend not responding (HTTP $BACKEND_HEALTH)"
-            fi
-            echo ""
-            
-            echo "Testing frontend..."
-            FRONTEND_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 || echo "000")
-            if [ "$FRONTEND_RESPONSE" = "200" ]; then
-              echo "✅ Frontend is responding (HTTP $FRONTEND_RESPONSE)"
-              curl -s http://localhost:3000 | head -3
-            else
-              echo "❌ Frontend not responding (HTTP $FRONTEND_RESPONSE)"
-            fi
-            echo ""
-            
-            # Verify code is actually updated
-            echo "Verifying deployed code matches GitHub..."
-            DEPLOYED_COMMIT=$(git rev-parse --short HEAD)
-            echo "📌 Deployed commit: $DEPLOYED_COMMIT"
-            echo "📌 Full commit hash: $(git rev-parse HEAD)"
-            echo ""
-            
-            # VERIFY AGAIN: Check Header.tsx one more time after build
-            echo "🔍 FINAL VERIFICATION: Checking Header.tsx after build..."
-            if grep -q "Contact Us" frontend/src/components/layout/Header.tsx; then
-              echo "✅ Header.tsx still contains 'Contact Us' (source file verified)"
-            else
-              echo "❌ ERROR: Header.tsx lost 'Contact Us' after build!"
+            if [ "$BACKEND_PORT" -eq "0" ]; then
+              echo "❌ Backend not listening on port 3001"
+              pm2 logs wissen-backend --lines 30 --nostream
               exit 1
             fi
             
-            # Check if the built .next contains the change
-            if [ -f "frontend/.next/server/app/layout.js" ] || [ -f "frontend/.next/server/app/layout.js.map" ]; then
-              echo "✅ Frontend build files exist"
-            else
-              echo "⚠️  Frontend build structure may be different (standalone mode)"
-            fi
-            echo ""
-            
-            # Verify build files are recent (within last 2 minutes)
-            echo "🔍 Verifying build files are recent..."
-            BACKEND_BUILD_TIME=$(stat -c %Y backend/dist/main.js 2>/dev/null || echo "0")
-            FRONTEND_BUILD_TIME=$(stat -c %Y frontend/.next/BUILD_ID 2>/dev/null || echo "0")
-            CURRENT_TIME=$(date +%s)
-            BACKEND_AGE=$((CURRENT_TIME - BACKEND_BUILD_TIME))
-            FRONTEND_AGE=$((CURRENT_TIME - FRONTEND_BUILD_TIME))
-            
-            if [ "$BACKEND_AGE" -gt 300 ]; then
-              echo "⚠️  WARNING: Backend build is $BACKEND_AGE seconds old (may be stale)"
-            else
-              echo "✅ Backend build is fresh ($BACKEND_AGE seconds old)"
+            if [ "$FRONTEND_PORT" -eq "0" ]; then
+              echo "❌ Frontend not listening on port 3000"
+              pm2 logs wissen-frontend --lines 30 --nostream
+              exit 1
             fi
             
-            if [ "$FRONTEND_AGE" -gt 300 ]; then
-              echo "⚠️  WARNING: Frontend build is $FRONTEND_AGE seconds old (may be stale)"
-            else
-              echo "✅ Frontend build is fresh ($FRONTEND_AGE seconds old)"
-            fi
-            echo ""
+            # Test localhost
+            BACKEND_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health 2>/dev/null || echo "000")
+            FRONTEND_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null || echo "000")
             
-            # Check if PM2 is using the correct working directory
-            echo "🔍 Verifying PM2 working directories..."
-            BACKEND_CWD=$(pm2 describe wissen-backend 2>/dev/null | grep "cwd" | awk '{print $2}' || echo "unknown")
-            FRONTEND_CWD=$(pm2 describe wissen-frontend 2>/dev/null | grep "cwd" | awk '{print $2}' || echo "unknown")
-            echo "  Backend CWD: $BACKEND_CWD"
-            echo "  Frontend CWD: $FRONTEND_CWD"
-            echo ""
+            echo "Backend health: HTTP $BACKEND_HEALTH"
+            echo "Frontend health: HTTP $FRONTEND_HEALTH"
+            
+            if [ "$BACKEND_HEALTH" != "200" ]; then
+              echo "❌ Backend health check failed"
+              pm2 logs wissen-backend --lines 30 --nostream
+              exit 1
+            fi
+            
+            if [ "$FRONTEND_HEALTH" != "200" ]; then
+              echo "❌ Frontend health check failed"
+              pm2 logs wissen-frontend --lines 30 --nostream
+              exit 1
+            fi
             
             # Reload Nginx
-            echo "=========================================="
-            echo "🔄 STEP 6: RELOADING NGINX"
-            echo "=========================================="
-            if sudo nginx -t; then
-              echo "✅ Nginx configuration is valid"
-              sudo systemctl reload nginx
-              echo "✅ Nginx reloaded"
-            else
-              echo "❌ Nginx configuration test failed!"
-              exit 1
-            fi
-            echo ""
+            sudo nginx -t && sudo systemctl reload nginx || echo "⚠️  Nginx reload failed"
             
             echo "=========================================="
             echo "✅ DEPLOYMENT COMPLETE!"
             echo "=========================================="
-            echo "🌐 Application URL: http://${{ secrets.EC2_DOMAIN }}"
-            echo "📅 Deployment timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
-            echo "📌 Deployed commit: $DEPLOYED_COMMIT"
-            echo "📝 Commit message: $COMMIT_MSG"
-            echo ""
-            echo "🔍 Final verification:"
-            echo "  - Backend status: $(pm2 jlist | grep -o '"name":"wissen-backend"[^}]*"status":"[^"]*' | grep -o '"status":"[^"]*' | cut -d'"' -f4 || echo 'unknown')"
-            echo "  - Frontend status: $(pm2 jlist | grep -o '"name":"wissen-frontend"[^}]*"status":"[^"]*' | grep -o '"status":"[^"]*' | cut -d'"' -f4 || echo 'unknown')"
-            echo "  - Backend uptime: $(pm2 describe wissen-backend 2>/dev/null | grep 'uptime' || echo 'N/A')"
-            echo "  - Frontend uptime: $(pm2 describe wissen-frontend 2>/dev/null | grep 'uptime' || echo 'N/A')"
-            echo ""
-            
-            # CRITICAL: Verify the actual HTML being served contains our changes
-            echo "🔍 CRITICAL: Verifying served HTML contains changes..."
-            sleep 10
-            
-            # First check if frontend is responding at all
-            FRONTEND_RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null || echo "000")
-            echo "Frontend response code: $FRONTEND_RESPONSE_CODE"
-            
-            if [ "$FRONTEND_RESPONSE_CODE" != "200" ]; then
-              echo "❌ ERROR: Frontend is not responding (HTTP $FRONTEND_RESPONSE_CODE)"
-              echo "PM2 status:"
-              pm2 status
-              echo ""
-              echo "Frontend logs:"
-              pm2 logs wissen-frontend --lines 50 --nostream
-              echo ""
-              echo "Checking if port 3000 is listening:"
-              netstat -tln | grep ":3000" || echo "Port 3000 is NOT listening"
-              exit 1
-            fi
-            
-            FRONTEND_HTML=$(curl -s http://localhost:3000 2>/dev/null || echo "")
-            if [ -z "$FRONTEND_HTML" ]; then
-              echo "❌ ERROR: Frontend returned empty response!"
-              echo "PM2 logs:"
-              pm2 logs wissen-frontend --lines 50 --nostream
-              exit 1
-            fi
-            
-            if echo "$FRONTEND_HTML" | grep -q "Contact Us"; then
-              echo "✅ VERIFIED: Frontend HTML contains 'Contact Us'"
-            else
-              echo "❌ ERROR: Frontend HTML does NOT contain 'Contact Us'!"
-              echo "This means the new code is NOT being served!"
-              echo "Checking PM2 logs..."
-              pm2 logs wissen-frontend --lines 50 --nostream
-              echo ""
-              echo "Checking if .next directory exists and has correct structure..."
-              ls -la frontend/.next/ 2>/dev/null | head -20
-              echo ""
-              echo "First 200 characters of HTML response:"
-              echo "$FRONTEND_HTML" | head -c 200
-              exit 1
-            fi
-            
-            if echo "$FRONTEND_HTML" | grep -q "AWS Deployed v2"; then
-              echo "✅ VERIFIED: Frontend HTML contains 'AWS Deployed v2'"
-            else
-              echo "⚠️  WARNING: Frontend HTML does NOT contain 'AWS Deployed v2'"
-            fi
-            
-            # Check Next.js build ID
-            if [ -f "frontend/.next/BUILD_ID" ]; then
-              BUILD_ID=$(cat frontend/.next/BUILD_ID)
-              echo "📦 Next.js BUILD_ID: $BUILD_ID"
-            fi
-            
-            echo ""
-            echo "=========================================="
-            
-            # FINAL CHECK: Verify services are actually running before ending SSH session
-            echo "🔍 FINAL CHECK: Verifying services before ending deployment..."
-            sleep 5
-            
-            PM2_FINAL_STATUS=$(pm2 status)
-            echo "📊 Final PM2 Status:"
-            echo "$PM2_FINAL_STATUS"
-            echo ""
-            
-            # Check if services are online
-            BACKEND_ONLINE=$(echo "$PM2_FINAL_STATUS" | grep "wissen-backend" | grep -q "online" && echo "yes" || echo "no")
-            FRONTEND_ONLINE=$(echo "$PM2_FINAL_STATUS" | grep "wissen-frontend" | grep -q "online" && echo "yes" || echo "no")
-            
-            if [ "$BACKEND_ONLINE" = "no" ]; then
-              echo "❌ CRITICAL: Backend is NOT online!"
-              echo "Backend logs:"
-              pm2 logs wissen-backend --lines 50 --nostream
-            else
-              echo "✅ Backend is online"
-            fi
-            
-            if [ "$FRONTEND_ONLINE" = "no" ]; then
-              echo "❌ CRITICAL: Frontend is NOT online!"
-              echo "Frontend logs:"
-              pm2 logs wissen-frontend --lines 50 --nostream
-            else
-              echo "✅ Frontend is online"
-            fi
-            
-            # Test localhost endpoints
-            echo ""
-            echo "Testing localhost endpoints..."
-            BACKEND_LOCAL=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health 2>/dev/null || echo "000")
-            FRONTEND_LOCAL=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null || echo "000")
-            
-            echo "  Backend localhost:3001/api/health = HTTP $BACKEND_LOCAL"
-            echo "  Frontend localhost:3000 = HTTP $FRONTEND_LOCAL"
-            
-            if [ "$BACKEND_LOCAL" != "200" ]; then
-              echo "❌ CRITICAL: Backend not responding on localhost (HTTP $BACKEND_LOCAL)"
-              echo "Showing backend logs for debugging:"
-              pm2 logs wissen-backend --lines 50 --nostream || echo "Could not get backend logs"
-              echo ""
-              echo "⚠️  Deployment will continue but backend is not working"
-              # Don't exit - let's see if frontend works
-            fi
-            
-            if [ "$FRONTEND_LOCAL" != "200" ]; then
-              echo "❌ CRITICAL: Frontend not responding on localhost (HTTP $FRONTEND_LOCAL)"
-              echo "Showing frontend logs for debugging:"
-              pm2 logs wissen-frontend --lines 50 --nostream || echo "Could not get frontend logs"
-              echo ""
-              echo "⚠️  Deployment will continue but frontend is not working"
-              # Don't exit - we want to see the diagnostic output
-            fi
-            
-            # Show port status
-            echo ""
-            echo "Port listening status:"
-            netstat -tln 2>/dev/null | grep -E ":3000|:3001" || echo "No services listening on ports 3000 or 3001"
-            
-            echo ""
-            echo "=========================================="
+            echo "🌐 Application: http://${{ secrets.EC2_DOMAIN }}"
+            echo "📌 Commit: $NEW_COMMIT"
           ENDSSH
-
-      - name: Diagnostic Check
-        if: always()
-        run: |
-          echo "=========================================="
-          echo "🔍 DIAGNOSTIC CHECK (Always Runs)"
-          echo "=========================================="
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'DIAGSSH'
-            cd /var/www/wissen-publication-group
-            echo "1. PM2 Status:"
-            pm2 status || echo "PM2 not running"
-            echo ""
-            echo "2. PM2 List:"
-            pm2 list || echo "PM2 list failed"
-            echo ""
-            echo "3. PM2 Process Details:"
-            echo "Backend:"
-            pm2 describe wissen-backend 2>/dev/null || echo "Backend not found"
-            echo ""
-            echo "Frontend:"
-            pm2 describe wissen-frontend 2>/dev/null || echo "Frontend not found"
-            echo ""
-            echo "4. Port Status:"
-            netstat -tln 2>/dev/null | grep -E ":3000|:3001|:80" || echo "No services on ports 3000/3001/80"
-            echo ""
-            echo "5. Process Status:"
-            ps aux | grep -E "node|npm" | grep -v grep || echo "No node processes running"
-            echo ""
-            echo "6. Testing localhost:"
-            echo "Backend:"
-            curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3001/api/health 2>/dev/null || echo "FAILED"
-            echo "Frontend:"
-            curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3000 2>/dev/null || echo "FAILED"
-            echo ""
-            echo "7. Nginx Status:"
-            sudo systemctl status nginx --no-pager | head -5 || echo "Nginx not running"
-            echo ""
-            echo "8. PM2 Logs (last 30 lines each):"
-            echo "Backend logs:"
-            pm2 logs wissen-backend --lines 30 --nostream 2>/dev/null || echo "Could not get backend logs"
-            echo ""
-            echo "Frontend logs:"
-            pm2 logs wissen-frontend --lines 30 --nostream 2>/dev/null || echo "Could not get frontend logs"
-            echo ""
-            echo "9. Check if build files exist:"
-            ls -lh backend/dist/main.js 2>/dev/null || echo "Backend build file missing"
-            ls -ld frontend/.next 2>/dev/null || echo "Frontend build directory missing"
-          DIAGSSH
 
       - name: Verify deployment
         run: |
-          echo "=========================================="
-          echo "🔍 FINAL VERIFICATION FROM GITHUB ACTIONS"
-          echo "=========================================="
-          echo "Waiting 45 seconds for services to fully start..."
-          sleep 45
-          
+          sleep 20
           EC2_HOST="${{ secrets.EC2_HOST }}"
-          
-          echo ""
-          echo "Testing backend health endpoint..."
           BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${EC2_HOST}/api/health" 2>&1 || echo "000")
-          if [ "$BACKEND_STATUS" = "200" ]; then
-            echo "✅ Backend health check passed (HTTP $BACKEND_STATUS)"
-            curl -s "http://${EC2_HOST}/api/health" 2>&1 | head -5
-          else
-            echo "❌ Backend health check failed (HTTP $BACKEND_STATUS)"
-            echo "⚠️  This might be normal if services are still starting"
-            echo "⚠️  Check the deployment logs above to see if services started correctly"
-          fi
-          echo ""
-          
-          echo "Testing frontend..."
           FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${EC2_HOST}/" 2>&1 || echo "000")
-          if [ "$FRONTEND_STATUS" = "200" ]; then
-            echo "✅ Frontend is accessible (HTTP $FRONTEND_STATUS)"
-            echo ""
-            echo "Checking if frontend HTML contains 'Contact Us'..."
-            FRONTEND_HTML=$(curl -s "http://${EC2_HOST}/" 2>&1)
-            if echo "$FRONTEND_HTML" | grep -q "Contact Us"; then
-              echo "✅ Frontend HTML contains 'Contact Us' - deployment successful!"
-            else
-              echo "❌ Frontend HTML does NOT contain 'Contact Us' - deployment may have failed"
-              echo "First 100 lines of HTML:"
-              echo "$FRONTEND_HTML" | head -100
-            fi
-            echo ""
-            echo "Checking if frontend HTML contains 'AWS Deployed v2'..."
-            if echo "$FRONTEND_HTML" | grep -q "AWS Deployed v2"; then
-              echo "✅ Frontend HTML contains 'AWS Deployed v2' - deployment badge is present!"
-            else
-              echo "⚠️  Frontend HTML does NOT contain 'AWS Deployed v2' - badge may not be showing"
-            fi
+          echo "Backend: HTTP $BACKEND_STATUS"
+          echo "Frontend: HTTP $FRONTEND_STATUS"
+          if [ "$BACKEND_STATUS" = "200" ] && [ "$FRONTEND_STATUS" = "200" ]; then
+            echo "✅ Deployment successful!"
           else
-            echo "❌ Frontend check failed (HTTP $FRONTEND_STATUS)"
-            echo "⚠️  This might be normal if services are still starting"
-            echo "⚠️  Check the deployment logs above to see if services started correctly"
+            echo "⚠️  Services may still be starting"
           fi
-          echo ""
-          echo "=========================================="
-          echo "💡 TIP: If health checks failed, wait 1-2 minutes and try accessing"
-          echo "   http://${EC2_HOST}/ in your browser"
-          echo "=========================================="
-
