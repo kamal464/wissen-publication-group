@@ -184,6 +184,12 @@ jobs:
             echo "🔨 Building frontend..."
             export NEXT_PUBLIC_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
             echo "📅 Build timestamp: $NEXT_PUBLIC_BUILD_TIME"
+            echo "📅 Setting NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME"
+            # Set it in .env.production as well for Next.js to pick up
+            echo "NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME" >> .env.production
+            echo "📋 .env.production contents:"
+            cat .env.production
+            echo ""
             NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME npm run build
             if [ -d ".next" ]; then
               echo "✅ Frontend built successfully"
