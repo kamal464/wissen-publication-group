@@ -253,18 +253,52 @@ jobs:
             
             # Verify processes started
             echo "🔍 Verifying processes started..."
-            sleep 2
-            if ! pm2 list | grep -q "wissen-backend"; then
+            sleep 3
+            PM2_LIST=$(pm2 list)
+            echo "📊 PM2 List Output:"
+            echo "$PM2_LIST"
+            echo ""
+            
+            if ! echo "$PM2_LIST" | grep -q "wissen-backend"; then
               echo "❌ ERROR: wissen-backend not found in PM2!"
-              pm2 logs --lines 20
+              echo "PM2 status:"
+              pm2 status
+              echo ""
+              echo "PM2 logs:"
+              pm2 logs --lines 30 --nostream
               exit 1
             fi
-            if ! pm2 list | grep -q "wissen-frontend"; then
+            
+            if ! echo "$PM2_LIST" | grep -q "wissen-frontend"; then
               echo "❌ ERROR: wissen-frontend not found in PM2!"
-              pm2 logs --lines 20
+              echo "PM2 status:"
+              pm2 status
+              echo ""
+              echo "PM2 logs:"
+              pm2 logs --lines 30 --nostream
               exit 1
             fi
+            
             echo "✅ Both processes found in PM2"
+            
+            # Check process status
+            BACKEND_STATUS=$(pm2 jlist | jq -r '.[] | select(.name=="wissen-backend") | .pm2_env.status' 2>/dev/null || echo "unknown")
+            FRONTEND_STATUS=$(pm2 jlist | jq -r '.[] | select(.name=="wissen-frontend") | .pm2_env.status' 2>/dev/null || echo "unknown")
+            echo "  Backend status: $BACKEND_STATUS"
+            echo "  Frontend status: $FRONTEND_STATUS"
+            
+            if [ "$BACKEND_STATUS" != "online" ]; then
+              echo "⚠️  WARNING: Backend status is '$BACKEND_STATUS', not 'online'"
+              echo "Backend logs:"
+              pm2 logs wissen-backend --lines 30 --nostream
+            fi
+            
+            if [ "$FRONTEND_STATUS" != "online" ]; then
+              echo "⚠️  WARNING: Frontend status is '$FRONTEND_STATUS', not 'online'"
+              echo "Frontend logs:"
+              pm2 logs wissen-frontend --lines 30 --nostream
+            fi
+            echo ""
             
             # Wait for services to start and verify they're listening
             echo "⏳ Waiting for services to start (20 seconds)..."
@@ -451,18 +485,46 @@ jobs:
             
             # CRITICAL: Verify the actual HTML being served contains our changes
             echo "🔍 CRITICAL: Verifying served HTML contains changes..."
-            sleep 5
+            sleep 10
+            
+            # First check if frontend is responding at all
+            FRONTEND_RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null || echo "000")
+            echo "Frontend response code: $FRONTEND_RESPONSE_CODE"
+            
+            if [ "$FRONTEND_RESPONSE_CODE" != "200" ]; then
+              echo "❌ ERROR: Frontend is not responding (HTTP $FRONTEND_RESPONSE_CODE)"
+              echo "PM2 status:"
+              pm2 status
+              echo ""
+              echo "Frontend logs:"
+              pm2 logs wissen-frontend --lines 50 --nostream
+              echo ""
+              echo "Checking if port 3000 is listening:"
+              netstat -tln | grep ":3000" || echo "Port 3000 is NOT listening"
+              exit 1
+            fi
+            
             FRONTEND_HTML=$(curl -s http://localhost:3000 2>/dev/null || echo "")
+            if [ -z "$FRONTEND_HTML" ]; then
+              echo "❌ ERROR: Frontend returned empty response!"
+              echo "PM2 logs:"
+              pm2 logs wissen-frontend --lines 50 --nostream
+              exit 1
+            fi
+            
             if echo "$FRONTEND_HTML" | grep -q "Contact Us"; then
               echo "✅ VERIFIED: Frontend HTML contains 'Contact Us'"
             else
               echo "❌ ERROR: Frontend HTML does NOT contain 'Contact Us'!"
               echo "This means the new code is NOT being served!"
               echo "Checking PM2 logs..."
-              pm2 logs wissen-frontend --lines 20 --nostream
+              pm2 logs wissen-frontend --lines 50 --nostream
               echo ""
               echo "Checking if .next directory exists and has correct structure..."
               ls -la frontend/.next/ 2>/dev/null | head -20
+              echo ""
+              echo "First 200 characters of HTML response:"
+              echo "$FRONTEND_HTML" | head -c 200
               exit 1
             fi
             
