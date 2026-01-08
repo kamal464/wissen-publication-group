@@ -3,8 +3,8 @@ module.exports = {
     {
       name: 'wissen-backend',
       cwd: './backend',
-      script: 'npm',
-      args: 'start',
+      script: 'node',
+      args: 'dist/main.js',
       env: {
         NODE_ENV: 'production',
         PORT: 3001,
