@@ -247,9 +247,41 @@ jobs:
             if [ -n "$DB_PASSWORD" ] && [ "$DB_PASSWORD" != "" ]; then
               echo "✅ Using local PostgreSQL (localhost) - DB_PASSWORD provided"
               # URL encode the password to handle special characters
-              DB_PASSWORD_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${DB_PASSWORD}', safe=''))" 2>/dev/null || echo "${DB_PASSWORD}")
+              echo "   Encoding password..."
+              # Try to URL encode the password, capture both stdout and stderr separately
+              DB_PASSWORD_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${DB_PASSWORD}', safe=''))" 2>/tmp/python_error.log)
+              PYTHON_EXIT_CODE=$?
+              
+              if [ $PYTHON_EXIT_CODE -ne 0 ] || [ -z "$DB_PASSWORD_ENCODED" ]; then
+                echo "   ⚠️  Python encoding failed (exit code: $PYTHON_EXIT_CODE), using password as-is"
+                if [ -f /tmp/python_error.log ]; then
+                  echo "   Python error: $(cat /tmp/python_error.log)"
+                fi
+                DB_PASSWORD_ENCODED="${DB_PASSWORD}"
+              else
+                # Remove any trailing newlines or whitespace
+                DB_PASSWORD_ENCODED=$(echo "$DB_PASSWORD_ENCODED" | tr -d '\n\r' | sed 's/[[:space:]]*$//')
+              fi
+              
+              if [ -z "$DB_PASSWORD_ENCODED" ]; then
+                echo "   ❌ ERROR: DB_PASSWORD_ENCODED is still empty after encoding attempt!"
+                exit 1
+              fi
+              
+              echo "   Password encoded (length: ${#DB_PASSWORD_ENCODED})"
+              
               FINAL_DATABASE_URL="postgresql://postgres:${DB_PASSWORD_ENCODED}@localhost:5432/wissen_publication_group"
+              
+              # Verify assignment worked
+              if [ -z "$FINAL_DATABASE_URL" ] || [ "$FINAL_DATABASE_URL" = "" ]; then
+                echo "   ❌ ERROR: FINAL_DATABASE_URL assignment failed!"
+                echo "   DB_PASSWORD_ENCODED: '${DB_PASSWORD_ENCODED}'"
+                exit 1
+              fi
+              
               echo "   Connection: postgresql://postgres:***@localhost:5432/wissen_publication_group"
+              echo "   FINAL_DATABASE_URL length: ${#FINAL_DATABASE_URL}"
+              echo "   FINAL_DATABASE_URL preview: ${FINAL_DATABASE_URL:0:60}..."
             # Priority 2: Use AWS RDS if credentials are provided
             elif [ -n "$DB_HOST" ] && [ -n "$DB_USER" ] && [ -n "$DB_PASSWORD" ] && [ -n "$DB_NAME" ]; then
               echo "✅ Constructing DATABASE_URL from AWS RDS credentials"
@@ -284,9 +316,14 @@ jobs:
             # Verify FINAL_DATABASE_URL is set
             if [ -z "$FINAL_DATABASE_URL" ] || [ "$FINAL_DATABASE_URL" = "" ]; then
               echo "❌ ERROR: FINAL_DATABASE_URL is empty after construction!"
+              echo "Debug info:"
+              echo "   DB_PASSWORD is set: $([ -n "$DB_PASSWORD" ] && echo 'YES (length: '${#DB_PASSWORD}')' || echo 'NO')"
+              echo "   DB_PASSWORD_ENCODED is set: $([ -n "$DB_PASSWORD_ENCODED" ] && echo 'YES (length: '${#DB_PASSWORD_ENCODED}')' || echo 'NO')"
+              echo "   FINAL_DATABASE_URL value: '${FINAL_DATABASE_URL}'"
               exit 1
             fi
             echo "✅ FINAL_DATABASE_URL is set (length: ${#FINAL_DATABASE_URL} characters)"
+            echo "   First 50 chars: ${FINAL_DATABASE_URL:0:50}..."
             
             {
               echo "DATABASE_URL=${FINAL_DATABASE_URL}"
