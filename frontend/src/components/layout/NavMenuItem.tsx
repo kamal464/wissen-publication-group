@@ -18,8 +18,9 @@ export default function NavMenuItem({ label, href, variant }: NavMenuItemProps) 
     <Link
       href={href}
       className={`header__nav-link${isActive ? ' header__nav-link--active' : ''}${variantClass}`}
+      suppressHydrationWarning
     >
-      {label}
+      <span suppressHydrationWarning>{label}</span>
     </Link>
   );
 }

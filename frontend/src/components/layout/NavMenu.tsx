@@ -16,7 +16,7 @@ export default function NavMenu({ items }: NavMenuProps) {
   }));
 
   return (
-    <div className="header__nav" aria-label="Primary navigation">
+    <div className="header__nav" aria-label="Primary navigation" suppressHydrationWarning>
       <Menubar model={model} className="header__nav-menubar" />
     </div>
   );
