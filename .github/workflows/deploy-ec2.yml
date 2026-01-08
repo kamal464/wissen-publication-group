@@ -32,8 +32,16 @@ jobs:
           chmod 644 ~/.ssh/known_hosts
 
       - name: Deploy to EC2
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+          CLOUDFRONT_URL: ${{ secrets.CLOUDFRONT_URL }}
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'ENDSSH'
+          ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} << 'ENDSSH'
             set -x
             cd /var/www/wissen-publication-group || { echo "❌ Directory not found"; exit 1; }
             
@@ -52,18 +60,18 @@ jobs:
             echo "📌 Deployed commit: $NEW_COMMIT"
             
             {
-              echo "DATABASE_URL=postgresql://postgres:${{ secrets.DB_PASSWORD }}@localhost:5432/wissen_publication_group"
+              echo "DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@localhost:5432/wissen_publication_group"
               echo "NODE_ENV=production"
               echo "PORT=3001"
-              echo "CORS_ORIGIN=http://${{ secrets.EC2_HOST }},http://localhost:3000,http://localhost:3002"
-              echo "AWS_REGION=${{ secrets.AWS_REGION }}"
-              echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}"
-              echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-              echo "S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}"
-              echo "CLOUDFRONT_URL=${{ secrets.CLOUDFRONT_URL }}"
+              echo "CORS_ORIGIN=http://${EC2_HOST},http://localhost:3000,http://localhost:3002"
+              echo "AWS_REGION=${AWS_REGION}"
+              echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
+              echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
+              echo "S3_BUCKET_NAME=${S3_BUCKET_NAME}"
+              echo "CLOUDFRONT_URL=${CLOUDFRONT_URL}"
             } > backend/.env
             
-            echo "NEXT_PUBLIC_API_URL=http://${{ secrets.EC2_HOST }}/api" > frontend/.env.production
+            echo "NEXT_PUBLIC_API_URL=http://${EC2_HOST}/api" > frontend/.env.production
             export NEXT_PUBLIC_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
             echo "NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME" >> frontend/.env.production
             
@@ -174,7 +182,7 @@ jobs:
             echo "=========================================="
             echo "✅ DEPLOYMENT COMPLETE!"
             echo "=========================================="
-            echo "🌐 Application: http://${{ secrets.EC2_HOST }}"
+            echo "🌐 Application: http://${EC2_HOST}"
             echo "📌 Commit: $NEW_COMMIT"
           ENDSSH
 
