@@ -163,14 +163,15 @@ jobs:
             
             # Install dependencies
             echo "Installing backend dependencies..."
-            if ! npm ci; then
-              echo "❌ npm ci failed"
-              echo "Trying npm install..."
-              npm install || {
-                echo "❌ npm install also failed"
+            echo "This may take a few minutes - keeping connection alive..."
+            if ! timeout 600 npm ci; then
+              echo "⚠️  npm ci timed out or failed, trying npm install..."
+              if ! timeout 600 npm install; then
+                echo "❌ npm install also failed or timed out"
                 exit 1
-              }
+              fi
             fi
+            echo "✅ Backend dependencies installed"
             
             # Verify nest CLI is available
             if ! command -v nest &> /dev/null && ! npx nest --version &> /dev/null; then
@@ -215,7 +216,15 @@ jobs:
             
             echo "🔨 Building frontend..."
             cd frontend
-            npm ci
+            echo "Installing frontend dependencies (this may take a few minutes)..."
+            if ! timeout 600 npm ci; then
+              echo "⚠️  Frontend npm ci timed out or failed, trying npm install..."
+              if ! timeout 600 npm install; then
+                echo "❌ Frontend npm install also failed or timed out"
+                exit 1
+              fi
+            fi
+            echo "✅ Frontend dependencies installed"
             rm -rf .next node_modules/.cache .swc
             echo "📝 Building with API URL: http://${EC2_HOST}/api"
             echo "📝 Build time: $NEXT_PUBLIC_BUILD_TIME"
