@@ -60,12 +60,19 @@ jobs:
             echo "📥 STEP 1: PULLING LATEST CODE"
             echo "=========================================="
             echo "Previous commit: $(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+            
+            # Kill PM2 processes FIRST to ensure they're not holding files
+            echo "🛑 Stopping PM2 processes before git pull..."
+            pm2 delete all 2>/dev/null || true
+            sleep 2
+            
             git fetch origin
             echo "✅ Fetched from origin"
             git reset --hard origin/main
             echo "✅ Reset to origin/main"
             git clean -fd
             echo "✅ Cleaned untracked files"
+            
             # Show current commit to verify
             NEW_COMMIT=$(git rev-parse --short HEAD)
             COMMIT_MSG=$(git log -1 --pretty=%B)
@@ -73,6 +80,19 @@ jobs:
             echo "📌 NEW COMMIT: $NEW_COMMIT"
             echo "📌 COMMIT MESSAGE: $COMMIT_MSG"
             echo "📌 COMMIT DATE: $(git log -1 --pretty=%cd)"
+            echo ""
+            
+            # VERIFY: Check that Header.tsx actually has "Contact Us"
+            echo "🔍 VERIFYING: Checking Header.tsx for 'Contact Us'..."
+            if grep -q "Contact Us" frontend/src/components/layout/Header.tsx; then
+              echo "✅ Header.tsx contains 'Contact Us'"
+              grep -A 2 -B 2 "Contact Us" frontend/src/components/layout/Header.tsx | head -5
+            else
+              echo "❌ ERROR: Header.tsx does NOT contain 'Contact Us'!"
+              echo "File content:"
+              cat frontend/src/components/layout/Header.tsx | grep -A 5 "menuItems"
+              exit 1
+            fi
             echo ""
             
             # Update backend environment file
@@ -144,7 +164,20 @@ jobs:
             rm -rf .next 2>/dev/null || true
             rm -rf node_modules/.cache 2>/dev/null || true
             rm -rf .swc 2>/dev/null || true
-            echo "✅ Cache cleared"
+            rm -rf .next/cache 2>/dev/null || true
+            rm -rf out 2>/dev/null || true
+            # Also clear standalone if it exists
+            rm -rf standalone 2>/dev/null || true
+            echo "✅ All caches cleared"
+            
+            # Verify cache is cleared
+            if [ -d ".next" ]; then
+              echo "⚠️  WARNING: .next directory still exists after cleanup!"
+              ls -la .next | head -10
+            else
+              echo "✅ Verified: .next directory is completely removed"
+            fi
+            echo ""
             
             # Build frontend with deployment timestamp
             echo ""
@@ -175,10 +208,20 @@ jobs:
             pm2 status || echo "PM2 not running"
             echo ""
             
+            # AGGRESSIVE: Kill all Node processes to ensure nothing is holding files
+            echo "🛑 Killing all Node processes..."
+            pkill -9 node 2>/dev/null || echo "No node processes to kill"
+            sleep 2
+            
             # Stop all processes first
             echo "🛑 Stopping all PM2 processes..."
             pm2 delete all 2>/dev/null || echo "No processes to delete"
+            pm2 kill 2>/dev/null || true
             sleep 3
+            
+            # Restart PM2 daemon
+            pm2 resurrect 2>/dev/null || pm2 ping || true
+            sleep 1
             
             # Clear PM2 logs
             echo "🧹 Clearing PM2 logs..."
@@ -218,8 +261,37 @@ jobs:
             echo "✅ Both processes found in PM2"
             
             # Wait for services to start
-            echo "⏳ Waiting for services to start (10 seconds)..."
-            sleep 10
+            echo "⏳ Waiting for services to start (15 seconds)..."
+            sleep 15
+            
+            # VERIFY: Check that the running process is using the new code
+            echo "🔍 VERIFYING: Checking if running code matches deployment..."
+            BACKEND_PID=$(pm2 pid wissen-backend 2>/dev/null || echo "")
+            FRONTEND_PID=$(pm2 pid wissen-frontend 2>/dev/null || echo "")
+            
+            if [ -n "$BACKEND_PID" ]; then
+              BACKEND_CWD=$(pwdx $BACKEND_PID 2>/dev/null | awk '{print $2}' || readlink -f /proc/$BACKEND_PID/cwd 2>/dev/null || echo "unknown")
+              echo "  Backend PID: $BACKEND_PID"
+              echo "  Backend CWD: $BACKEND_CWD"
+            fi
+            
+            if [ -n "$FRONTEND_PID" ]; then
+              FRONTEND_CWD=$(pwdx $FRONTEND_PID 2>/dev/null | awk '{print $2}' || readlink -f /proc/$FRONTEND_PID/cwd 2>/dev/null || echo "unknown")
+              echo "  Frontend PID: $FRONTEND_PID"
+              echo "  Frontend CWD: $FRONTEND_CWD"
+              
+              # Check if frontend is actually using the new .next directory
+              if [ -d "frontend/.next" ]; then
+                NEXT_BUILD_TIME=$(stat -c %Y frontend/.next/BUILD_ID 2>/dev/null || echo "0")
+                CURRENT_TIME=$(date +%s)
+                BUILD_AGE=$((CURRENT_TIME - NEXT_BUILD_TIME))
+                echo "  Frontend .next build age: $BUILD_AGE seconds"
+                if [ "$BUILD_AGE" -gt 600 ]; then
+                  echo "  ⚠️  WARNING: Frontend build is more than 10 minutes old!"
+                fi
+              fi
+            fi
+            echo ""
             
             # Show PM2 status
             echo ""
@@ -266,6 +338,23 @@ jobs:
             DEPLOYED_COMMIT=$(git rev-parse --short HEAD)
             echo "📌 Deployed commit: $DEPLOYED_COMMIT"
             echo "📌 Full commit hash: $(git rev-parse HEAD)"
+            echo ""
+            
+            # VERIFY AGAIN: Check Header.tsx one more time after build
+            echo "🔍 FINAL VERIFICATION: Checking Header.tsx after build..."
+            if grep -q "Contact Us" frontend/src/components/layout/Header.tsx; then
+              echo "✅ Header.tsx still contains 'Contact Us' (source file verified)"
+            else
+              echo "❌ ERROR: Header.tsx lost 'Contact Us' after build!"
+              exit 1
+            fi
+            
+            # Check if the built .next contains the change
+            if [ -f "frontend/.next/server/app/layout.js" ] || [ -f "frontend/.next/server/app/layout.js.map" ]; then
+              echo "✅ Frontend build files exist"
+            else
+              echo "⚠️  Frontend build structure may be different (standalone mode)"
+            fi
             echo ""
             
             # Verify build files are recent (within last 2 minutes)

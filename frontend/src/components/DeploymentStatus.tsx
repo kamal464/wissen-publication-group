@@ -58,7 +58,7 @@ export default function DeploymentStatus() {
         animation: 'pulse 2s infinite',
         boxShadow: '0 0 8px rgba(74, 222, 128, 0.6)'
       }} />
-      <span>🚀 AWS Deployed</span>
+      <span>🚀 AWS Deployed v2</span>
       <span style={{ opacity: 0.8, fontSize: '10px' }}>{formattedDate}</span>
       <style jsx>{`
         @keyframes pulse {
