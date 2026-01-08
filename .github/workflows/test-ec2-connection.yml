@@ -1,10 +1,8 @@
 name: Test EC2 Connection
 
 on:
-  workflow_dispatch: # Manual trigger only
-  push:
-    branches:
-      - main
+  workflow_dispatch: # Manual trigger only - for testing
+  # Removed push trigger - this is just for testing connection
 
 jobs:
   test-connection:
