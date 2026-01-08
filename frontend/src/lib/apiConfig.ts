@@ -71,7 +71,7 @@ export const getApiBaseUrl = (): string => {
     apiUrl = process.env.NEXT_PUBLIC_API_URL;
   }
 
-  // Normalize the URL
+  // Normalize the URL - CRITICAL: Always return absolute URL
   if (apiUrl) {
     // Ensure it's a full URL (starts with http:// or https://)
     if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
@@ -79,16 +79,20 @@ export const getApiBaseUrl = (): string => {
       if (typeof window !== 'undefined') {
         const protocol = window.location.protocol;
         const host = window.location.host;
-        apiUrl = `${protocol}//${host}${apiUrl.startsWith('/') ? '' : '/'}${apiUrl}`;
+        // Handle both /api and api formats
+        const cleanPath = apiUrl.startsWith('/') ? apiUrl : `/${apiUrl}`;
+        apiUrl = `${protocol}//${host}${cleanPath}`;
       } else {
         // Server-side: can't determine host, return as-is (shouldn't happen)
         console.warn('API URL is relative on server-side:', apiUrl);
       }
     }
     
-    // Ensure it ends with /api
+    // Ensure it ends with /api (but don't double it)
     if (apiUrl.endsWith('/api')) {
       return apiUrl;
+    } else if (apiUrl.endsWith('/api/')) {
+      return apiUrl.slice(0, -1); // Remove trailing slash
     } else if (apiUrl.endsWith('/')) {
       return `${apiUrl}api`;
     } else {
@@ -97,6 +101,11 @@ export const getApiBaseUrl = (): string => {
   }
 
   // Final fallback: development localhost
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol;
+    const host = window.location.host;
+    return `${protocol}//${host}/api`;
+  }
   return `${DEVELOPMENT_BACKEND_URL}/api`;
 };
 
