@@ -60,6 +60,29 @@ jobs:
           
           echo "✅ SSH setup complete"
 
+      - name: Test SSH Connection
+        run: |
+          echo "🔍 Testing SSH connection to EC2..."
+          if ssh -o StrictHostKeyChecking=no \
+                 -o ConnectTimeout=10 \
+                 -o ServerAliveInterval=5 \
+                 -o ServerAliveCountMax=3 \
+                 ubuntu@${{ secrets.EC2_HOST }} \
+                 "echo '✅ SSH connection successful'; hostname; uptime" 2>&1; then
+            echo "✅ SSH connection test passed"
+          else
+            echo "❌ SSH connection test failed"
+            echo "Please check:"
+            echo "  1. EC2 instance is running (not stopped/terminated)"
+            echo "  2. EC2_HOST secret is correct (IP address or hostname)"
+            echo "  3. Security group allows SSH (port 22) from GitHub Actions IPs"
+            echo "  4. EC2 instance has a public IP address"
+            echo ""
+            echo "Attempting to ping the host..."
+            ping -c 3 ${{ secrets.EC2_HOST }} || echo "Ping also failed"
+            exit 1
+          fi
+
       - name: Deploy to EC2
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
