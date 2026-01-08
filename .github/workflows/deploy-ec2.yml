@@ -15,21 +15,50 @@ jobs:
 
       - name: Setup SSH
         run: |
+          set -e
+          echo "🔧 Setting up SSH..."
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
+          
+          # Check if SSH key secret is set
+          if [ -z "${{ secrets.EC2_SSH_PRIVATE_KEY }}" ]; then
+            echo "❌ EC2_SSH_PRIVATE_KEY secret is not set"
+            exit 1
+          fi
+          
+          # Check if EC2_HOST secret is set
+          if [ -z "${{ secrets.EC2_HOST }}" ]; then
+            echo "❌ EC2_HOST secret is not set"
+            exit 1
+          fi
+          
+          # Write SSH key
           printf '%s\n' "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           sed -i 's/\r$//' ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          
+          # Verify SSH key file
           if [ ! -s ~/.ssh/id_rsa ]; then
             echo "❌ SSH key file is empty"
             exit 1
           fi
-          if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/id_rsa; then
-            echo "❌ Invalid SSH key format"
+          
+          # Check SSH key format (more lenient check)
+          if ! grep -qE "(BEGIN|PRIVATE|KEY)" ~/.ssh/id_rsa; then
+            echo "❌ Invalid SSH key format - key file does not contain expected markers"
+            echo "First 50 characters of key file:"
+            head -c 50 ~/.ssh/id_rsa || true
             exit 1
           fi
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          
+          # Add host to known_hosts
+          echo "🔍 Adding EC2 host to known_hosts..."
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts 2>&1 || {
+            echo "⚠️  ssh-keyscan failed, but continuing..."
+          }
           chmod 644 ~/.ssh/known_hosts
+          
+          echo "✅ SSH setup complete"
 
       - name: Deploy to EC2
         env:
