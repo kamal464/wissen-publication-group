@@ -121,11 +121,20 @@ jobs:
             npm ci
             rm -rf .next node_modules/.cache .swc
             echo "📝 Building with API URL: http://${EC2_HOST}/api"
-            NEXT_PUBLIC_API_URL="http://${EC2_HOST}/api" NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME npm run build
-            if [ ! -d ".next" ]; then
-              echo "❌ Frontend build failed"
+            echo "📝 Build time: $NEXT_PUBLIC_BUILD_TIME"
+            if ! NEXT_PUBLIC_API_URL="http://${EC2_HOST}/api" NEXT_PUBLIC_BUILD_TIME="$NEXT_PUBLIC_BUILD_TIME" npm run build; then
+              echo "❌ Frontend build failed - checking logs..."
+              echo "Node version: $(node --version)"
+              echo "NPM version: $(npm --version)"
+              echo "Checking for build errors..."
               exit 1
             fi
+            if [ ! -d ".next" ]; then
+              echo "❌ Frontend build directory not found after build"
+              ls -la .next 2>/dev/null || echo "No .next directory"
+              exit 1
+            fi
+            echo "✅ Frontend build successful"
             cd ..
             
             echo "🚀 Starting services..."
@@ -155,7 +164,8 @@ jobs:
             echo ""
             
             # Verify backend
-            BACKEND_STATUS=$(pm2 list | grep wissen-backend | awk '{print $10}' || echo "unknown")
+            BACKEND_STATUS=$(pm2 list | grep wissen-backend | awk '{print $10}' 2>/dev/null || echo "unknown")
+            BACKEND_STATUS=${BACKEND_STATUS:-unknown}
             echo "Backend PM2 status: $BACKEND_STATUS"
             
             if [ "$BACKEND_STATUS" != "online" ]; then
@@ -166,7 +176,8 @@ jobs:
             fi
             
             # Verify frontend - this is critical
-            FRONTEND_STATUS=$(pm2 list | grep wissen-frontend | awk '{print $10}' || echo "unknown")
+            FRONTEND_STATUS=$(pm2 list | grep wissen-frontend | awk '{print $10}' 2>/dev/null || echo "unknown")
+            FRONTEND_STATUS=${FRONTEND_STATUS:-unknown}
             echo "Frontend PM2 status: $FRONTEND_STATUS"
             
             if [ "$FRONTEND_STATUS" != "online" ]; then
@@ -180,12 +191,16 @@ jobs:
             fi
             
             # Check ports - this is the real test
-            BACKEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
-            FRONTEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
+            BACKEND_PORT_COUNT=$(netstat -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
+            FRONTEND_PORT_COUNT=$(netstat -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
             
             # Ensure variables are numbers, default to 0 if empty
-            BACKEND_PORT=${BACKEND_PORT:-0}
-            FRONTEND_PORT=${FRONTEND_PORT:-0}
+            BACKEND_PORT=${BACKEND_PORT_COUNT:-0}
+            FRONTEND_PORT=${FRONTEND_PORT_COUNT:-0}
+            
+            # Convert to integer, default to 0
+            BACKEND_PORT=$((BACKEND_PORT + 0))
+            FRONTEND_PORT=$((FRONTEND_PORT + 0))
             
             echo "Port verification:"
             if [ "${BACKEND_PORT:-0}" -gt 0 ] 2>/dev/null; then
