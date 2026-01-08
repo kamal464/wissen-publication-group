@@ -256,17 +256,15 @@ jobs:
               if command -v python3 >/dev/null 2>&1; then
                 # Use a safer approach - write password to temp file to avoid shell escaping issues
                 echo "${DB_PASSWORD}" > /tmp/db_password.txt
-                DB_PASSWORD_ENCODED=$(python3 << 'PYTHON_SCRIPT'
-import urllib.parse
-import sys
-with open('/tmp/db_password.txt', 'r') as f:
-    password = f.read().strip()
-encoded = urllib.parse.quote(password, safe='')
-print(encoded)
-PYTHON_SCRIPT
-                2>/tmp/python_error.log)
+                # Create Python script using echo to avoid YAML heredoc issues
+                echo 'import urllib.parse' > /tmp/encode_password.py
+                echo 'with open("/tmp/db_password.txt", "r") as f:' >> /tmp/encode_password.py
+                echo '    password = f.read().strip()' >> /tmp/encode_password.py
+                echo 'encoded = urllib.parse.quote(password, safe="")' >> /tmp/encode_password.py
+                echo 'print(encoded)' >> /tmp/encode_password.py
+                DB_PASSWORD_ENCODED=$(python3 /tmp/encode_password.py 2>/tmp/python_error.log)
                 PYTHON_EXIT_CODE=$?
-                rm -f /tmp/db_password.txt
+                rm -f /tmp/db_password.txt /tmp/encode_password.py
                 
                 if [ $PYTHON_EXIT_CODE -eq 0 ] && [ -n "$DB_PASSWORD_ENCODED" ] && [ "$DB_PASSWORD_ENCODED" != "" ]; then
                   # Remove any trailing newlines or whitespace
