@@ -12,20 +12,29 @@
  * - EC2 Instance: 54.165.116.208
  */
 
+'use client';
+
+import { useState, useEffect } from 'react';
+
 export default function DeploymentStatus() {
-  // Build timestamp - updated on each deployment
-  const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString();
-  const buildDate = new Date(buildTime);
+  const [formattedDate, setFormattedDate] = useState<string>('');
   
-  // Format: "Jan 7, 2026 7:45 PM"
-  const formattedDate = buildDate.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  });
+  useEffect(() => {
+    // Only format date on client side to prevent hydration mismatch
+    const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString();
+    const buildDate = new Date(buildTime);
+    
+    // Format: "Jan 7, 2026 7:45 PM"
+    const formatted = buildDate.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    setFormattedDate(formatted);
+  }, []);
 
   return (
     <div 
@@ -59,7 +68,7 @@ export default function DeploymentStatus() {
         boxShadow: '0 0 8px rgba(74, 222, 128, 0.6)'
       }} />
       <span>🚀 AWS Deployed v2</span>
-      <span style={{ opacity: 0.8, fontSize: '10px' }}>{formattedDate}</span>
+      <span style={{ opacity: 0.8, fontSize: '10px' }} suppressHydrationWarning>{formattedDate || 'Loading...'}</span>
       <style jsx>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
