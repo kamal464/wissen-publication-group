@@ -314,13 +314,29 @@ jobs:
             echo "🔨 Building frontend..."
             cd frontend
             echo "Installing frontend dependencies (this may take a few minutes)..."
-            if ! timeout 600 npm ci; then
-              echo "⚠️  Frontend npm ci timed out or failed, trying npm install..."
-              if ! timeout 600 npm install; then
+            
+            # Fix permissions for node_modules if it exists
+            if [ -d "node_modules" ]; then
+              echo "Fixing permissions on existing node_modules..."
+              chmod -R u+w node_modules 2>/dev/null || true
+            fi
+            
+            # Try npm ci with unsafe-perm flag for native modules
+            if ! timeout 600 npm ci --unsafe-perm; then
+              echo "⚠️  Frontend npm ci timed out or failed, trying npm install with unsafe-perm..."
+              # Clean and retry with proper permissions
+              rm -rf node_modules package-lock.json 2>/dev/null || true
+              if ! timeout 600 npm install --unsafe-perm; then
                 echo "❌ Frontend npm install also failed or timed out"
+                echo "Checking npm and node versions..."
+                npm --version
+                node --version
                 exit 1
               fi
             fi
+            
+            # Ensure node_modules has correct permissions
+            chmod -R u+w node_modules 2>/dev/null || true
             echo "✅ Frontend dependencies installed"
             rm -rf .next node_modules/.cache .swc
             echo "📝 Building with API URL: http://${EC2_HOST}/api"
