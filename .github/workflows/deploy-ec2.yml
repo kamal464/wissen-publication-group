@@ -248,8 +248,9 @@ jobs:
               echo "✅ Using local PostgreSQL (localhost) - DB_PASSWORD provided"
               echo "   DB_PASSWORD length: ${#DB_PASSWORD}"
               
-              # Initialize with the original password as fallback
+              # Initialize with the original password as fallback - this ensures we always have a value
               DB_PASSWORD_ENCODED="${DB_PASSWORD}"
+              echo "   Initialized DB_PASSWORD_ENCODED with DB_PASSWORD (length: ${#DB_PASSWORD_ENCODED})"
               
               # Try to URL encode the password to handle special characters
               echo "   Attempting to URL encode password with Python..."
@@ -268,31 +269,44 @@ jobs:
                 PYTHON_EXIT_CODE=$?
                 rm -f /tmp/db_password.txt /tmp/encode_password.py
                 
-                if [ $PYTHON_EXIT_CODE -eq 0 ] && [ -n "$PYTHON_OUTPUT" ] && [ "$PYTHON_OUTPUT" != "" ]; then
+                # Check if Python encoding succeeded (handle empty exit code)
+                if [ -n "$PYTHON_EXIT_CODE" ] && [ "$PYTHON_EXIT_CODE" = "0" ] && [ -n "$PYTHON_OUTPUT" ] && [ "$PYTHON_OUTPUT" != "" ]; then
                   # Remove any trailing newlines or whitespace
                   PYTHON_OUTPUT=$(echo "$PYTHON_OUTPUT" | tr -d '\n\r' | sed 's/[[:space:]]*$//')
                   if [ -n "$PYTHON_OUTPUT" ] && [ "$PYTHON_OUTPUT" != "" ]; then
                     DB_PASSWORD_ENCODED="$PYTHON_OUTPUT"
                     echo "   ✅ Python encoding successful (length: ${#DB_PASSWORD_ENCODED})"
                   else
-                    echo "   ⚠️  Python encoding produced empty result, using password as-is"
+                    echo "   ⚠️  Python encoding produced empty result, keeping original password"
                   fi
                 else
-                  echo "   ⚠️  Python encoding failed (exit code: ${PYTHON_EXIT_CODE:-unknown}), using password as-is"
+                  # Python failed or produced no output - keep the original password we initialized
+                  EXIT_CODE_MSG="${PYTHON_EXIT_CODE:-unknown}"
+                  echo "   ⚠️  Python encoding failed (exit code: ${EXIT_CODE_MSG}), using password as-is"
                   if [ -f /tmp/python_error.log ] && [ -s /tmp/python_error.log ]; then
                     echo "   Python error: $(cat /tmp/python_error.log | head -3)"
                   fi
+                  # DB_PASSWORD_ENCODED already has the original password, so we're good
                 fi
               else
                 echo "   ⚠️  python3 not available, using password as-is"
+                # DB_PASSWORD_ENCODED already has the original password, so we're good
               fi
               
-              # Final validation - ensure we have a password
+              # Final validation - ensure we have a password (should always pass since we initialized it)
               if [ -z "$DB_PASSWORD_ENCODED" ] || [ "$DB_PASSWORD_ENCODED" = "" ]; then
                 echo "   ❌ CRITICAL ERROR: DB_PASSWORD_ENCODED is empty!"
                 echo "   DB_PASSWORD status: $([ -n "$DB_PASSWORD" ] && echo "SET (length: ${#DB_PASSWORD})" || echo "NOT SET")"
-                exit 1
+                echo "   This should never happen - attempting emergency fix..."
+                DB_PASSWORD_ENCODED="${DB_PASSWORD}"
+                if [ -z "$DB_PASSWORD_ENCODED" ]; then
+                  echo "   ❌ Emergency fix also failed!"
+                  exit 1
+                fi
+                echo "   ✅ Emergency fix succeeded"
               fi
+              
+              echo "   Final password to use (length: ${#DB_PASSWORD_ENCODED})"
               
               echo "   Final password to use (length: ${#DB_PASSWORD_ENCODED})"
               
