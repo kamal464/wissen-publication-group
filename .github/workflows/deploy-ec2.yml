@@ -598,13 +598,40 @@ jobs:
             echo "=========================================="
           ENDSSH
 
+      - name: Diagnostic Check
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "🔍 DIAGNOSTIC CHECK (Always Runs)"
+          echo "=========================================="
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'DIAGSSH'
+            echo "1. PM2 Status:"
+            pm2 status || echo "PM2 not running"
+            echo ""
+            echo "2. PM2 List:"
+            pm2 list || echo "PM2 list failed"
+            echo ""
+            echo "3. Port Status:"
+            netstat -tln 2>/dev/null | grep -E ":3000|:3001" || echo "No services on ports 3000/3001"
+            echo ""
+            echo "4. Process Status:"
+            ps aux | grep -E "node|npm" | grep -v grep || echo "No node processes running"
+            echo ""
+            echo "5. Testing localhost:"
+            curl -s -o /dev/null -w "Backend localhost:3001/api/health = HTTP %{http_code}\n" http://localhost:3001/api/health 2>/dev/null || echo "Backend localhost: FAILED"
+            curl -s -o /dev/null -w "Frontend localhost:3000 = HTTP %{http_code}\n" http://localhost:3000 2>/dev/null || echo "Frontend localhost: FAILED"
+            echo ""
+            echo "6. PM2 Logs (last 20 lines):"
+            pm2 logs --lines 20 --nostream 2>/dev/null || echo "Could not get PM2 logs"
+          DIAGSSH
+
       - name: Verify deployment
         run: |
           echo "=========================================="
           echo "🔍 FINAL VERIFICATION FROM GITHUB ACTIONS"
           echo "=========================================="
-          echo "Waiting 30 seconds for services to fully start..."
-          sleep 30
+          echo "Waiting 45 seconds for services to fully start..."
+          sleep 45
           
           EC2_HOST="${{ secrets.EC2_HOST }}"
           
