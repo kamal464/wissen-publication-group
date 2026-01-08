@@ -214,19 +214,19 @@ jobs:
             pm2 status || echo "PM2 not running"
             echo ""
             
-            # AGGRESSIVE: Kill all Node processes to ensure nothing is holding files
-            echo "🛑 Killing all Node processes..."
-            pkill -9 node 2>/dev/null || echo "No node processes to kill"
-            sleep 2
-            
-            # Stop all processes first
+            # Stop all PM2 processes first (don't kill daemon)
             echo "🛑 Stopping all PM2 processes..."
             pm2 delete all 2>/dev/null || echo "No processes to delete"
-            pm2 kill 2>/dev/null || true
-            sleep 3
+            sleep 2
             
-            # Restart PM2 daemon
-            pm2 resurrect 2>/dev/null || pm2 ping || true
+            # Ensure PM2 daemon is running
+            echo "🔧 Ensuring PM2 daemon is running..."
+            if ! pm2 ping 2>/dev/null; then
+              echo "⚠️  PM2 daemon not responding, starting it..."
+              pm2 kill 2>/dev/null || true
+              sleep 2
+            fi
+            pm2 ping || echo "⚠️  PM2 daemon check failed, but continuing..."
             sleep 1
             
             # Clear PM2 logs
@@ -266,9 +266,37 @@ jobs:
             fi
             echo "✅ Both processes found in PM2"
             
-            # Wait for services to start
-            echo "⏳ Waiting for services to start (15 seconds)..."
-            sleep 15
+            # Wait for services to start and verify they're listening
+            echo "⏳ Waiting for services to start (20 seconds)..."
+            sleep 20
+            
+            # CRITICAL: Verify services are actually listening on ports
+            echo "🔍 Verifying services are listening on ports..."
+            BACKEND_LISTENING=$(netstat -tln 2>/dev/null | grep -c ":3001 " || echo "0")
+            FRONTEND_LISTENING=$(netstat -tln 2>/dev/null | grep -c ":3000 " || echo "0")
+            
+            if [ "$BACKEND_LISTENING" -eq "0" ]; then
+              echo "❌ ERROR: Backend is NOT listening on port 3001!"
+              echo "PM2 status:"
+              pm2 status
+              echo "Backend logs:"
+              pm2 logs wissen-backend --lines 30 --nostream
+              exit 1
+            else
+              echo "✅ Backend is listening on port 3001"
+            fi
+            
+            if [ "$FRONTEND_LISTENING" -eq "0" ]; then
+              echo "❌ ERROR: Frontend is NOT listening on port 3000!"
+              echo "PM2 status:"
+              pm2 status
+              echo "Frontend logs:"
+              pm2 logs wissen-frontend --lines 30 --nostream
+              exit 1
+            else
+              echo "✅ Frontend is listening on port 3000"
+            fi
+            echo ""
             
             # VERIFY: Check that the running process is using the new code
             echo "🔍 VERIFYING: Checking if running code matches deployment..."
@@ -459,10 +487,12 @@ jobs:
           echo "=========================================="
           echo "🔍 FINAL VERIFICATION FROM GITHUB ACTIONS"
           echo "=========================================="
-          sleep 20
+          echo "Waiting 30 seconds for services to fully start..."
+          sleep 30
           
           EC2_HOST="${{ secrets.EC2_HOST }}"
           
+          echo ""
           echo "Testing backend health endpoint..."
           BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${EC2_HOST}/api/health" 2>&1 || echo "000")
           if [ "$BACKEND_STATUS" = "200" ]; then
@@ -470,7 +500,8 @@ jobs:
             curl -s "http://${EC2_HOST}/api/health" 2>&1 | head -5
           else
             echo "❌ Backend health check failed (HTTP $BACKEND_STATUS)"
-            echo "⚠️  Deployment may still be in progress or there may be an issue"
+            echo "⚠️  This might be normal if services are still starting"
+            echo "⚠️  Check the deployment logs above to see if services started correctly"
           fi
           echo ""
           
@@ -480,23 +511,29 @@ jobs:
             echo "✅ Frontend is accessible (HTTP $FRONTEND_STATUS)"
             echo ""
             echo "Checking if frontend HTML contains 'Contact Us'..."
-            if curl -s "http://${EC2_HOST}/" 2>&1 | grep -q "Contact Us"; then
+            FRONTEND_HTML=$(curl -s "http://${EC2_HOST}/" 2>&1)
+            if echo "$FRONTEND_HTML" | grep -q "Contact Us"; then
               echo "✅ Frontend HTML contains 'Contact Us' - deployment successful!"
             else
               echo "❌ Frontend HTML does NOT contain 'Contact Us' - deployment may have failed"
-              echo "First 50 lines of HTML:"
-              curl -s "http://${EC2_HOST}/" 2>&1 | head -50
+              echo "First 100 lines of HTML:"
+              echo "$FRONTEND_HTML" | head -100
             fi
             echo ""
             echo "Checking if frontend HTML contains 'AWS Deployed v2'..."
-            if curl -s "http://${EC2_HOST}/" 2>&1 | grep -q "AWS Deployed v2"; then
+            if echo "$FRONTEND_HTML" | grep -q "AWS Deployed v2"; then
               echo "✅ Frontend HTML contains 'AWS Deployed v2' - deployment badge is present!"
             else
               echo "⚠️  Frontend HTML does NOT contain 'AWS Deployed v2' - badge may not be showing"
             fi
           else
             echo "❌ Frontend check failed (HTTP $FRONTEND_STATUS)"
+            echo "⚠️  This might be normal if services are still starting"
+            echo "⚠️  Check the deployment logs above to see if services started correctly"
           fi
           echo ""
+          echo "=========================================="
+          echo "💡 TIP: If health checks failed, wait 1-2 minutes and try accessing"
+          echo "   http://${EC2_HOST}/ in your browser"
           echo "=========================================="
 
