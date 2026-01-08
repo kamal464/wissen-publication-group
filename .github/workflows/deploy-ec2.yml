@@ -426,23 +426,43 @@ jobs:
       - name: Verify deployment
         run: |
           echo "=========================================="
-          echo "🔍 FINAL VERIFICATION"
+          echo "🔍 FINAL VERIFICATION FROM GITHUB ACTIONS"
           echo "=========================================="
-          sleep 15
+          sleep 20
+          
+          EC2_HOST="${{ secrets.EC2_HOST }}"
+          
           echo "Testing backend health endpoint..."
-          BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}/api/health || echo "000")
+          BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${EC2_HOST}/api/health" 2>&1 || echo "000")
           if [ "$BACKEND_STATUS" = "200" ]; then
             echo "✅ Backend health check passed (HTTP $BACKEND_STATUS)"
-            curl -s http://${{ secrets.EC2_HOST }}/api/health | head -5
+            curl -s "http://${EC2_HOST}/api/health" 2>&1 | head -5
           else
             echo "❌ Backend health check failed (HTTP $BACKEND_STATUS)"
             echo "⚠️  Deployment may still be in progress or there may be an issue"
           fi
           echo ""
+          
           echo "Testing frontend..."
-          FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}/ || echo "000")
+          FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${EC2_HOST}/" 2>&1 || echo "000")
           if [ "$FRONTEND_STATUS" = "200" ]; then
             echo "✅ Frontend is accessible (HTTP $FRONTEND_STATUS)"
+            echo ""
+            echo "Checking if frontend HTML contains 'Contact Us'..."
+            if curl -s "http://${EC2_HOST}/" 2>&1 | grep -q "Contact Us"; then
+              echo "✅ Frontend HTML contains 'Contact Us' - deployment successful!"
+            else
+              echo "❌ Frontend HTML does NOT contain 'Contact Us' - deployment may have failed"
+              echo "First 50 lines of HTML:"
+              curl -s "http://${EC2_HOST}/" 2>&1 | head -50
+            fi
+            echo ""
+            echo "Checking if frontend HTML contains 'AWS Deployed v2'..."
+            if curl -s "http://${EC2_HOST}/" 2>&1 | grep -q "AWS Deployed v2"; then
+              echo "✅ Frontend HTML contains 'AWS Deployed v2' - deployment badge is present!"
+            else
+              echo "⚠️  Frontend HTML does NOT contain 'AWS Deployed v2' - badge may not be showing"
+            fi
           else
             echo "❌ Frontend check failed (HTTP $FRONTEND_STATUS)"
           fi
