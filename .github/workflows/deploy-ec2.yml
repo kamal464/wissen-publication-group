@@ -105,15 +105,57 @@ jobs:
             
             echo "🔨 Building backend..."
             cd backend
-            npm ci
-            npx prisma generate
+            
+            # Install dependencies
+            echo "Installing backend dependencies..."
+            if ! npm ci; then
+              echo "❌ npm ci failed"
+              echo "Trying npm install..."
+              npm install || {
+                echo "❌ npm install also failed"
+                exit 1
+              }
+            fi
+            
+            # Verify nest CLI is available
+            if ! command -v nest &> /dev/null && ! npx nest --version &> /dev/null; then
+              echo "⚠️  nest CLI not found, checking node_modules..."
+              if [ ! -f "node_modules/.bin/nest" ]; then
+                echo "❌ nest CLI not installed"
+                echo "Reinstalling dependencies..."
+                rm -rf node_modules package-lock.json
+                npm install
+              fi
+            fi
+            
+            echo "Generating Prisma client..."
+            npx prisma generate || {
+              echo "❌ Prisma generate failed"
+              exit 1
+            }
+            
+            echo "Pushing database schema..."
             npx prisma db push --accept-data-loss || true
+            
+            echo "Building backend..."
             rm -rf dist
-            npm run build
-            if [ ! -f "dist/src/main.js" ]; then
+            if ! npm run build; then
               echo "❌ Backend build failed"
+              echo "Checking if nest is available:"
+              which nest || npx nest --version || echo "nest not found"
+              echo "Node version: $(node --version)"
+              echo "NPM version: $(npm --version)"
               exit 1
             fi
+            
+            if [ ! -f "dist/src/main.js" ]; then
+              echo "❌ Backend build file not found"
+              echo "Checking dist directory:"
+              ls -la dist/ 2>/dev/null || echo "dist directory not found"
+              exit 1
+            fi
+            
+            echo "✅ Backend build successful"
             cd ..
             
             echo "🔨 Building frontend..."
