@@ -98,6 +98,7 @@ jobs:
               -o ServerAliveCountMax=30 \
               -o ConnectTimeout=30 \
               -o TCPKeepAlive=yes \
+              -o BatchMode=yes \
               ubuntu@${EC2_HOST} bash -s << ENDSSH
             export DB_PASSWORD="$DB_PASSWORD"
             export EC2_HOST="$EC2_HOST"
