@@ -377,12 +377,41 @@ jobs:
             echo "Nginx proxy to backend (/health): HTTP $NGINX_BACKEND"
             echo "Nginx proxy to frontend (/): HTTP $NGINX_FRONTEND"
             
+            # Final verification - both services must be listening
+            FINAL_BACKEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3001 " || echo "0")
+            FINAL_FRONTEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3000 " || echo "0")
+            
+            if [ "$FINAL_BACKEND_PORT" -eq "0" ] || [ "$FINAL_FRONTEND_PORT" -eq "0" ]; then
+              echo "❌ DEPLOYMENT FAILED - Services not running!"
+              echo "Backend port 3001: $([ "$FINAL_BACKEND_PORT" -gt "0" ] && echo "✅" || echo "❌")"
+              echo "Frontend port 3000: $([ "$FINAL_FRONTEND_PORT" -gt "0" ] && echo "✅" || echo "❌")"
+              echo ""
+              echo "=== Final PM2 Status ==="
+              pm2 list || true
+              echo ""
+              echo "=== Final Port Status ==="
+              netstat -tln | grep -E ":3000|:3001" || echo "No services listening"
+              echo ""
+              if [ "$FINAL_FRONTEND_PORT" -eq "0" ]; then
+                echo "=== Frontend Logs (Final) ==="
+                pm2 logs wissen-frontend --lines 100 --nostream || true
+              fi
+              if [ "$FINAL_BACKEND_PORT" -eq "0" ]; then
+                echo "=== Backend Logs (Final) ==="
+                pm2 logs wissen-backend --lines 100 --nostream || true
+              fi
+              exit 1
+            fi
+            
             if [ "$NGINX_BACKEND" != "200" ] || [ "$NGINX_FRONTEND" != "200" ]; then
-              echo "⚠️  Nginx proxy test failed - services may need more time to start"
+              echo "⚠️  Nginx proxy test returned non-200, but ports are listening"
+              echo "Backend via Nginx: HTTP $NGINX_BACKEND"
+              echo "Frontend via Nginx: HTTP $NGINX_FRONTEND"
               echo "PM2 status:"
               pm2 list || true
-              echo "Nginx error log:"
-              sudo tail -20 /var/log/nginx/error.log || true
+              echo "Nginx error log (last 10 lines):"
+              sudo tail -10 /var/log/nginx/error.log || true
+              echo "⚠️  Services are running but Nginx may need more time or configuration"
             fi
             
             echo "=========================================="
@@ -390,6 +419,8 @@ jobs:
             echo "=========================================="
             echo "🌐 Application: http://${EC2_HOST}"
             echo "📌 Commit: $NEW_COMMIT"
+            echo "✅ Backend: Listening on port 3001"
+            echo "✅ Frontend: Listening on port 3000"
           ENDSSH
 
       - name: Verify deployment
