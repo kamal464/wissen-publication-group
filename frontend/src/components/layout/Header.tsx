@@ -36,7 +36,7 @@ export default function Header() {
   };
 
   return (
-    <header className="header-wrapper">
+    <header className="header-wrapper" suppressHydrationWarning>
       {!isSearchOpen && <TopNewsBar />}
 
       <div className="header">
