@@ -41,11 +41,9 @@ jobs:
             echo "🚀 STARTING DEPLOYMENT"
             echo "=========================================="
             
-            # Stop PM2 processes
             pm2 delete all 2>/dev/null || true
             sleep 2
             
-            # Pull latest code
             echo "📥 Pulling latest code..."
             git fetch origin
             git reset --hard origin/main
@@ -53,24 +51,22 @@ jobs:
             NEW_COMMIT=$(git rev-parse --short HEAD)
             echo "📌 Deployed commit: $NEW_COMMIT"
             
-            # Update environment files
-            cat > backend/.env << ENVEOF
-DATABASE_URL=postgresql://postgres:${{ secrets.DB_PASSWORD }}@localhost:5432/wissen_publication_group
-NODE_ENV=production
-PORT=3001
-CORS_ORIGIN=http://${{ secrets.EC2_HOST }},http://localhost:3000,http://localhost:3002
-AWS_REGION=${{ secrets.AWS_REGION }}
-AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}
-CLOUDFRONT_URL=${{ secrets.CLOUDFRONT_URL }}
-ENVEOF
+            cat > backend/.env << 'ENVEOF'
+          DATABASE_URL=postgresql://postgres:${{ secrets.DB_PASSWORD }}@localhost:5432/wissen_publication_group
+          NODE_ENV=production
+          PORT=3001
+          CORS_ORIGIN=http://${{ secrets.EC2_HOST }},http://localhost:3000,http://localhost:3002
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}
+          CLOUDFRONT_URL=${{ secrets.CLOUDFRONT_URL }}
+          ENVEOF
             
             echo "NEXT_PUBLIC_API_URL=http://${{ secrets.EC2_HOST }}/api" > frontend/.env.production
             export NEXT_PUBLIC_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
             echo "NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME" >> frontend/.env.production
             
-            # Build backend
             echo "🔨 Building backend..."
             cd backend
             npm ci
@@ -84,7 +80,6 @@ ENVEOF
             fi
             cd ..
             
-            # Build frontend
             echo "🔨 Building frontend..."
             cd frontend
             npm ci
@@ -96,13 +91,11 @@ ENVEOF
             fi
             cd ..
             
-            # Start services with PM2
             echo "🚀 Starting services..."
             mkdir -p logs
             pm2 delete all 2>/dev/null || true
             sleep 2
             
-            # Start backend
             cd backend
             pm2 start node --name wissen-backend -- dist/src/main.js || {
               echo "❌ Backend start failed"
@@ -111,7 +104,6 @@ ENVEOF
             }
             cd ..
             
-            # Start frontend
             cd frontend
             pm2 start npm --name wissen-frontend -- start || {
               echo "❌ Frontend start failed"
@@ -122,11 +114,9 @@ ENVEOF
             
             pm2 save
             
-            # Wait for services
             echo "⏳ Waiting for services to start..."
             sleep 30
             
-            # Verify services
             echo "🔍 Verifying services..."
             BACKEND_STATUS=$(pm2 jlist | jq -r '.[] | select(.name=="wissen-backend") | .pm2_env.status' 2>/dev/null || echo "unknown")
             FRONTEND_STATUS=$(pm2 jlist | jq -r '.[] | select(.name=="wissen-frontend") | .pm2_env.status' 2>/dev/null || echo "unknown")
@@ -146,7 +136,6 @@ ENVEOF
               exit 1
             fi
             
-            # Check ports
             BACKEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3001 " || echo "0")
             FRONTEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3000 " || echo "0")
             
@@ -162,7 +151,6 @@ ENVEOF
               exit 1
             fi
             
-            # Test localhost
             BACKEND_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health 2>/dev/null || echo "000")
             FRONTEND_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null || echo "000")
             
@@ -181,7 +169,6 @@ ENVEOF
               exit 1
             fi
             
-            # Reload Nginx
             sudo nginx -t && sudo systemctl reload nginx || echo "⚠️  Nginx reload failed"
             
             echo "=========================================="
