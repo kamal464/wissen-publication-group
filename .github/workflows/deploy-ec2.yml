@@ -217,6 +217,21 @@ jobs:
             # 2. Construct from AWS RDS credentials (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
             # 3. Use DATABASE_URL secret ONLY if it's NOT Supabase (ignore Supabase URLs)
             
+            echo "🔍 Checking available database credentials..."
+            echo "   DB_PASSWORD is set: $([ -n "$DB_PASSWORD" ] && echo 'YES' || echo 'NO')"
+            echo "   DB_HOST is set: $([ -n "$DB_HOST" ] && echo 'YES' || echo 'NO')"
+            echo "   DB_USER is set: $([ -n "$DB_USER" ] && echo 'YES' || echo 'NO')"
+            echo "   DB_NAME is set: $([ -n "$DB_NAME" ] && echo 'YES' || echo 'NO')"
+            echo "   DATABASE_URL is set: $([ -n "$DATABASE_URL" ] && echo 'YES' || echo 'NO')"
+            if [ -n "$DATABASE_URL" ]; then
+              if echo "$DATABASE_URL" | grep -qi "supabase"; then
+                echo "   DATABASE_URL contains Supabase: YES"
+              else
+                echo "   DATABASE_URL contains Supabase: NO"
+              fi
+            fi
+            echo ""
+            
             # Check if DATABASE_URL contains Supabase and ignore it
             if [ -n "$DATABASE_URL" ] && [ "$DATABASE_URL" != "" ]; then
               if echo "$DATABASE_URL" | grep -qi "supabase"; then
@@ -224,6 +239,9 @@ jobs:
                 DATABASE_URL=""
               fi
             fi
+            
+            # Initialize FINAL_DATABASE_URL
+            FINAL_DATABASE_URL=""
             
             # Priority 1: Always use localhost PostgreSQL if DB_PASSWORD is available
             if [ -n "$DB_PASSWORD" ] && [ "$DB_PASSWORD" != "" ]; then
@@ -263,6 +281,13 @@ jobs:
               exit 1
             fi
             
+            # Verify FINAL_DATABASE_URL is set
+            if [ -z "$FINAL_DATABASE_URL" ] || [ "$FINAL_DATABASE_URL" = "" ]; then
+              echo "❌ ERROR: FINAL_DATABASE_URL is empty after construction!"
+              exit 1
+            fi
+            echo "✅ FINAL_DATABASE_URL is set (length: ${#FINAL_DATABASE_URL} characters)"
+            
             {
               echo "DATABASE_URL=${FINAL_DATABASE_URL}"
               echo "NODE_ENV=production"
@@ -292,12 +317,32 @@ jobs:
             fi
             
             # Verify DATABASE_URL is not empty
-            DATABASE_URL_VALUE=$(grep "^DATABASE_URL=" backend/.env | cut -d'=' -f2-)
-            if [ -z "$DATABASE_URL_VALUE" ]; then
-              echo "❌ ERROR: DATABASE_URL is empty in backend/.env file!"
+            if [ ! -f backend/.env ]; then
+              echo "❌ ERROR: backend/.env file does not exist!"
               exit 1
             fi
-            echo "✅ DATABASE_URL is set in backend/.env"
+            
+            # Extract DATABASE_URL value (handle cases where value might be empty or have special characters)
+            if grep -q "^DATABASE_URL=" backend/.env; then
+              DATABASE_URL_VALUE=$(grep "^DATABASE_URL=" backend/.env | sed 's/^DATABASE_URL=//' | head -1)
+              # Remove any trailing whitespace
+              DATABASE_URL_VALUE=$(echo "$DATABASE_URL_VALUE" | sed 's/[[:space:]]*$//')
+              
+              if [ -z "$DATABASE_URL_VALUE" ] || [ "$DATABASE_URL_VALUE" = "" ]; then
+                echo "❌ ERROR: DATABASE_URL is empty in backend/.env file!"
+                echo "File contents:"
+                cat backend/.env || true
+                echo ""
+                echo "FINAL_DATABASE_URL value was: ${FINAL_DATABASE_URL:0:50}..."
+                exit 1
+              fi
+              echo "✅ DATABASE_URL is set in backend/.env (length: ${#DATABASE_URL_VALUE} characters)"
+            else
+              echo "❌ ERROR: DATABASE_URL line not found in backend/.env file!"
+              echo "File contents:"
+              cat backend/.env || true
+              exit 1
+            fi
             
             # Ensure EC2_HOST is set
             if [ -z "${EC2_HOST}" ]; then
