@@ -479,12 +479,14 @@ jobs:
                 # Check port again
                 BACKEND_PORT_RETRY=0
                 if command -v ss >/dev/null 2>&1; then
-                  PORT_CHECK=$(ss -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
+                  PORT_CHECK_RESULT=$(ss -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
                 else
-                  PORT_CHECK=$(netstat -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
+                  PORT_CHECK_RESULT=$(netstat -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
                 fi
-                if [ -n "$PORT_CHECK" ] && [ "$PORT_CHECK" != "" ]; then
-                  BACKEND_PORT_RETRY=$((PORT_CHECK + 0))
+                if [ -n "$PORT_CHECK_RESULT" ] && [ "$PORT_CHECK_RESULT" != "" ]; then
+                  BACKEND_PORT_RETRY=$((PORT_CHECK_RESULT + 0))
+                else
+                  BACKEND_PORT_RETRY=0
                 fi
                 
                 if [ "${BACKEND_PORT_RETRY:-0}" -eq 0 ] 2>/dev/null; then
