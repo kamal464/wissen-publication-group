@@ -140,55 +140,69 @@ jobs:
             sleep 30
             
             echo "🔍 Verifying services..."
-            pm2 ping || pm2 kill && pm2 resurrect || true
-            sleep 2
+            pm2 list
+            echo ""
             
+            # Verify backend
             BACKEND_STATUS=$(pm2 list | grep wissen-backend | awk '{print $10}' || echo "unknown")
-            FRONTEND_STATUS=$(pm2 list | grep wissen-frontend | awk '{print $10}' || echo "unknown")
-            
             echo "Backend PM2 status: $BACKEND_STATUS"
+            
+            if [ "$BACKEND_STATUS" != "online" ]; then
+              echo "⚠️  Backend PM2 status is $BACKEND_STATUS"
+              echo "Backend logs:"
+              pm2 logs wissen-backend --lines 50 --nostream || true
+              echo ""
+            fi
+            
+            # Verify frontend - this is critical
+            FRONTEND_STATUS=$(pm2 list | grep wissen-frontend | awk '{print $10}' || echo "unknown")
             echo "Frontend PM2 status: $FRONTEND_STATUS"
             
-            if [ "$BACKEND_STATUS" != "online" ] && [ "$BACKEND_STATUS" != "errored" ]; then
-              echo "⚠️  Backend PM2 status is $BACKEND_STATUS (checking if process is running...)"
-              if pgrep -f "dist/src/main.js" > /dev/null; then
-                echo "✅ Backend process is running (PM2 status check may be unreliable)"
-                BACKEND_STATUS="online"
-              else
-                echo "❌ Backend not running"
-                pm2 logs wissen-backend --lines 30 --nostream || true
-                exit 1
-              fi
+            if [ "$FRONTEND_STATUS" != "online" ]; then
+              echo "⚠️  Frontend PM2 status is $FRONTEND_STATUS"
+              echo "Frontend logs (last 50 lines):"
+              pm2 logs wissen-frontend --lines 50 --nostream || true
+              echo ""
+              echo "Frontend .env.production:"
+              cat frontend/.env.production 2>/dev/null || echo "No .env.production file"
+              echo ""
             fi
             
-            if [ "$FRONTEND_STATUS" != "online" ] && [ "$FRONTEND_STATUS" != "errored" ]; then
-              echo "⚠️  Frontend PM2 status is $FRONTEND_STATUS (checking if process is running...)"
-              if pgrep -f "npm.*start" > /dev/null || pgrep -f "next-server" > /dev/null; then
-                echo "✅ Frontend process is running (PM2 status check may be unreliable)"
-                FRONTEND_STATUS="online"
-              else
-                echo "❌ Frontend not running"
-                pm2 logs wissen-frontend --lines 30 --nostream || true
-                exit 1
-              fi
-            fi
-            
+            # Check ports - this is the real test
             BACKEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3001 " || echo "0")
             FRONTEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3000 " || echo "0")
             
-            echo "Backend port check: $BACKEND_PORT"
-            echo "Frontend port check: $FRONTEND_PORT"
+            echo "Port verification:"
+            echo "  Backend port 3001: $([ "$BACKEND_PORT" -gt "0" ] && echo "✅ Listening" || echo "❌ Not listening")"
+            echo "  Frontend port 3000: $([ "$FRONTEND_PORT" -gt "0" ] && echo "✅ Listening" || echo "❌ Not listening")"
+            echo ""
             
             if [ "$BACKEND_PORT" -eq "0" ]; then
               echo "❌ Backend not listening on port 3001"
-              pm2 logs wissen-backend --lines 30 --nostream
+              pm2 logs wissen-backend --lines 50 --nostream || true
               exit 1
             fi
             
             if [ "$FRONTEND_PORT" -eq "0" ]; then
-              echo "❌ Frontend not listening on port 3000"
-              pm2 logs wissen-frontend --lines 30 --nostream
-              exit 1
+              echo "❌ Frontend not listening on port 3000 - this is causing the 502 error!"
+              echo "Full frontend logs:"
+              pm2 logs wissen-frontend --lines 50 --nostream || true
+              echo ""
+              echo "Attempting to restart frontend..."
+              pm2 restart wissen-frontend || {
+                pm2 delete wissen-frontend
+                pm2 start ecosystem.config.js --only wissen-frontend
+              }
+              sleep 15
+              FRONTEND_PORT_RETRY=$(netstat -tln 2>/dev/null | grep -c ":3000 " || echo "0")
+              if [ "$FRONTEND_PORT_RETRY" -eq "0" ]; then
+                echo "❌ Frontend still not listening after restart"
+                echo "Final frontend logs:"
+                pm2 logs wissen-frontend --lines 50 --nostream || true
+                exit 1
+              else
+                echo "✅ Frontend is now listening on port 3000"
+              fi
             fi
             
             echo "🔍 Testing health endpoints (with retries)..."
