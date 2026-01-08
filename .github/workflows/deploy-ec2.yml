@@ -322,8 +322,24 @@ jobs:
             echo "📝 Verifying database connection string (password hidden)..."
             grep -v "PASSWORD" backend/.env | head -1 || true
             echo ""
-            echo "📋 Full .env file contents (sensitive values hidden):"
-            sed 's/\(.*PASSWORD.*=\).*/\1***/' backend/.env | sed 's/\(.*SECRET.*=\).*/\1***/' | sed 's/\(.*KEY.*=\).*/\1***/' || true
+            
+            # Test database connection
+            echo "🔍 Testing database connection..."
+            if command -v psql >/dev/null 2>&1; then
+              # Extract password from DATABASE_URL for psql test
+              DB_PASS_FOR_TEST=$(echo "$FINAL_DATABASE_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p' | sed 's|%40|@|g')
+              if [ -n "$DB_PASS_FOR_TEST" ]; then
+                export PGPASSWORD="$DB_PASS_FOR_TEST"
+                if psql -h localhost -U postgres -d wissen_publication_group -c "SELECT 1;" >/dev/null 2>&1; then
+                  echo "✅ Database connection test successful"
+                else
+                  echo "⚠️  Database connection test failed (may still work with Prisma)"
+                fi
+                unset PGPASSWORD
+              fi
+            else
+              echo "⚠️  psql not available, skipping direct connection test"
+            fi
             echo ""
             
             # Verify DATABASE_URL is set
@@ -899,38 +915,57 @@ jobs:
             fi
             
             echo "🔧 Configuring Nginx..."
-            # Copy the nginx config file from the repo
-            if [ -f "nginx-production.conf" ]; then
-              sudo cp nginx-production.conf /etc/nginx/sites-available/wissen-publication-group
-              echo "✅ Copied nginx-production.conf"
-            else
-              echo "⚠️  nginx-production.conf not found, using fallback method"
-              # Fallback: use the existing nginx-wissen.conf if available
-              if [ -f "nginx-wissen.conf" ]; then
-                sudo cp nginx-wissen.conf /etc/nginx/sites-available/wissen-publication-group
-                sudo sed -i 's/YOUR_EC2_IP/_/g' /etc/nginx/sites-available/wissen-publication-group
-                sudo sed -i 's/api.yourdomain.com/_/g' /etc/nginx/sites-available/wissen-publication-group
-                sudo sed -i 's/yourdomain.com/_/g' /etc/nginx/sites-available/wissen-publication-group
-                sudo sed -i 's/www.yourdomain.com/_/g' /etc/nginx/sites-available/wissen-publication-group
-              else
-                echo "❌ No nginx config file found!"
-                exit 1
-              fi
-            fi
+            # Create nginx config inline - fully automated, no file dependencies
+            sudo tee /etc/nginx/sites-available/wissen-publication-group > /dev/null << NGINXCONF
+server {
+    listen 80;
+    server_name ${EC2_HOST} _;
+    
+    # Allow large file uploads
+    client_max_body_size 50M;
+    proxy_read_timeout 300s;
+    proxy_connect_timeout 300s;
+    proxy_send_timeout 300s;
+    
+    # Backend API
+    location /api {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+    }
+    
+    # Frontend
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+NGINXCONF
             
             sudo ln -sf /etc/nginx/sites-available/wissen-publication-group /etc/nginx/sites-enabled/
             sudo rm -f /etc/nginx/sites-enabled/default
             
-            if sudo nginx -t; then
-              sudo systemctl reload nginx || sudo systemctl restart nginx
+            # Test and reload nginx
+            if sudo nginx -t 2>&1; then
+              sudo systemctl reload nginx 2>/dev/null || sudo systemctl restart nginx
               echo "✅ Nginx configured and reloaded"
-              echo "Nginx status:"
-              sudo systemctl status nginx --no-pager | head -5 || true
+              sudo systemctl status nginx --no-pager | head -3 || true
             else
               echo "❌ Nginx configuration test failed"
-              sudo nginx -t
-              echo "Nginx error log (last 10 lines):"
-              sudo tail -10 /var/log/nginx/error.log || true
+              sudo nginx -t 2>&1
               exit 1
             fi
             
@@ -1095,13 +1130,49 @@ jobs:
               echo "⚠️  Services are running but Nginx may need more time or configuration"
             fi
             
+            # Configure AWS CLI if credentials are available
+            if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ] && [ -n "$AWS_REGION" ]; then
+              echo "🔧 Configuring AWS CLI..."
+              mkdir -p ~/.aws
+              cat > ~/.aws/credentials << AWSCREDS
+[default]
+aws_access_key_id = ${AWS_ACCESS_KEY_ID}
+aws_secret_access_key = ${AWS_SECRET_ACCESS_KEY}
+AWSCREDS
+              cat > ~/.aws/config << AWSCONFIG
+[default]
+region = ${AWS_REGION}
+AWSCONFIG
+              chmod 600 ~/.aws/credentials ~/.aws/config
+              echo "✅ AWS CLI configured"
+              
+              # Test AWS CLI
+              if command -v aws >/dev/null 2>&1; then
+                if aws sts get-caller-identity >/dev/null 2>&1; then
+                  echo "✅ AWS CLI authentication successful"
+                else
+                  echo "⚠️  AWS CLI authentication test failed"
+                fi
+              fi
+            fi
+            
             echo "=========================================="
             echo "✅ DEPLOYMENT COMPLETE!"
             echo "=========================================="
             echo "🌐 Application: http://${EC2_HOST}"
+            echo "🌐 API: http://${EC2_HOST}/api"
+            echo "🌐 Health: http://${EC2_HOST}/api/health"
             echo "📌 Commit: $NEW_COMMIT"
-            echo "✅ Backend: Listening on port 3001"
-            echo "✅ Frontend: Listening on port 3000"
+            echo ""
+            echo "📊 Service Status:"
+            pm2 list || true
+            echo ""
+            echo "🔌 Port Status:"
+            (ss -tln 2>/dev/null | grep -E ":300[01] " || netstat -tln 2>/dev/null | grep -E ":300[01] " || echo "Port check unavailable") | head -2
+            echo ""
+            echo "✅ Backend: Port 3001"
+            echo "✅ Frontend: Port 3000"
+            echo "✅ Nginx: Port 80"
           ENDSSH
 
       - name: Verify deployment
