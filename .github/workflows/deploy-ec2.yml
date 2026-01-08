@@ -233,14 +233,26 @@ jobs:
             fi
             
             # Check ports - this is the real test
-            BACKEND_PORT_COUNT=$(netstat -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
-            FRONTEND_PORT_COUNT=$(netstat -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
+            # Use ss if available, fallback to netstat
+            if command -v ss >/dev/null 2>&1; then
+              BACKEND_PORT_COUNT=$(ss -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
+              FRONTEND_PORT_COUNT=$(ss -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
+            else
+              BACKEND_PORT_COUNT=$(netstat -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
+              FRONTEND_PORT_COUNT=$(netstat -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
+            fi
             
             # Ensure variables are numbers, default to 0 if empty
             BACKEND_PORT_NUM=${BACKEND_PORT_COUNT:-0}
             FRONTEND_PORT_NUM=${FRONTEND_PORT_COUNT:-0}
             
-            # Convert to integer, default to 0
+            # Convert to integer, default to 0 (handle empty strings)
+            if [ -z "$BACKEND_PORT_NUM" ]; then
+              BACKEND_PORT_NUM=0
+            fi
+            if [ -z "$FRONTEND_PORT_NUM" ]; then
+              FRONTEND_PORT_NUM=0
+            fi
             BACKEND_PORT_NUM=$((BACKEND_PORT_NUM + 0))
             FRONTEND_PORT_NUM=$((FRONTEND_PORT_NUM + 0))
             
