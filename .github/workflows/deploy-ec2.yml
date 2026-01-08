@@ -1135,15 +1135,15 @@ jobs:
             if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ] && [ -n "$AWS_REGION" ]; then
               echo "🔧 Configuring AWS CLI..."
               mkdir -p ~/.aws
-              cat > ~/.aws/credentials << AWSCREDS
-[default]
-aws_access_key_id = ${AWS_ACCESS_KEY_ID}
-aws_secret_access_key = ${AWS_SECRET_ACCESS_KEY}
-AWSCREDS
-              cat > ~/.aws/config << AWSCONFIG
-[default]
-region = ${AWS_REGION}
-AWSCONFIG
+              {
+                echo '[default]'
+                echo "aws_access_key_id = ${AWS_ACCESS_KEY_ID}"
+                echo "aws_secret_access_key = ${AWS_SECRET_ACCESS_KEY}"
+              } > ~/.aws/credentials
+              {
+                echo '[default]'
+                echo "region = ${AWS_REGION}"
+              } > ~/.aws/config
               chmod 600 ~/.aws/credentials ~/.aws/config
               echo "✅ AWS CLI configured"
               
