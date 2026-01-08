@@ -142,7 +142,12 @@ jobs:
 
       - name: Deploy to EC2
         env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_PORT: ${{ secrets.DB_PORT }}
           EC2_HOST: ${{ env.EC2_HOST }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -157,7 +162,12 @@ jobs:
               -o TCPKeepAlive=yes \
               -o BatchMode=yes \
               ubuntu@${EC2_HOST} bash -s << ENDSSH
+            export DATABASE_URL="$DATABASE_URL"
+            export DB_HOST="$DB_HOST"
+            export DB_USER="$DB_USER"
             export DB_PASSWORD="$DB_PASSWORD"
+            export DB_NAME="$DB_NAME"
+            export DB_PORT="$DB_PORT"
             export EC2_HOST="$EC2_HOST"
             export AWS_REGION="$AWS_REGION"
             export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
@@ -202,11 +212,47 @@ jobs:
             NEW_COMMIT=$(git rev-parse --short HEAD)
             echo "📌 Deployed commit: $NEW_COMMIT"
             
-            # URL encode the password to handle special characters
-            DB_PASSWORD_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${DB_PASSWORD}', safe=''))" 2>/dev/null || echo "${DB_PASSWORD}")
+            # Construct DATABASE_URL with priority:
+            # 1. Use DATABASE_URL secret if provided (complete connection string)
+            # 2. Construct from AWS RDS credentials (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
+            # 3. Fall back to localhost with DB_PASSWORD
+            
+            if [ -n "$DATABASE_URL" ] && [ "$DATABASE_URL" != "" ]; then
+              echo "✅ Using DATABASE_URL from secrets (complete connection string)"
+              FINAL_DATABASE_URL="$DATABASE_URL"
+            elif [ -n "$DB_HOST" ] && [ -n "$DB_USER" ] && [ -n "$DB_PASSWORD" ] && [ -n "$DB_NAME" ]; then
+              echo "✅ Constructing DATABASE_URL from AWS RDS credentials"
+              # URL encode the password to handle special characters
+              DB_PASSWORD_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${DB_PASSWORD}', safe=''))" 2>/dev/null || echo "${DB_PASSWORD}")
+              # Use DB_PORT if provided, default to 5432
+              DB_PORT_FINAL=${DB_PORT:-5432}
+              # AWS RDS requires SSL, add ?sslmode=require
+              FINAL_DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD_ENCODED}@${DB_HOST}:${DB_PORT_FINAL}/${DB_NAME}?sslmode=require"
+              echo "   Host: ${DB_HOST}"
+              echo "   Database: ${DB_NAME}"
+              echo "   User: ${DB_USER}"
+              echo "   Port: ${DB_PORT_FINAL}"
+            elif [ -n "$DB_PASSWORD" ] && [ "$DB_PASSWORD" != "" ]; then
+              echo "✅ Constructing DATABASE_URL from DB_PASSWORD (localhost)"
+              # URL encode the password to handle special characters
+              DB_PASSWORD_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${DB_PASSWORD}', safe=''))" 2>/dev/null || echo "${DB_PASSWORD}")
+              FINAL_DATABASE_URL="postgresql://postgres:${DB_PASSWORD_ENCODED}@localhost:5432/wissen_publication_group"
+            else
+              echo "❌ Database configuration is missing!"
+              echo "Please set one of the following:"
+              echo "  Option 1: DATABASE_URL secret (complete connection string)"
+              echo "  Option 2: AWS RDS credentials:"
+              echo "    - DB_HOST (RDS endpoint)"
+              echo "    - DB_USER (database username)"
+              echo "    - DB_PASSWORD (database password)"
+              echo "    - DB_NAME (database name)"
+              echo "    - DB_PORT (optional, defaults to 5432)"
+              echo "  Option 3: DB_PASSWORD secret (for local PostgreSQL)"
+              exit 1
+            fi
             
             {
-              echo "DATABASE_URL=postgresql://postgres:${DB_PASSWORD_ENCODED}@localhost:5432/wissen_publication_group"
+              echo "DATABASE_URL=${FINAL_DATABASE_URL}"
               echo "NODE_ENV=production"
               echo "PORT=3001"
               echo "CORS_ORIGIN=http://${EC2_HOST},http://localhost:3000,http://localhost:3002"
@@ -453,23 +499,36 @@ jobs:
             
             # Check ports - this is the real test
             # Use ss if available, fallback to netstat
+            # Use proper command substitution to avoid executing the result
+            BACKEND_PORT_COUNT=0
+            FRONTEND_PORT_COUNT=0
+            
             if command -v ss >/dev/null 2>&1; then
               BACKEND_PORT_COUNT=$(ss -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
               FRONTEND_PORT_COUNT=$(ss -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
-            else
+            elif command -v netstat >/dev/null 2>&1; then
               BACKEND_PORT_COUNT=$(netstat -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
               FRONTEND_PORT_COUNT=$(netstat -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
+            else
+              echo "⚠️  Neither ss nor netstat available, using curl to check ports"
+              # Fallback to HTTP check
+              if curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:3001/health 2>/dev/null | grep -q "200\|000"; then
+                BACKEND_PORT_COUNT=1
+              fi
+              if curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:3000 2>/dev/null | grep -q "200\|000"; then
+                FRONTEND_PORT_COUNT=1
+              fi
             fi
             
             # Ensure variables are numbers, default to 0 if empty
             BACKEND_PORT_NUM=${BACKEND_PORT_COUNT:-0}
             FRONTEND_PORT_NUM=${FRONTEND_PORT_COUNT:-0}
             
-            # Convert to integer, default to 0 (handle empty strings)
-            if [ -z "$BACKEND_PORT_NUM" ]; then
+            # Convert to integer, default to 0 (handle empty strings and non-numeric)
+            if [ -z "$BACKEND_PORT_NUM" ] || ! [[ "$BACKEND_PORT_NUM" =~ ^[0-9]+$ ]]; then
               BACKEND_PORT_NUM=0
             fi
-            if [ -z "$FRONTEND_PORT_NUM" ]; then
+            if [ -z "$FRONTEND_PORT_NUM" ] || ! [[ "$FRONTEND_PORT_NUM" =~ ^[0-9]+$ ]]; then
               FRONTEND_PORT_NUM=0
             fi
             BACKEND_PORT_NUM=$((BACKEND_PORT_NUM + 0))
@@ -503,16 +562,17 @@ jobs:
                 
                 # Check port again
                 BACKEND_PORT_RETRY=0
+                PORT_CHECK_RESULT=0
                 if command -v ss >/dev/null 2>&1; then
                   PORT_CHECK_RESULT=$(ss -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
-                else
+                elif command -v netstat >/dev/null 2>&1; then
                   PORT_CHECK_RESULT=$(netstat -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
                 fi
-                if [ -n "$PORT_CHECK_RESULT" ] && [ "$PORT_CHECK_RESULT" != "" ]; then
-                  BACKEND_PORT_RETRY=$((PORT_CHECK_RESULT + 0))
-                else
-                  BACKEND_PORT_RETRY=0
+                # Ensure it's a number
+                if [ -z "$PORT_CHECK_RESULT" ] || ! [[ "$PORT_CHECK_RESULT" =~ ^[0-9]+$ ]]; then
+                  PORT_CHECK_RESULT=0
                 fi
+                BACKEND_PORT_RETRY=$((PORT_CHECK_RESULT + 0))
                 
                 if [ "${BACKEND_PORT_RETRY:-0}" -eq 0 ] 2>/dev/null; then
                   echo "⚠️  Backend still not listening on port 3001"
@@ -603,12 +663,14 @@ jobs:
                 echo "✅ Frontend started with PM2, waiting for port..."
                 cd ..
                 sleep 25
+                FRONTEND_PORT_RETRY_CHECK=0
                 if command -v ss >/dev/null 2>&1; then
                   FRONTEND_PORT_RETRY_CHECK=$(ss -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
-                else
+                elif command -v netstat >/dev/null 2>&1; then
                   FRONTEND_PORT_RETRY_CHECK=$(netstat -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
                 fi
-                if [ -z "$FRONTEND_PORT_RETRY_CHECK" ]; then
+                # Ensure it's a number
+                if [ -z "$FRONTEND_PORT_RETRY_CHECK" ] || ! [[ "$FRONTEND_PORT_RETRY_CHECK" =~ ^[0-9]+$ ]]; then
                   FRONTEND_PORT_RETRY_CHECK=0
                 fi
                 FRONTEND_PORT_RETRY_NUM=$((FRONTEND_PORT_RETRY_CHECK + 0))
@@ -771,19 +833,31 @@ jobs:
             
             # Final verification - both services must be listening AND responding
             echo "🔍 Final verification - checking ports and HTTP responses..."
+            # Check ports with proper error handling
+            FINAL_BACKEND_PORT=0
+            FINAL_FRONTEND_PORT=0
+            
             if command -v ss >/dev/null 2>&1; then
               FINAL_BACKEND_PORT=$(ss -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
               FINAL_FRONTEND_PORT=$(ss -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
-            else
+            elif command -v netstat >/dev/null 2>&1; then
               FINAL_BACKEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
               FINAL_FRONTEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
+            else
+              # Fallback to HTTP check
+              if curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:3001/health 2>/dev/null | grep -q "200\|000"; then
+                FINAL_BACKEND_PORT=1
+              fi
+              if curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:3000 2>/dev/null | grep -q "200\|000"; then
+                FINAL_FRONTEND_PORT=1
+              fi
             fi
             
             # Ensure variables are numbers
-            if [ -z "$FINAL_BACKEND_PORT" ]; then
+            if [ -z "$FINAL_BACKEND_PORT" ] || ! [[ "$FINAL_BACKEND_PORT" =~ ^[0-9]+$ ]]; then
               FINAL_BACKEND_PORT=0
             fi
-            if [ -z "$FINAL_FRONTEND_PORT" ]; then
+            if [ -z "$FINAL_FRONTEND_PORT" ] || ! [[ "$FINAL_FRONTEND_PORT" =~ ^[0-9]+$ ]]; then
               FINAL_FRONTEND_PORT=0
             fi
             FINAL_BACKEND_PORT=$((FINAL_BACKEND_PORT + 0))
