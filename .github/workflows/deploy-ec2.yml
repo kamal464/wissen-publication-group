@@ -106,7 +106,8 @@ jobs:
             cd frontend
             npm ci
             rm -rf .next node_modules/.cache .swc
-            NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME npm run build
+            echo "📝 Building with API URL: http://${EC2_HOST}/api"
+            NEXT_PUBLIC_API_URL="http://${EC2_HOST}/api" NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME npm run build
             if [ ! -d ".next" ]; then
               echo "❌ Frontend build failed"
               exit 1

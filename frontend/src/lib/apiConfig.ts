@@ -5,7 +5,10 @@
  */
 
 // Production backend URL (fallback)
-const PRODUCTION_BACKEND_URL = 'https://wissen-api-285326281784.us-central1.run.app';
+// This will be overridden by NEXT_PUBLIC_API_URL if set
+const PRODUCTION_BACKEND_URL = typeof window !== 'undefined' 
+  ? `${window.location.protocol}//${window.location.host}`
+  : 'http://localhost:3001';
 const DEVELOPMENT_BACKEND_URL = 'http://localhost:3001';
 
 /**

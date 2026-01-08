@@ -43,8 +43,8 @@ export function InjectApiUrl() {
         if (!apiUrl) {
           const hostname = window.location.hostname;
           if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.includes('localhost')) {
-            // Production environment - use known backend URL
-            const productionBackendUrl = 'https://wissen-api-285326281784.us-central1.run.app';
+            // Production environment - use same host as frontend
+            const productionBackendUrl = `${window.location.protocol}//${window.location.host}`;
             apiUrl = `${productionBackendUrl}/api`;
           }
         }
