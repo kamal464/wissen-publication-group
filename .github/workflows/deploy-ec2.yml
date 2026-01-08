@@ -116,26 +116,25 @@ jobs:
             
             echo "🚀 Starting services..."
             mkdir -p logs
+            
+            # Stop all existing PM2 processes
             pm2 delete all 2>/dev/null || true
-            sleep 2
+            sleep 3
             
-            cd backend
-            pm2 start node --name wissen-backend -- dist/src/main.js || {
-              echo "❌ Backend start failed"
-              pm2 logs wissen-backend --lines 20 --nostream 2>/dev/null || true
+            # Start services using ecosystem.config.js for better reliability
+            echo "Starting services with PM2 ecosystem config..."
+            pm2 start ecosystem.config.js || {
+              echo "❌ PM2 start failed"
+              pm2 list || true
+              pm2 logs --lines 30 --nostream || true
               exit 1
             }
-            cd ..
-            
-            cd frontend
-            pm2 start npm --name wissen-frontend -- start || {
-              echo "❌ Frontend start failed"
-              pm2 logs wissen-frontend --lines 20 --nostream 2>/dev/null || true
-              exit 1
-            }
-            cd ..
             
             pm2 save
+            
+            # Give services time to start
+            echo "⏳ Waiting for services to initialize..."
+            sleep 10
             
             echo "⏳ Waiting for services to start..."
             sleep 30
