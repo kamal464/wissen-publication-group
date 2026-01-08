@@ -252,15 +252,25 @@ jobs:
               # This avoids all the variable assignment issues
               echo "   Building connection string..."
               
-              # Replace @ with %40 in the password for URL encoding
-              PASSWORD_FOR_URL="${DB_PASSWORD//@/%40}"
+              # Verify DB_PASSWORD is still set
+              if [ -z "$DB_PASSWORD" ] || [ "$DB_PASSWORD" = "" ]; then
+                echo "   ❌ ERROR: DB_PASSWORD became empty!"
+                exit 1
+              fi
               
-              # Build the connection string directly
-              FINAL_DATABASE_URL="postgresql://postgres:${PASSWORD_FOR_URL}@localhost:5432/wissen_publication_group"
+              # Replace @ with %40 in the password for URL encoding (bash string replacement)
+              # Use a temporary variable to avoid any issues
+              TEMP_PASS="${DB_PASSWORD}"
+              TEMP_PASS="${TEMP_PASS//@/%40}"
               
-              # Verify it was created
+              # Build the connection string directly in one step
+              FINAL_DATABASE_URL="postgresql://postgres:${TEMP_PASS}@localhost:5432/wissen_publication_group"
+              
+              # Verify it was created and is not empty
               if [ -z "$FINAL_DATABASE_URL" ] || [ "$FINAL_DATABASE_URL" = "" ]; then
                 echo "   ❌ ERROR: Failed to create FINAL_DATABASE_URL!"
+                echo "   DB_PASSWORD was: $([ -n "$DB_PASSWORD" ] && echo "SET (length: ${#DB_PASSWORD})" || echo "NOT SET")"
+                echo "   TEMP_PASS was: $([ -n "$TEMP_PASS" ] && echo "SET (length: ${#TEMP_PASS})" || echo "NOT SET")"
                 exit 1
               fi
               
