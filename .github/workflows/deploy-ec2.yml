@@ -248,11 +248,12 @@ jobs:
               echo "✅ Using local PostgreSQL (localhost) - DB_PASSWORD provided"
               echo "   DB_PASSWORD length: ${#DB_PASSWORD}"
               
-              # URL encode the password to handle special characters
-              echo "   Encoding password with Python..."
-              DB_PASSWORD_ENCODED=""
+              # Initialize with the original password as fallback
+              DB_PASSWORD_ENCODED="${DB_PASSWORD}"
               
-              # Try Python encoding first
+              # Try to URL encode the password to handle special characters
+              echo "   Attempting to URL encode password with Python..."
+              
               if command -v python3 >/dev/null 2>&1; then
                 # Use a safer approach - write password to temp file to avoid shell escaping issues
                 echo "${DB_PASSWORD}" > /tmp/db_password.txt
@@ -262,43 +263,49 @@ jobs:
                 echo '    password = f.read().strip()' >> /tmp/encode_password.py
                 echo 'encoded = urllib.parse.quote(password, safe="")' >> /tmp/encode_password.py
                 echo 'print(encoded)' >> /tmp/encode_password.py
-                DB_PASSWORD_ENCODED=$(python3 /tmp/encode_password.py 2>/tmp/python_error.log)
+                
+                PYTHON_OUTPUT=$(python3 /tmp/encode_password.py 2>/tmp/python_error.log)
                 PYTHON_EXIT_CODE=$?
                 rm -f /tmp/db_password.txt /tmp/encode_password.py
                 
-                if [ $PYTHON_EXIT_CODE -eq 0 ] && [ -n "$DB_PASSWORD_ENCODED" ] && [ "$DB_PASSWORD_ENCODED" != "" ]; then
+                if [ $PYTHON_EXIT_CODE -eq 0 ] && [ -n "$PYTHON_OUTPUT" ] && [ "$PYTHON_OUTPUT" != "" ]; then
                   # Remove any trailing newlines or whitespace
-                  DB_PASSWORD_ENCODED=$(echo "$DB_PASSWORD_ENCODED" | tr -d '\n\r' | sed 's/[[:space:]]*$//')
-                  echo "   ✅ Python encoding successful (length: ${#DB_PASSWORD_ENCODED})"
-                else
-                  echo "   ⚠️  Python encoding failed (exit code: ${PYTHON_EXIT_CODE:-unknown})"
-                  if [ -f /tmp/python_error.log ] && [ -s /tmp/python_error.log ]; then
-                    echo "   Python error: $(cat /tmp/python_error.log)"
+                  PYTHON_OUTPUT=$(echo "$PYTHON_OUTPUT" | tr -d '\n\r' | sed 's/[[:space:]]*$//')
+                  if [ -n "$PYTHON_OUTPUT" ] && [ "$PYTHON_OUTPUT" != "" ]; then
+                    DB_PASSWORD_ENCODED="$PYTHON_OUTPUT"
+                    echo "   ✅ Python encoding successful (length: ${#DB_PASSWORD_ENCODED})"
+                  else
+                    echo "   ⚠️  Python encoding produced empty result, using password as-is"
                   fi
-                  DB_PASSWORD_ENCODED=""
+                else
+                  echo "   ⚠️  Python encoding failed (exit code: ${PYTHON_EXIT_CODE:-unknown}), using password as-is"
+                  if [ -f /tmp/python_error.log ] && [ -s /tmp/python_error.log ]; then
+                    echo "   Python error: $(cat /tmp/python_error.log | head -3)"
+                  fi
                 fi
               else
-                echo "   ⚠️  python3 not available"
-                DB_PASSWORD_ENCODED=""
+                echo "   ⚠️  python3 not available, using password as-is"
               fi
               
-              # Fallback: use password as-is if encoding failed
+              # Final validation - ensure we have a password
               if [ -z "$DB_PASSWORD_ENCODED" ] || [ "$DB_PASSWORD_ENCODED" = "" ]; then
-                echo "   Using password as-is (no encoding)"
-                DB_PASSWORD_ENCODED="${DB_PASSWORD}"
-              fi
-              
-              # Final validation
-              if [ -z "$DB_PASSWORD_ENCODED" ] || [ "$DB_PASSWORD_ENCODED" = "" ]; then
-                echo "   ❌ ERROR: DB_PASSWORD_ENCODED is still empty!"
-                echo "   DB_PASSWORD was: $([ -n "$DB_PASSWORD" ] && echo 'SET (length: '${#DB_PASSWORD}')' || echo 'NOT SET')"
+                echo "   ❌ CRITICAL ERROR: DB_PASSWORD_ENCODED is empty!"
+                echo "   DB_PASSWORD status: $([ -n "$DB_PASSWORD" ] && echo "SET (length: ${#DB_PASSWORD})" || echo "NOT SET")"
                 exit 1
               fi
               
-              echo "   Final encoded password length: ${#DB_PASSWORD_ENCODED}"
+              echo "   Final password to use (length: ${#DB_PASSWORD_ENCODED})"
               
-              # Construct the connection string
-              FINAL_DATABASE_URL="postgresql://postgres:${DB_PASSWORD_ENCODED}@localhost:5432/wissen_publication_group"
+              # Construct the connection string - manually encode @ symbol if present
+              # PostgreSQL connection strings need @ to be encoded as %40
+              DB_PASSWORD_FOR_URL="${DB_PASSWORD_ENCODED}"
+              # Replace @ with %40 if not already encoded
+              if [[ "$DB_PASSWORD_FOR_URL" == *"@"* ]] && [[ "$DB_PASSWORD_FOR_URL" != *"%40"* ]]; then
+                DB_PASSWORD_FOR_URL="${DB_PASSWORD_FOR_URL//@/%40}"
+                echo "   Encoded @ symbol in password"
+              fi
+              
+              FINAL_DATABASE_URL="postgresql://postgres:${DB_PASSWORD_FOR_URL}@localhost:5432/wissen_publication_group"
               
               # Verify assignment worked
               if [ -z "$FINAL_DATABASE_URL" ] || [ "$FINAL_DATABASE_URL" = "" ]; then
