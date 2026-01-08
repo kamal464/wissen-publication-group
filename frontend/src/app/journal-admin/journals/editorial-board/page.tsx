@@ -103,7 +103,7 @@ export default function EditorialBoardPage() {
   };
 
   const getImageUrl = (imagePath: string | undefined) => {
-    if (!imagePath) return null;
+    if (!imagePath || imagePath.trim() === '' || imagePath === 'undefined') return null;
     
     // If it's already a data URI, return as is
     if (imagePath.startsWith('data:')) {
