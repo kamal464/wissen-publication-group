@@ -449,10 +449,17 @@ jobs:
             if [ "${BACKEND_PORT_NUM:-0}" -eq 0 ] 2>/dev/null; then
               echo "⚠️  Backend not listening on port 3001 yet"
               echo "Checking if backend process is running..."
-              if pgrep -f "dist/src/main.js" > /dev/null; then
-                echo "✅ Backend process is running, port may be starting..."
-                echo "Waiting 10 more seconds for port to open..."
-                sleep 10
+              if pgrep -f "dist/src/main.js" > /dev/null || pgrep -f "wissen-backend" > /dev/null; then
+                echo "✅ Backend process is running, checking PM2 status..."
+                pm2 list | grep wissen-backend || true
+                echo ""
+                echo "Backend logs (last 20 lines):"
+                pm2 logs wissen-backend --lines 20 --nostream || true
+                echo ""
+                echo "Waiting 15 more seconds for port to open..."
+                sleep 15
+                
+                # Check port again
                 BACKEND_PORT_RETRY=0
                 if command -v ss >/dev/null 2>&1; then
                   PORT_CHECK=$(ss -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
@@ -462,16 +469,33 @@ jobs:
                 if [ -n "$PORT_CHECK" ] && [ "$PORT_CHECK" != "" ]; then
                   BACKEND_PORT_RETRY=$((PORT_CHECK + 0))
                 fi
+                
                 if [ "${BACKEND_PORT_RETRY:-0}" -eq 0 ] 2>/dev/null; then
-                  echo "❌ Backend still not listening after retry"
-                  pm2 logs wissen-backend --lines 50 --nostream || true
-                  exit 1
+                  echo "⚠️  Backend still not listening on port 3001"
+                  echo "Checking backend health endpoint directly..."
+                  BACKEND_HEALTH_DIRECT=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/health 2>/dev/null || echo "000")
+                  if [ "$BACKEND_HEALTH_DIRECT" != "000" ] && [ "$BACKEND_HEALTH_DIRECT" != "" ]; then
+                    echo "✅ Backend is responding on port 3001 (HTTP $BACKEND_HEALTH_DIRECT) - port check may be incorrect"
+                    BACKEND_PORT_NUM=1
+                  else
+                    echo "❌ Backend process is running but not responding"
+                    echo "Full backend logs:"
+                    pm2 logs wissen-backend --lines 100 --nostream || true
+                    echo ""
+                    echo "Checking if backend crashed:"
+                    pm2 list | grep wissen-backend || true
+                    exit 1
+                  fi
                 else
                   echo "✅ Backend is now listening on port 3001"
                   BACKEND_PORT_NUM=1
                 fi
               else
                 echo "❌ Backend process not running"
+                echo "PM2 status:"
+                pm2 list || true
+                echo ""
+                echo "Backend logs:"
                 pm2 logs wissen-backend --lines 50 --nostream || true
                 exit 1
               fi
