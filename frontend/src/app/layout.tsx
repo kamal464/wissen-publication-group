@@ -25,7 +25,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <head>
         {/* Meta tag for API URL - provides fallback for client-side injection */}
         {apiUrl && (
-          <meta name="api-base-url" content={apiUrl} />
+          <meta name="api-base-url" content={apiUrl} suppressHydrationWarning />
         )}
         {/* Prevent FOUC (Flash of Unstyled Content) */}
         <style dangerouslySetInnerHTML={{
@@ -33,7 +33,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             html { visibility: hidden; }
             html.hydrated { visibility: visible; }
           `
-        }} />
+        }} suppressHydrationWarning />
       </head>
       <body className="antialiased min-h-screen" suppressHydrationWarning>
         {/* Inject API URL - client-side only, no rendering */}
