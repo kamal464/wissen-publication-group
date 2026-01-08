@@ -542,6 +542,60 @@ jobs:
             
             echo ""
             echo "=========================================="
+            
+            # FINAL CHECK: Verify services are actually running before ending SSH session
+            echo "🔍 FINAL CHECK: Verifying services before ending deployment..."
+            sleep 5
+            
+            PM2_FINAL_STATUS=$(pm2 status)
+            echo "📊 Final PM2 Status:"
+            echo "$PM2_FINAL_STATUS"
+            echo ""
+            
+            # Check if services are online
+            BACKEND_ONLINE=$(echo "$PM2_FINAL_STATUS" | grep "wissen-backend" | grep -q "online" && echo "yes" || echo "no")
+            FRONTEND_ONLINE=$(echo "$PM2_FINAL_STATUS" | grep "wissen-frontend" | grep -q "online" && echo "yes" || echo "no")
+            
+            if [ "$BACKEND_ONLINE" = "no" ]; then
+              echo "❌ CRITICAL: Backend is NOT online!"
+              echo "Backend logs:"
+              pm2 logs wissen-backend --lines 50 --nostream
+            else
+              echo "✅ Backend is online"
+            fi
+            
+            if [ "$FRONTEND_ONLINE" = "no" ]; then
+              echo "❌ CRITICAL: Frontend is NOT online!"
+              echo "Frontend logs:"
+              pm2 logs wissen-frontend --lines 50 --nostream
+            else
+              echo "✅ Frontend is online"
+            fi
+            
+            # Test localhost endpoints
+            echo ""
+            echo "Testing localhost endpoints..."
+            BACKEND_LOCAL=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health 2>/dev/null || echo "000")
+            FRONTEND_LOCAL=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null || echo "000")
+            
+            echo "  Backend localhost:3001/api/health = HTTP $BACKEND_LOCAL"
+            echo "  Frontend localhost:3000 = HTTP $FRONTEND_LOCAL"
+            
+            if [ "$BACKEND_LOCAL" != "200" ]; then
+              echo "⚠️  WARNING: Backend not responding on localhost"
+            fi
+            
+            if [ "$FRONTEND_LOCAL" != "200" ]; then
+              echo "⚠️  WARNING: Frontend not responding on localhost"
+            fi
+            
+            # Show port status
+            echo ""
+            echo "Port listening status:"
+            netstat -tln 2>/dev/null | grep -E ":3000|:3001" || echo "No services listening on ports 3000 or 3001"
+            
+            echo ""
+            echo "=========================================="
           ENDSSH
 
       - name: Verify deployment
