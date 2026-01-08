@@ -1,13 +1,34 @@
 import axios from 'axios';
 import { getApiBaseUrl } from '../lib/apiConfig';
 
-const API_BASE_URL = getApiBaseUrl();
-
+// Create axios instance with lazy baseURL evaluation
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: '/api', // Default relative URL, will be overridden
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+// Override request interceptor to set baseURL dynamically
+const baseUrlInterceptor = api.interceptors.request.use((config) => {
+  // Get fresh API base URL on each request
+  const apiBaseUrl = getApiBaseUrl();
+  
+  // Always use absolute URL
+  if (apiBaseUrl.startsWith('http://') || apiBaseUrl.startsWith('https://')) {
+    // Already absolute - use it
+    config.baseURL = apiBaseUrl;
+  } else if (typeof window !== 'undefined') {
+    // Convert relative to absolute using current host
+    const protocol = window.location.protocol;
+    const host = window.location.host;
+    config.baseURL = `${protocol}//${host}${apiBaseUrl.startsWith('/') ? '' : '/'}${apiBaseUrl}`;
+  } else {
+    // Server-side: use as-is (shouldn't happen but fallback)
+    config.baseURL = apiBaseUrl;
+  }
+  
+  return config;
 });
 
 // Request interceptor for adding auth token

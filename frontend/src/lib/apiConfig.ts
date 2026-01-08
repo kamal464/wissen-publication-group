@@ -58,7 +58,10 @@ export const getApiBaseUrl = (): string => {
     if (!apiUrl) {
       const hostname = window.location.hostname;
       if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.includes('localhost')) {
-        apiUrl = `${PRODUCTION_BACKEND_URL}/api`;
+        // Use current host for production
+        const protocol = window.location.protocol;
+        const host = window.location.host;
+        apiUrl = `${protocol}//${host}/api`;
         // Cache it
         (window as any).__API_BASE_URL__ = apiUrl;
       }
@@ -70,6 +73,19 @@ export const getApiBaseUrl = (): string => {
 
   // Normalize the URL
   if (apiUrl) {
+    // Ensure it's a full URL (starts with http:// or https://)
+    if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+      // If it's a relative URL, make it absolute using current host
+      if (typeof window !== 'undefined') {
+        const protocol = window.location.protocol;
+        const host = window.location.host;
+        apiUrl = `${protocol}//${host}${apiUrl.startsWith('/') ? '' : '/'}${apiUrl}`;
+      } else {
+        // Server-side: can't determine host, return as-is (shouldn't happen)
+        console.warn('API URL is relative on server-side:', apiUrl);
+      }
+    }
+    
     // Ensure it ends with /api
     if (apiUrl.endsWith('/api')) {
       return apiUrl;
