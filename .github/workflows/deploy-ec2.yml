@@ -63,23 +63,33 @@ jobs:
       - name: Test SSH Connection
         run: |
           echo "🔍 Testing SSH connection to EC2..."
+          EC2_HOST="${{ secrets.EC2_HOST }}"
+          if [ -z "$EC2_HOST" ]; then
+            echo "❌ EC2_HOST secret is not set"
+            exit 1
+          fi
+          
+          echo "Testing connection to: $EC2_HOST"
           if ssh -o StrictHostKeyChecking=no \
                  -o ConnectTimeout=10 \
                  -o ServerAliveInterval=5 \
                  -o ServerAliveCountMax=3 \
-                 ubuntu@${{ secrets.EC2_HOST }} \
+                 -o BatchMode=yes \
+                 ubuntu@"$EC2_HOST" \
                  "echo '✅ SSH connection successful'; hostname; uptime" 2>&1; then
             echo "✅ SSH connection test passed"
           else
-            echo "❌ SSH connection test failed"
+            SSH_EXIT_CODE=$?
+            echo "❌ SSH connection test failed (exit code: $SSH_EXIT_CODE)"
+            echo ""
             echo "Please check:"
             echo "  1. EC2 instance is running (not stopped/terminated)"
-            echo "  2. EC2_HOST secret is correct (IP address or hostname)"
+            echo "  2. EC2_HOST secret is correct: $EC2_HOST"
             echo "  3. Security group allows SSH (port 22) from GitHub Actions IPs"
             echo "  4. EC2 instance has a public IP address"
             echo ""
             echo "Attempting to ping the host..."
-            ping -c 3 ${{ secrets.EC2_HOST }} || echo "Ping also failed"
+            ping -c 3 "$EC2_HOST" 2>&1 || echo "Ping also failed"
             exit 1
           fi
 
