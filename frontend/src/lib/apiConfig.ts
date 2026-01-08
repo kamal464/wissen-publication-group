@@ -54,6 +54,28 @@ export const getApiBaseUrl = (): string => {
       apiUrl = process.env.NEXT_PUBLIC_API_URL;
     }
 
+    // Priority 4.5: If API URL is set but doesn't match current origin, use current origin instead
+    // This prevents CORS errors when accessing via IP but API URL is set to domain
+    if (apiUrl && typeof window !== 'undefined') {
+      try {
+        const apiUrlObj = new URL(apiUrl);
+        const currentOrigin = `${window.location.protocol}//${window.location.host}`;
+        const apiOrigin = `${apiUrlObj.protocol}//${apiUrlObj.host}`;
+        
+        // If origins don't match, use current origin to avoid CORS
+        if (apiOrigin !== currentOrigin) {
+          console.log(`[API] Origin mismatch detected. API URL origin: ${apiOrigin}, Current origin: ${currentOrigin}. Using current origin.`);
+          apiUrl = `${currentOrigin}/api`;
+          // Cache it
+          (window as any).__API_BASE_URL__ = apiUrl;
+        }
+      } catch (e) {
+        // If URL parsing fails, fall through to Priority 5
+        console.warn('[API] Failed to parse API URL, using fallback:', e);
+        apiUrl = undefined;
+      }
+    }
+
     // Priority 5: Production fallback based on hostname
     if (!apiUrl) {
       const hostname = window.location.hostname;
