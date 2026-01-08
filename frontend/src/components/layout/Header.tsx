@@ -14,7 +14,7 @@ const menuItems: NavMenuItemProps[] = [
   { label: 'Journals', href: '/journals' },
   { label: 'Guidelines', href: '/instructions' }, // Using /instructions as guidelines page
   { label: 'Submit Manuscript', href: '/submit-manuscript', variant: 'cta' },
-  // { label: 'Contact Us', href: '/contact' },
+  { label: 'Contact Us', href: '/contact' }, // ✅ Re-enabled for deployment verification
   // Commented out items:
   // { label: 'Articles', href: '/articles' },
   // { label: 'Editorial Board', href: '/editorial-board' },

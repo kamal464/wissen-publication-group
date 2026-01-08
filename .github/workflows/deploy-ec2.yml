@@ -142,6 +142,9 @@ jobs:
             # Clean Next.js cache before building
             echo "🧹 Cleaning Next.js cache..."
             rm -rf .next 2>/dev/null || true
+            rm -rf node_modules/.cache 2>/dev/null || true
+            rm -rf .swc 2>/dev/null || true
+            echo "✅ Cache cleared"
             
             # Build frontend with deployment timestamp
             echo ""
@@ -175,11 +178,22 @@ jobs:
             # Stop all processes first
             echo "🛑 Stopping all PM2 processes..."
             pm2 delete all 2>/dev/null || echo "No processes to delete"
-            sleep 2
+            sleep 3
             
             # Clear PM2 logs
             echo "🧹 Clearing PM2 logs..."
             pm2 flush 2>/dev/null || echo "No logs to clear"
+            
+            # Verify ecosystem.config.js exists and is readable
+            echo "📋 Checking ecosystem.config.js..."
+            if [ -f "ecosystem.config.js" ]; then
+              echo "✅ ecosystem.config.js found"
+              cat ecosystem.config.js | head -20
+            else
+              echo "❌ ERROR: ecosystem.config.js not found!"
+              exit 1
+            fi
+            echo ""
             
             # Start services fresh
             echo "🚀 Starting services with PM2..."
@@ -187,6 +201,21 @@ jobs:
             echo "✅ PM2 start command executed"
             pm2 save
             echo "✅ PM2 save executed"
+            
+            # Verify processes started
+            echo "🔍 Verifying processes started..."
+            sleep 2
+            if ! pm2 list | grep -q "wissen-backend"; then
+              echo "❌ ERROR: wissen-backend not found in PM2!"
+              pm2 logs --lines 20
+              exit 1
+            fi
+            if ! pm2 list | grep -q "wissen-frontend"; then
+              echo "❌ ERROR: wissen-frontend not found in PM2!"
+              pm2 logs --lines 20
+              exit 1
+            fi
+            echo "✅ Both processes found in PM2"
             
             # Wait for services to start
             echo "⏳ Waiting for services to start (10 seconds)..."
@@ -236,7 +265,36 @@ jobs:
             echo "Verifying deployed code matches GitHub..."
             DEPLOYED_COMMIT=$(git rev-parse --short HEAD)
             echo "📌 Deployed commit: $DEPLOYED_COMMIT"
-            echo "📌 Commit matches latest: $(git rev-parse HEAD | head -c 7)"
+            echo "📌 Full commit hash: $(git rev-parse HEAD)"
+            echo ""
+            
+            # Verify build files are recent (within last 2 minutes)
+            echo "🔍 Verifying build files are recent..."
+            BACKEND_BUILD_TIME=$(stat -c %Y backend/dist/main.js 2>/dev/null || echo "0")
+            FRONTEND_BUILD_TIME=$(stat -c %Y frontend/.next/BUILD_ID 2>/dev/null || echo "0")
+            CURRENT_TIME=$(date +%s)
+            BACKEND_AGE=$((CURRENT_TIME - BACKEND_BUILD_TIME))
+            FRONTEND_AGE=$((CURRENT_TIME - FRONTEND_BUILD_TIME))
+            
+            if [ "$BACKEND_AGE" -gt 300 ]; then
+              echo "⚠️  WARNING: Backend build is $BACKEND_AGE seconds old (may be stale)"
+            else
+              echo "✅ Backend build is fresh ($BACKEND_AGE seconds old)"
+            fi
+            
+            if [ "$FRONTEND_AGE" -gt 300 ]; then
+              echo "⚠️  WARNING: Frontend build is $FRONTEND_AGE seconds old (may be stale)"
+            else
+              echo "✅ Frontend build is fresh ($FRONTEND_AGE seconds old)"
+            fi
+            echo ""
+            
+            # Check if PM2 is using the correct working directory
+            echo "🔍 Verifying PM2 working directories..."
+            BACKEND_CWD=$(pm2 describe wissen-backend 2>/dev/null | grep "cwd" | awk '{print $2}' || echo "unknown")
+            FRONTEND_CWD=$(pm2 describe wissen-frontend 2>/dev/null | grep "cwd" | awk '{print $2}' || echo "unknown")
+            echo "  Backend CWD: $BACKEND_CWD"
+            echo "  Frontend CWD: $FRONTEND_CWD"
             echo ""
             
             # Reload Nginx
@@ -272,6 +330,27 @@ jobs:
 
       - name: Verify deployment
         run: |
-          sleep 10
-          curl -f http://${{ secrets.EC2_HOST }}/api/health || echo "⚠️  Health check failed, but deployment may still be in progress"
+          echo "=========================================="
+          echo "🔍 FINAL VERIFICATION"
+          echo "=========================================="
+          sleep 15
+          echo "Testing backend health endpoint..."
+          BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}/api/health || echo "000")
+          if [ "$BACKEND_STATUS" = "200" ]; then
+            echo "✅ Backend health check passed (HTTP $BACKEND_STATUS)"
+            curl -s http://${{ secrets.EC2_HOST }}/api/health | head -5
+          else
+            echo "❌ Backend health check failed (HTTP $BACKEND_STATUS)"
+            echo "⚠️  Deployment may still be in progress or there may be an issue"
+          fi
+          echo ""
+          echo "Testing frontend..."
+          FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}/ || echo "000")
+          if [ "$FRONTEND_STATUS" = "200" ]; then
+            echo "✅ Frontend is accessible (HTTP $FRONTEND_STATUS)"
+          else
+            echo "❌ Frontend check failed (HTTP $FRONTEND_STATUS)"
+          fi
+          echo ""
+          echo "=========================================="
 
