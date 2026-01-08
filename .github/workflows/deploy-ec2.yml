@@ -44,19 +44,36 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'ENDSSH'
             set -e
-            echo "🚀 Starting deployment..."
+            echo "=========================================="
+            echo "🚀 STARTING DEPLOYMENT"
+            echo "=========================================="
+            echo "Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+            echo ""
             
             # Navigate to project directory
             cd /var/www/wissen-publication-group
+            echo "📁 Current directory: $(pwd)"
+            echo ""
             
             # Pull latest code
-            echo "📥 Pulling latest code..."
+            echo "=========================================="
+            echo "📥 STEP 1: PULLING LATEST CODE"
+            echo "=========================================="
+            echo "Previous commit: $(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
             git fetch origin
+            echo "✅ Fetched from origin"
             git reset --hard origin/main
+            echo "✅ Reset to origin/main"
             git clean -fd
+            echo "✅ Cleaned untracked files"
             # Show current commit to verify
-            echo "📌 Current commit: $(git rev-parse --short HEAD)"
-            echo "📌 Commit message: $(git log -1 --pretty=%B)"
+            NEW_COMMIT=$(git rev-parse --short HEAD)
+            COMMIT_MSG=$(git log -1 --pretty=%B)
+            echo ""
+            echo "📌 NEW COMMIT: $NEW_COMMIT"
+            echo "📌 COMMIT MESSAGE: $COMMIT_MSG"
+            echo "📌 COMMIT DATE: $(git log -1 --pretty=%cd)"
+            echo ""
             
             # Update backend environment file
             echo "⚙️  Updating backend environment..."
@@ -77,9 +94,14 @@ jobs:
             echo "NEXT_PUBLIC_API_URL=http://${{ secrets.EC2_DOMAIN }}/api" > frontend/.env.production
             
             # Install backend dependencies
-            echo "📦 Installing backend dependencies..."
+            echo "=========================================="
+            echo "📦 STEP 2: BACKEND SETUP"
+            echo "=========================================="
             cd backend
+            echo "📁 Backend directory: $(pwd)"
+            echo "Installing dependencies..."
             npm ci
+            echo "✅ Backend dependencies installed"
             
             # Generate Prisma Client
             echo "🔧 Generating Prisma Client..."
@@ -94,63 +116,158 @@ jobs:
             rm -rf dist 2>/dev/null || true
             
             # Build backend
+            echo ""
             echo "🔨 Building backend..."
             npm run build
-            echo "✅ Backend built successfully"
+            if [ -f "dist/main.js" ]; then
+              echo "✅ Backend built successfully"
+              echo "📦 Build file size: $(du -h dist/main.js | cut -f1)"
+              echo "📅 Build time: $(date)"
+            else
+              echo "❌ ERROR: Backend build file not found!"
+              exit 1
+            fi
+            echo ""
             
             # Install frontend dependencies
-            echo "📦 Installing frontend dependencies..."
+            echo "=========================================="
+            echo "📦 STEP 3: FRONTEND SETUP"
+            echo "=========================================="
             cd ../frontend
+            echo "📁 Frontend directory: $(pwd)"
+            echo "Installing dependencies..."
             npm ci
+            echo "✅ Frontend dependencies installed"
             
             # Clean Next.js cache before building
             echo "🧹 Cleaning Next.js cache..."
             rm -rf .next 2>/dev/null || true
             
             # Build frontend with deployment timestamp
+            echo ""
             echo "🔨 Building frontend..."
             export NEXT_PUBLIC_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
             echo "📅 Build timestamp: $NEXT_PUBLIC_BUILD_TIME"
             NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME npm run build
-            echo "✅ Frontend built successfully"
+            if [ -d ".next" ]; then
+              echo "✅ Frontend built successfully"
+              echo "📦 Build directory size: $(du -sh .next | cut -f1)"
+              echo "📅 Build time: $(date)"
+            else
+              echo "❌ ERROR: Frontend build directory not found!"
+              exit 1
+            fi
+            echo ""
             
             # Restart services with PM2 (force restart to ensure changes are loaded)
-            echo "🔄 Restarting services..."
+            echo "=========================================="
+            echo "🔄 STEP 4: RESTARTING SERVICES"
+            echo "=========================================="
             cd /var/www/wissen-publication-group
+            echo "📁 Project root: $(pwd)"
+            echo ""
+            
+            # Show PM2 status before restart
+            echo "📊 PM2 Status BEFORE restart:"
+            pm2 status || echo "PM2 not running"
+            echo ""
+            
             # Stop all processes first
-            pm2 delete all 2>/dev/null || true
+            echo "🛑 Stopping all PM2 processes..."
+            pm2 delete all 2>/dev/null || echo "No processes to delete"
+            sleep 2
+            
             # Clear PM2 logs
-            pm2 flush 2>/dev/null || true
+            echo "🧹 Clearing PM2 logs..."
+            pm2 flush 2>/dev/null || echo "No logs to clear"
+            
             # Start services fresh
+            echo "🚀 Starting services with PM2..."
             pm2 start ecosystem.config.js
+            echo "✅ PM2 start command executed"
             pm2 save
-            # Wait a moment for services to start
-            sleep 5
+            echo "✅ PM2 save executed"
+            
+            # Wait for services to start
+            echo "⏳ Waiting for services to start (10 seconds)..."
+            sleep 10
+            
             # Show PM2 status
+            echo ""
+            echo "📊 PM2 Status AFTER restart:"
             pm2 status
-            echo "✅ Services restarted"
+            echo ""
             
             # Verify services are running with new code
-            echo "🔍 Verifying deployment..."
-            sleep 3
-            echo "Backend process info:"
-            pm2 describe wissen-backend | grep -E "status|pid|uptime|restarts" || echo "Backend not found"
-            echo "Frontend process info:"
-            pm2 describe wissen-frontend | grep -E "status|pid|uptime|restarts" || echo "Frontend not found"
+            echo "=========================================="
+            echo "🔍 STEP 5: VERIFYING DEPLOYMENT"
+            echo "=========================================="
+            
+            echo "Backend process details:"
+            pm2 describe wissen-backend 2>/dev/null | grep -E "status|pid|uptime|restarts|pm2 env" || echo "❌ Backend not found in PM2"
+            echo ""
+            
+            echo "Frontend process details:"
+            pm2 describe wissen-frontend 2>/dev/null | grep -E "status|pid|uptime|restarts|pm2 env" || echo "❌ Frontend not found in PM2"
+            echo ""
             
             # Test if services are responding
-            echo "Testing backend health..."
-            curl -s http://localhost:3001/api/health || echo "Backend not responding yet"
+            echo "Testing backend health endpoint..."
+            BACKEND_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health || echo "000")
+            if [ "$BACKEND_HEALTH" = "200" ]; then
+              echo "✅ Backend is responding (HTTP $BACKEND_HEALTH)"
+              curl -s http://localhost:3001/api/health | head -3
+            else
+              echo "❌ Backend not responding (HTTP $BACKEND_HEALTH)"
+            fi
+            echo ""
+            
             echo "Testing frontend..."
-            curl -s http://localhost:3000 | head -5 || echo "Frontend not responding yet"
+            FRONTEND_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 || echo "000")
+            if [ "$FRONTEND_RESPONSE" = "200" ]; then
+              echo "✅ Frontend is responding (HTTP $FRONTEND_RESPONSE)"
+              curl -s http://localhost:3000 | head -3
+            else
+              echo "❌ Frontend not responding (HTTP $FRONTEND_RESPONSE)"
+            fi
+            echo ""
+            
+            # Verify code is actually updated
+            echo "Verifying deployed code matches GitHub..."
+            DEPLOYED_COMMIT=$(git rev-parse --short HEAD)
+            echo "📌 Deployed commit: $DEPLOYED_COMMIT"
+            echo "📌 Commit matches latest: $(git rev-parse HEAD | head -c 7)"
+            echo ""
             
             # Reload Nginx
-            echo "🔄 Reloading Nginx..."
-            sudo nginx -t && sudo systemctl reload nginx
+            echo "=========================================="
+            echo "🔄 STEP 6: RELOADING NGINX"
+            echo "=========================================="
+            if sudo nginx -t; then
+              echo "✅ Nginx configuration is valid"
+              sudo systemctl reload nginx
+              echo "✅ Nginx reloaded"
+            else
+              echo "❌ Nginx configuration test failed!"
+              exit 1
+            fi
+            echo ""
             
-            echo "✅ Deployment complete!"
-            echo "🌐 Application is live at: http://${{ secrets.EC2_DOMAIN }}"
+            echo "=========================================="
+            echo "✅ DEPLOYMENT COMPLETE!"
+            echo "=========================================="
+            echo "🌐 Application URL: http://${{ secrets.EC2_DOMAIN }}"
             echo "📅 Deployment timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+            echo "📌 Deployed commit: $DEPLOYED_COMMIT"
+            echo "📝 Commit message: $COMMIT_MSG"
+            echo ""
+            echo "🔍 Final verification:"
+            echo "  - Backend status: $(pm2 jlist | grep -o '"name":"wissen-backend"[^}]*"status":"[^"]*' | grep -o '"status":"[^"]*' | cut -d'"' -f4 || echo 'unknown')"
+            echo "  - Frontend status: $(pm2 jlist | grep -o '"name":"wissen-frontend"[^}]*"status":"[^"]*' | grep -o '"status":"[^"]*' | cut -d'"' -f4 || echo 'unknown')"
+            echo "  - Backend uptime: $(pm2 describe wissen-backend 2>/dev/null | grep 'uptime' || echo 'N/A')"
+            echo "  - Frontend uptime: $(pm2 describe wissen-frontend 2>/dev/null | grep 'uptime' || echo 'N/A')"
+            echo ""
+            echo "=========================================="
           ENDSSH
 
       - name: Verify deployment
