@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Sidebar } from 'primereact/sidebar';
+import { ClientOnly } from '@/components/ClientOnly';
 import TopNewsBar from './TopNewsBar';
 import NavMenu from './NavMenu';
 import type { NavMenuItemProps } from './NavMenuItem';
@@ -37,7 +38,11 @@ export default function Header() {
 
   return (
     <header className="header-wrapper" suppressHydrationWarning>
-      {!isSearchOpen && <TopNewsBar />}
+      {!isSearchOpen && (
+        <ClientOnly>
+          <TopNewsBar />
+        </ClientOnly>
+      )}
 
       <div className="header">
         <div className="header__container">
