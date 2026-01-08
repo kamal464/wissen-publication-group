@@ -268,7 +268,19 @@ jobs:
             
             # Ensure node_modules has correct permissions
             chmod -R u+w node_modules 2>/dev/null || true
-            echo "✅ Backend dependencies installed"
+            
+            # Verify critical dependencies are installed
+            echo "Verifying critical dependencies..."
+            if [ ! -d "node_modules/@nestjs/core" ]; then
+              echo "❌ @nestjs/core not found in node_modules"
+              echo "Reinstalling dependencies..."
+              rm -rf node_modules package-lock.json
+              npm install --unsafe-perm || {
+                echo "❌ Failed to reinstall dependencies"
+                exit 1
+              }
+            fi
+            echo "✅ Backend dependencies installed and verified"
             
             # Verify nest CLI is available
             if ! command -v nest &> /dev/null && ! npx nest --version &> /dev/null; then
@@ -292,12 +304,25 @@ jobs:
             
             echo "Building backend..."
             rm -rf dist
+            
+            # Verify node_modules exists and has required packages before building
+            if [ ! -d "node_modules" ] || [ ! -d "node_modules/@nestjs/core" ]; then
+              echo "❌ node_modules missing or incomplete before build"
+              echo "Reinstalling dependencies..."
+              npm install --unsafe-perm || {
+                echo "❌ Failed to install dependencies"
+                exit 1
+              }
+            fi
+            
             if ! npm run build; then
               echo "❌ Backend build failed"
               echo "Checking if nest is available:"
               which nest || npx nest --version || echo "nest not found"
               echo "Node version: $(node --version)"
               echo "NPM version: $(npm --version)"
+              echo "Checking node_modules:"
+              ls -la node_modules/@nestjs 2>/dev/null | head -5 || echo "@nestjs not found"
               exit 1
             fi
             
