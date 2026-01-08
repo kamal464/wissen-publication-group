@@ -41,14 +41,14 @@ jobs:
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
           CLOUDFRONT_URL: ${{ secrets.CLOUDFRONT_URL }}
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} bash -s << 'ENDSSH'
-            export DB_PASSWORD="${DB_PASSWORD}"
-            export EC2_HOST="${EC2_HOST}"
-            export AWS_REGION="${AWS_REGION}"
-            export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
-            export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"
-            export S3_BUCKET_NAME="${S3_BUCKET_NAME}"
-            export CLOUDFRONT_URL="${CLOUDFRONT_URL}"
+          ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} bash -s << ENDSSH
+            export DB_PASSWORD="$DB_PASSWORD"
+            export EC2_HOST="$EC2_HOST"
+            export AWS_REGION="$AWS_REGION"
+            export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
+            export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
+            export S3_BUCKET_NAME="$S3_BUCKET_NAME"
+            export CLOUDFRONT_URL="$CLOUDFRONT_URL"
             set -x
             cd /var/www/wissen-publication-group || { echo "❌ Directory not found"; exit 1; }
             
