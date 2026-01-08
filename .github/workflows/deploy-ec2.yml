@@ -278,6 +278,26 @@ jobs:
             echo "✅ Created backend/.env file"
             echo "📝 Verifying database connection string (password hidden)..."
             grep -v "PASSWORD" backend/.env | head -1 || true
+            echo ""
+            echo "📋 Full .env file contents (sensitive values hidden):"
+            sed 's/\(.*PASSWORD.*=\).*/\1***/' backend/.env | sed 's/\(.*SECRET.*=\).*/\1***/' | sed 's/\(.*KEY.*=\).*/\1***/' || true
+            echo ""
+            
+            # Verify DATABASE_URL is set
+            if ! grep -q "^DATABASE_URL=" backend/.env; then
+              echo "❌ ERROR: DATABASE_URL not found in backend/.env file!"
+              echo "File contents:"
+              cat backend/.env || true
+              exit 1
+            fi
+            
+            # Verify DATABASE_URL is not empty
+            DATABASE_URL_VALUE=$(grep "^DATABASE_URL=" backend/.env | cut -d'=' -f2-)
+            if [ -z "$DATABASE_URL_VALUE" ]; then
+              echo "❌ ERROR: DATABASE_URL is empty in backend/.env file!"
+              exit 1
+            fi
+            echo "✅ DATABASE_URL is set in backend/.env"
             
             # Ensure EC2_HOST is set
             if [ -z "${EC2_HOST}" ]; then
@@ -463,9 +483,24 @@ jobs:
             pm2 delete all 2>/dev/null || true
             sleep 3
             
+            # Load environment variables from backend/.env file
+            echo "📋 Loading environment variables from backend/.env..."
+            if [ -f backend/.env ]; then
+              set -a
+              source backend/.env
+              set +a
+              echo "✅ Environment variables loaded"
+              echo "DATABASE_URL is set: $([ -n "$DATABASE_URL" ] && echo 'YES' || echo 'NO')"
+            else
+              echo "❌ ERROR: backend/.env file not found!"
+              exit 1
+            fi
+            
             # Start services using ecosystem.config.js for better reliability
             echo "Starting services with PM2 ecosystem config..."
-            pm2 start ecosystem.config.js || {
+            # Export DATABASE_URL so PM2 can use it
+            export DATABASE_URL
+            pm2 start ecosystem.config.js --update-env || {
               echo "❌ PM2 start failed"
               pm2 list || true
               pm2 logs --lines 30 --nostream || true

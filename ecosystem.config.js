@@ -1,3 +1,11 @@
+// Try to load environment variables from .env file if dotenv is available
+try {
+  require('dotenv').config({ path: './backend/.env' });
+} catch (e) {
+  // dotenv not available, will rely on system environment variables
+  console.log('Note: dotenv not available, using system environment variables');
+}
+
 module.exports = {
   apps: [
     {
@@ -5,9 +13,18 @@ module.exports = {
       cwd: './backend',
       script: 'node',
       args: 'dist/src/main.js',
+      // PM2 will automatically read .env file from cwd (./backend)
+      // But we also explicitly pass env vars from process.env as fallback
       env: {
-        NODE_ENV: 'production',
-        PORT: 3001,
+        NODE_ENV: process.env.NODE_ENV || 'production',
+        PORT: process.env.PORT || 3001,
+        DATABASE_URL: process.env.DATABASE_URL,
+        CORS_ORIGIN: process.env.CORS_ORIGIN,
+        AWS_REGION: process.env.AWS_REGION,
+        AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+        AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+        S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
+        CLOUDFRONT_URL: process.env.CLOUDFRONT_URL,
       },
       error_file: './logs/backend-error.log',
       out_file: './logs/backend-out.log',
