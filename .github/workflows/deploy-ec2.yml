@@ -252,9 +252,31 @@ jobs:
             pwd
             ls -la ecosystem.config.js
             
-            # Try starting with explicit paths
-            pm2 start ecosystem.config.js --update-env
-            echo "✅ PM2 start command executed"
+            # Create logs directory if it doesn't exist
+            mkdir -p logs
+            
+            # Start backend first
+            echo "Starting backend..."
+            cd backend
+            pm2 start ecosystem.config.js --only wissen-backend --update-env || {
+              echo "⚠️  Ecosystem config failed, trying direct start..."
+              pm2 start node --name wissen-backend -- dist/src/main.js || {
+                echo "❌ Backend start failed, trying npm start..."
+                pm2 start npm --name wissen-backend -- start
+              }
+            }
+            cd ..
+            
+            # Start frontend
+            echo "Starting frontend..."
+            cd frontend
+            pm2 start ecosystem.config.js --only wissen-frontend --update-env || {
+              echo "⚠️  Ecosystem config failed, trying direct start..."
+              pm2 start npm --name wissen-frontend -- start
+            }
+            cd ..
+            
+            echo "✅ PM2 start commands executed"
             
             # Wait a moment for processes to initialize
             sleep 5
@@ -263,21 +285,6 @@ jobs:
             PM2_INITIAL=$(pm2 list)
             echo "📊 PM2 Status immediately after start:"
             echo "$PM2_INITIAL"
-            
-            # If processes didn't start, try starting them individually
-            if ! echo "$PM2_INITIAL" | grep -q "wissen-backend"; then
-              echo "⚠️  Backend not found, trying to start individually..."
-              cd backend
-              pm2 start npm --name wissen-backend -- start
-              cd ..
-            fi
-            
-            if ! echo "$PM2_INITIAL" | grep -q "wissen-frontend"; then
-              echo "⚠️  Frontend not found, trying to start individually..."
-              cd frontend
-              pm2 start npm --name wissen-frontend -- start
-              cd ..
-            fi
             
             pm2 save
             echo "✅ PM2 save executed"
