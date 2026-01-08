@@ -915,39 +915,39 @@ jobs:
             fi
             
             echo "🔧 Configuring Nginx..."
-            # Create nginx config using echo statements to avoid YAML heredoc issues
-            sudo tee /etc/nginx/sites-available/wissen-publication-group > /dev/null << 'EOF'
-server {
-    listen 80;
-    server_name _;
-    client_max_body_size 50M;
-    proxy_read_timeout 300s;
-    proxy_connect_timeout 300s;
-    proxy_send_timeout 300s;
-    location /api {
-        proxy_pass http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-EOF
+            # Create nginx config using echo statements - no heredoc, no YAML issues
+            {
+              echo 'server {'
+              echo '    listen 80;'
+              echo '    server_name _;'
+              echo '    client_max_body_size 50M;'
+              echo '    proxy_read_timeout 300s;'
+              echo '    proxy_connect_timeout 300s;'
+              echo '    proxy_send_timeout 300s;'
+              echo '    location /api {'
+              echo '        proxy_pass http://localhost:3001;'
+              echo '        proxy_http_version 1.1;'
+              echo '        proxy_set_header Upgrade $http_upgrade;'
+              echo '        proxy_set_header Connection '"'"'upgrade'"'"';'
+              echo '        proxy_set_header Host $host;'
+              echo '        proxy_set_header X-Real-IP $remote_addr;'
+              echo '        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;'
+              echo '        proxy_set_header X-Forwarded-Proto $scheme;'
+              echo '        proxy_cache_bypass $http_upgrade;'
+              echo '    }'
+              echo '    location / {'
+              echo '        proxy_pass http://localhost:3000;'
+              echo '        proxy_http_version 1.1;'
+              echo '        proxy_set_header Upgrade $http_upgrade;'
+              echo '        proxy_set_header Connection '"'"'upgrade'"'"';'
+              echo '        proxy_set_header Host $host;'
+              echo '        proxy_set_header X-Real-IP $remote_addr;'
+              echo '        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;'
+              echo '        proxy_set_header X-Forwarded-Proto $scheme;'
+              echo '        proxy_cache_bypass $http_upgrade;'
+              echo '    }'
+              echo '}'
+            } | sudo tee /etc/nginx/sites-available/wissen-publication-group > /dev/null
             
             sudo ln -sf /etc/nginx/sites-available/wissen-publication-group /etc/nginx/sites-enabled/
             sudo rm -f /etc/nginx/sites-enabled/default
