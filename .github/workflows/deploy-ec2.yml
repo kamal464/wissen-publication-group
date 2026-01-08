@@ -520,12 +520,23 @@ jobs:
             
             # Final verification - both services must be listening AND responding
             echo "🔍 Final verification - checking ports and HTTP responses..."
-            FINAL_BACKEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
-            FINAL_FRONTEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
+            if command -v ss >/dev/null 2>&1; then
+              FINAL_BACKEND_PORT=$(ss -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
+              FINAL_FRONTEND_PORT=$(ss -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
+            else
+              FINAL_BACKEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
+              FINAL_FRONTEND_PORT=$(netstat -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
+            fi
             
             # Ensure variables are numbers
-            FINAL_BACKEND_PORT=${FINAL_BACKEND_PORT:-0}
-            FINAL_FRONTEND_PORT=${FINAL_FRONTEND_PORT:-0}
+            if [ -z "$FINAL_BACKEND_PORT" ]; then
+              FINAL_BACKEND_PORT=0
+            fi
+            if [ -z "$FINAL_FRONTEND_PORT" ]; then
+              FINAL_FRONTEND_PORT=0
+            fi
+            FINAL_BACKEND_PORT=$((FINAL_BACKEND_PORT + 0))
+            FINAL_FRONTEND_PORT=$((FINAL_FRONTEND_PORT + 0))
             
             # Test HTTP responses, not just ports
             FINAL_BACKEND_HTTP=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://localhost:3001/health 2>/dev/null || echo "000")
