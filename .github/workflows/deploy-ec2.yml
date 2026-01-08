@@ -44,6 +44,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'ENDSSH'
             set -e
+            set -x  # Enable debug mode to see all commands
             echo "=========================================="
             echo "🚀 STARTING DEPLOYMENT"
             echo "=========================================="
@@ -582,11 +583,17 @@ jobs:
             echo "  Frontend localhost:3000 = HTTP $FRONTEND_LOCAL"
             
             if [ "$BACKEND_LOCAL" != "200" ]; then
-              echo "⚠️  WARNING: Backend not responding on localhost"
+              echo "❌ CRITICAL: Backend not responding on localhost (HTTP $BACKEND_LOCAL)"
+              echo "This will cause deployment to fail!"
+              pm2 logs wissen-backend --lines 50 --nostream
+              exit 1
             fi
             
             if [ "$FRONTEND_LOCAL" != "200" ]; then
-              echo "⚠️  WARNING: Frontend not responding on localhost"
+              echo "❌ CRITICAL: Frontend not responding on localhost (HTTP $FRONTEND_LOCAL)"
+              echo "This will cause deployment to fail!"
+              pm2 logs wissen-frontend --lines 50 --nostream
+              exit 1
             fi
             
             # Show port status
