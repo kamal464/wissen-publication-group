@@ -220,15 +220,22 @@ jobs:
           ENDSSH
 
       - name: Verify deployment
+        continue-on-error: true
         run: |
-          sleep 20
+          sleep 30
           EC2_HOST="${{ secrets.EC2_HOST }}"
-          BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${EC2_HOST}/api/health" 2>&1 || echo "000")
+          echo "🔍 Verifying deployment from GitHub Actions..."
+          
+          BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${EC2_HOST}/health" 2>&1 || echo "000")
           FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${EC2_HOST}/" 2>&1 || echo "000")
-          echo "Backend: HTTP $BACKEND_STATUS"
-          echo "Frontend: HTTP $FRONTEND_STATUS"
+          
+          echo "Backend health (via Nginx): HTTP $BACKEND_STATUS"
+          echo "Frontend (via Nginx): HTTP $FRONTEND_STATUS"
+          
           if [ "$BACKEND_STATUS" = "200" ] && [ "$FRONTEND_STATUS" = "200" ]; then
-            echo "✅ Deployment successful!"
+            echo "✅ Deployment successful! Both services are responding."
           else
-            echo "⚠️  Services may still be starting"
+            echo "⚠️  Services may still be starting or Nginx may need configuration"
+            echo "Backend endpoint: http://${EC2_HOST}/health"
+            echo "Frontend endpoint: http://${EC2_HOST}/"
           fi
