@@ -85,9 +85,23 @@ jobs:
             echo "📝 Verifying database connection string (password hidden)..."
             grep -v "PASSWORD" backend/.env | head -1 || true
             
-            echo "NEXT_PUBLIC_API_URL=http://${EC2_HOST}/api" > frontend/.env.production
-            export NEXT_PUBLIC_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-            echo "NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME" >> frontend/.env.production
+            # Ensure EC2_HOST is set
+            if [ -z "${EC2_HOST}" ]; then
+              echo "❌ EC2_HOST is not set!"
+              echo "Current EC2_HOST value: '${EC2_HOST}'"
+              exit 1
+            fi
+            
+            echo "Setting frontend environment variables..."
+            echo "EC2_HOST=${EC2_HOST}"
+            {
+              echo "NEXT_PUBLIC_API_URL=http://${EC2_HOST}/api"
+              echo "NEXT_PUBLIC_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+            } > frontend/.env.production
+            
+            echo "Frontend .env.production contents:"
+            cat frontend/.env.production
+            echo ""
             
             echo "🔨 Building backend..."
             cd backend
