@@ -1,10 +1,11 @@
-name: Deploy to Cloud Run (SSR) - Production
+name: Deploy to Cloud Run (SSR) - Production [DISABLED - Using EC2]
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch: # Allow manual trigger
+  # DISABLED - Using EC2 deployment instead
+  workflow_dispatch: # Only manual trigger (disabled)
+  # push:
+  #   branches:
+  #     - main
 
 jobs:
   deploy-frontend:
