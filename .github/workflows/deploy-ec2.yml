@@ -213,13 +213,26 @@ jobs:
             echo "📌 Deployed commit: $NEW_COMMIT"
             
             # Construct DATABASE_URL with priority:
-            # 1. Use DATABASE_URL secret if provided (complete connection string)
+            # 1. Use localhost PostgreSQL (DB_PASSWORD) - ALWAYS PRIORITIZE LOCAL POSTGRES
             # 2. Construct from AWS RDS credentials (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
-            # 3. Fall back to localhost with DB_PASSWORD
+            # 3. Use DATABASE_URL secret ONLY if it's NOT Supabase (ignore Supabase URLs)
             
+            # Check if DATABASE_URL contains Supabase and ignore it
             if [ -n "$DATABASE_URL" ] && [ "$DATABASE_URL" != "" ]; then
-              echo "✅ Using DATABASE_URL from secrets (complete connection string)"
-              FINAL_DATABASE_URL="$DATABASE_URL"
+              if echo "$DATABASE_URL" | grep -qi "supabase"; then
+                echo "⚠️  DATABASE_URL contains Supabase - ignoring and using local PostgreSQL instead"
+                DATABASE_URL=""
+              fi
+            fi
+            
+            # Priority 1: Always use localhost PostgreSQL if DB_PASSWORD is available
+            if [ -n "$DB_PASSWORD" ] && [ "$DB_PASSWORD" != "" ]; then
+              echo "✅ Using local PostgreSQL (localhost) - DB_PASSWORD provided"
+              # URL encode the password to handle special characters
+              DB_PASSWORD_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${DB_PASSWORD}', safe=''))" 2>/dev/null || echo "${DB_PASSWORD}")
+              FINAL_DATABASE_URL="postgresql://postgres:${DB_PASSWORD_ENCODED}@localhost:5432/wissen_publication_group"
+              echo "   Connection: postgresql://postgres:***@localhost:5432/wissen_publication_group"
+            # Priority 2: Use AWS RDS if credentials are provided
             elif [ -n "$DB_HOST" ] && [ -n "$DB_USER" ] && [ -n "$DB_PASSWORD" ] && [ -n "$DB_NAME" ]; then
               echo "✅ Constructing DATABASE_URL from AWS RDS credentials"
               # URL encode the password to handle special characters
@@ -232,22 +245,21 @@ jobs:
               echo "   Database: ${DB_NAME}"
               echo "   User: ${DB_USER}"
               echo "   Port: ${DB_PORT_FINAL}"
-            elif [ -n "$DB_PASSWORD" ] && [ "$DB_PASSWORD" != "" ]; then
-              echo "✅ Constructing DATABASE_URL from DB_PASSWORD (localhost)"
-              # URL encode the password to handle special characters
-              DB_PASSWORD_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${DB_PASSWORD}', safe=''))" 2>/dev/null || echo "${DB_PASSWORD}")
-              FINAL_DATABASE_URL="postgresql://postgres:${DB_PASSWORD_ENCODED}@localhost:5432/wissen_publication_group"
+            # Priority 3: Use DATABASE_URL only if it's not Supabase
+            elif [ -n "$DATABASE_URL" ] && [ "$DATABASE_URL" != "" ]; then
+              echo "✅ Using DATABASE_URL from secrets (non-Supabase connection string)"
+              FINAL_DATABASE_URL="$DATABASE_URL"
             else
               echo "❌ Database configuration is missing!"
               echo "Please set one of the following:"
-              echo "  Option 1: DATABASE_URL secret (complete connection string)"
+              echo "  Option 1: DB_PASSWORD secret (for local PostgreSQL) - RECOMMENDED"
               echo "  Option 2: AWS RDS credentials:"
               echo "    - DB_HOST (RDS endpoint)"
               echo "    - DB_USER (database username)"
               echo "    - DB_PASSWORD (database password)"
               echo "    - DB_NAME (database name)"
               echo "    - DB_PORT (optional, defaults to 5432)"
-              echo "  Option 3: DB_PASSWORD secret (for local PostgreSQL)"
+              echo "  Option 3: DATABASE_URL secret (complete connection string, NOT Supabase)"
               exit 1
             fi
             
