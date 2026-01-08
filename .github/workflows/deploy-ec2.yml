@@ -453,15 +453,15 @@ jobs:
                 echo "✅ Backend process is running, port may be starting..."
                 echo "Waiting 10 more seconds for port to open..."
                 sleep 10
+                BACKEND_PORT_RETRY=0
                 if command -v ss >/dev/null 2>&1; then
-                  BACKEND_PORT_RETRY=$(ss -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
+                  PORT_CHECK=$(ss -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
                 else
-                  BACKEND_PORT_RETRY=$(netstat -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
+                  PORT_CHECK=$(netstat -tln 2>/dev/null | grep -c ":3001 " 2>/dev/null || echo "0")
                 fi
-                if [ -z "$BACKEND_PORT_RETRY" ]; then
-                  BACKEND_PORT_RETRY=0
+                if [ -n "$PORT_CHECK" ] && [ "$PORT_CHECK" != "" ]; then
+                  BACKEND_PORT_RETRY=$((PORT_CHECK + 0))
                 fi
-                BACKEND_PORT_RETRY=$((BACKEND_PORT_RETRY + 0))
                 if [ "${BACKEND_PORT_RETRY:-0}" -eq 0 ] 2>/dev/null; then
                   echo "❌ Backend still not listening after retry"
                   pm2 logs wissen-backend --lines 50 --nostream || true
