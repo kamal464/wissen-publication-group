@@ -203,25 +203,25 @@ jobs:
             FRONTEND_PORT=$((FRONTEND_PORT + 0))
             
             echo "Port verification:"
-            if [ "${BACKEND_PORT:-0}" -gt 0 ] 2>/dev/null; then
+            if [ "${BACKEND_PORT_NUM:-0}" -gt 0 ] 2>/dev/null; then
               echo "  Backend port 3001: ✅ Listening"
             else
               echo "  Backend port 3001: ❌ Not listening"
             fi
-            if [ "${FRONTEND_PORT:-0}" -gt 0 ] 2>/dev/null; then
+            if [ "${FRONTEND_PORT_NUM:-0}" -gt 0 ] 2>/dev/null; then
               echo "  Frontend port 3000: ✅ Listening"
             else
               echo "  Frontend port 3000: ❌ Not listening"
             fi
             echo ""
             
-            if [ "${BACKEND_PORT:-0}" -eq 0 ] 2>/dev/null; then
+            if [ "${BACKEND_PORT_NUM:-0}" -eq 0 ] 2>/dev/null; then
               echo "❌ Backend not listening on port 3001"
               pm2 logs wissen-backend --lines 50 --nostream || true
               exit 1
             fi
             
-            if [ "${FRONTEND_PORT:-0}" -eq 0 ] 2>/dev/null; then
+            if [ "${FRONTEND_PORT_NUM:-0}" -eq 0 ] 2>/dev/null; then
               echo "❌ Frontend not listening on port 3000 - this is causing the 502 error!"
               echo ""
               echo "=== PM2 Status ==="
@@ -256,9 +256,9 @@ jobs:
               }
               cd ..
               sleep 20
-              FRONTEND_PORT_RETRY=$(netstat -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
-              FRONTEND_PORT_RETRY=${FRONTEND_PORT_RETRY:-0}
-              if [ "${FRONTEND_PORT_RETRY:-0}" -eq 0 ] 2>/dev/null; then
+              FRONTEND_PORT_RETRY_CHECK=$(netstat -tln 2>/dev/null | grep -c ":3000 " 2>/dev/null || echo "0")
+              FRONTEND_PORT_RETRY_NUM=$((FRONTEND_PORT_RETRY_CHECK + 0))
+              if [ "${FRONTEND_PORT_RETRY_NUM:-0}" -eq 0 ] 2>/dev/null; then
                 echo "❌ Frontend still not listening after restart - DEPLOYMENT FAILED"
                 echo "=== Final Diagnostics ==="
                 pm2 list || true
