@@ -246,41 +246,11 @@ jobs:
             # Priority 1: Always use localhost PostgreSQL if DB_PASSWORD is available
             if [ -n "$DB_PASSWORD" ] && [ "$DB_PASSWORD" != "" ]; then
               echo "✅ Using local PostgreSQL (localhost) - DB_PASSWORD provided"
-              echo "   DB_PASSWORD length: ${#DB_PASSWORD}"
               
-              # Simple approach: Build connection string directly, encoding @ as %40
-              # Use printf and sed to handle the encoding more reliably
-              echo "   Building connection string..."
+              # Simplest approach: Build connection string in one line with inline @ to %40 replacement
+              FINAL_DATABASE_URL="postgresql://postgres:$(echo "$DB_PASSWORD" | sed 's/@/%40/g')@localhost:5432/wissen_publication_group"
               
-              # Verify DB_PASSWORD is still set
-              if [ -z "$DB_PASSWORD" ] || [ "$DB_PASSWORD" = "" ]; then
-                echo "   ❌ ERROR: DB_PASSWORD became empty!"
-                exit 1
-              fi
-              
-              # Use printf to build the connection string with @ replaced by %40
-              # This avoids variable assignment issues
-              ENCODED_PASS=$(printf '%s' "$DB_PASSWORD" | sed 's/@/%40/g')
-              
-              # Verify encoding worked
-              if [ -z "$ENCODED_PASS" ] || [ "$ENCODED_PASS" = "" ]; then
-                echo "   ❌ ERROR: Password encoding failed!"
-                echo "   DB_PASSWORD was: $([ -n "$DB_PASSWORD" ] && echo "SET (length: ${#DB_PASSWORD})" || echo "NOT SET")"
-                exit 1
-              fi
-              
-              # Build the connection string
-              FINAL_DATABASE_URL="postgresql://postgres:${ENCODED_PASS}@localhost:5432/wissen_publication_group"
-              
-              # Verify it was created and is not empty
-              if [ -z "$FINAL_DATABASE_URL" ] || [ "$FINAL_DATABASE_URL" = "" ]; then
-                echo "   ❌ ERROR: Failed to create FINAL_DATABASE_URL!"
-                echo "   DB_PASSWORD was: $([ -n "$DB_PASSWORD" ] && echo "SET (length: ${#DB_PASSWORD})" || echo "NOT SET")"
-                echo "   ENCODED_PASS was: $([ -n "$ENCODED_PASS" ] && echo "SET (length: ${#ENCODED_PASS})" || echo "NOT SET")"
-                exit 1
-              fi
-              
-              echo "   ✅ Connection string created (length: ${#FINAL_DATABASE_URL})"
+              echo "   ✅ Connection string created"
               echo "   Connection: postgresql://postgres:***@localhost:5432/wissen_publication_group"
               
               # Verify assignment worked
