@@ -8,7 +8,6 @@ import { ReduxProvider } from "@/store/Provider";
 import { InjectApiUrl } from "@/components/InjectApiUrl";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ErrorFallback } from "@/components/ErrorFallback";
-import DeploymentStatus from "@/components/DeploymentStatus";
 
 export const metadata: Metadata = {
   title: "Wissen Publication Group - Scientific Journals & Research",
@@ -41,8 +40,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <ErrorBoundary fallback={<ErrorFallback />}>
           <ReduxProvider>
             {children}
-            {/* 🚀 AWS EC2 Auto-Deployment Status - Shows when GitHub Actions deployed */}
-            <DeploymentStatus />
           </ReduxProvider>
         </ErrorBoundary>
         {/* Mark as hydrated after client-side JS loads */}
