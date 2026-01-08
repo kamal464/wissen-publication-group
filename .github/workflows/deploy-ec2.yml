@@ -196,20 +196,47 @@ jobs:
             
             if [ "$FRONTEND_PORT" -eq "0" ]; then
               echo "❌ Frontend not listening on port 3000 - this is causing the 502 error!"
-              echo "Full frontend logs:"
-              pm2 logs wissen-frontend --lines 50 --nostream || true
               echo ""
-              echo "Attempting to restart frontend..."
-              pm2 restart wissen-frontend || {
-                pm2 delete wissen-frontend
-                pm2 start ecosystem.config.js --only wissen-frontend
+              echo "=== PM2 Status ==="
+              pm2 list || true
+              echo ""
+              echo "=== Frontend PM2 Info ==="
+              pm2 describe wissen-frontend || true
+              echo ""
+              echo "=== Full Frontend Logs ==="
+              pm2 logs wissen-frontend --lines 100 --nostream || true
+              echo ""
+              echo "=== Frontend Process Check ==="
+              ps aux | grep -E "next|node.*frontend" | grep -v grep || echo "No frontend processes found"
+              echo ""
+              echo "=== Frontend Directory Check ==="
+              ls -la frontend/.next 2>/dev/null || echo ".next directory not found"
+              echo ""
+              echo "=== Attempting to restart frontend ==="
+              pm2 delete wissen-frontend 2>/dev/null || true
+              sleep 2
+              cd frontend
+              pm2 start npm --name wissen-frontend -- start || {
+                echo "❌ Failed to start frontend with PM2"
+                echo "Trying direct start..."
+                NODE_ENV=production PORT=3000 npm start &
+                sleep 10
+                FRONTEND_PORT_DIRECT=$(netstat -tln 2>/dev/null | grep -c ":3000 " || echo "0")
+                if [ "$FRONTEND_PORT_DIRECT" -eq "0" ]; then
+                  echo "❌ Direct start also failed"
+                  exit 1
+                fi
               }
-              sleep 15
+              cd ..
+              sleep 20
               FRONTEND_PORT_RETRY=$(netstat -tln 2>/dev/null | grep -c ":3000 " || echo "0")
               if [ "$FRONTEND_PORT_RETRY" -eq "0" ]; then
-                echo "❌ Frontend still not listening after restart"
-                echo "Final frontend logs:"
-                pm2 logs wissen-frontend --lines 50 --nostream || true
+                echo "❌ Frontend still not listening after restart - DEPLOYMENT FAILED"
+                echo "=== Final Diagnostics ==="
+                pm2 list || true
+                pm2 logs wissen-frontend --lines 100 --nostream || true
+                echo "=== Port Status ==="
+                netstat -tln | grep -E ":3000|:3001" || echo "No services listening"
                 exit 1
               else
                 echo "✅ Frontend is now listening on port 3000"
