@@ -58,7 +58,7 @@ jobs:
 DATABASE_URL=postgresql://postgres:${{ secrets.DB_PASSWORD }}@localhost:5432/wissen_publication_group
 NODE_ENV=production
 PORT=3001
-CORS_ORIGIN=http://${{ secrets.EC2_HOST }},http://${{ secrets.EC2_DOMAIN }},http://www.${{ secrets.EC2_DOMAIN }},http://localhost:3000,http://localhost:3002
+CORS_ORIGIN=http://${{ secrets.EC2_HOST }},http://localhost:3000,http://localhost:3002
 AWS_REGION=${{ secrets.AWS_REGION }}
 AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
 AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -66,7 +66,7 @@ S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}
 CLOUDFRONT_URL=${{ secrets.CLOUDFRONT_URL }}
 ENVEOF
             
-            echo "NEXT_PUBLIC_API_URL=http://${{ secrets.EC2_DOMAIN }}/api" > frontend/.env.production
+            echo "NEXT_PUBLIC_API_URL=http://${{ secrets.EC2_HOST }}/api" > frontend/.env.production
             export NEXT_PUBLIC_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
             echo "NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME" >> frontend/.env.production
             
@@ -187,7 +187,7 @@ ENVEOF
             echo "=========================================="
             echo "✅ DEPLOYMENT COMPLETE!"
             echo "=========================================="
-            echo "🌐 Application: http://${{ secrets.EC2_DOMAIN }}"
+            echo "🌐 Application: http://${{ secrets.EC2_HOST }}"
             echo "📌 Commit: $NEW_COMMIT"
           ENDSSH
 
