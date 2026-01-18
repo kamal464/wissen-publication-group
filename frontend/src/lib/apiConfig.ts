@@ -5,7 +5,10 @@
  */
 
 // Production backend URL (fallback)
-const PRODUCTION_BACKEND_URL = 'https://wissen-api-285326281784.us-central1.run.app';
+// This will be overridden by NEXT_PUBLIC_API_URL if set
+const PRODUCTION_BACKEND_URL = typeof window !== 'undefined' 
+  ? `${window.location.protocol}//${window.location.host}`
+  : 'http://localhost:3001';
 const DEVELOPMENT_BACKEND_URL = 'http://localhost:3001';
 
 /**
@@ -51,11 +54,36 @@ export const getApiBaseUrl = (): string => {
       apiUrl = process.env.NEXT_PUBLIC_API_URL;
     }
 
+    // Priority 4.5: If API URL is set but doesn't match current origin, use current origin instead
+    // This prevents CORS errors when accessing via IP but API URL is set to domain
+    if (apiUrl && typeof window !== 'undefined') {
+      try {
+        const apiUrlObj = new URL(apiUrl);
+        const currentOrigin = `${window.location.protocol}//${window.location.host}`;
+        const apiOrigin = `${apiUrlObj.protocol}//${apiUrlObj.host}`;
+        
+        // If origins don't match, use current origin to avoid CORS
+        if (apiOrigin !== currentOrigin) {
+          console.log(`[API] Origin mismatch detected. API URL origin: ${apiOrigin}, Current origin: ${currentOrigin}. Using current origin.`);
+          apiUrl = `${currentOrigin}/api`;
+          // Cache it
+          (window as any).__API_BASE_URL__ = apiUrl;
+        }
+      } catch (e) {
+        // If URL parsing fails, fall through to Priority 5
+        console.warn('[API] Failed to parse API URL, using fallback:', e);
+        apiUrl = undefined;
+      }
+    }
+
     // Priority 5: Production fallback based on hostname
     if (!apiUrl) {
       const hostname = window.location.hostname;
       if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.includes('localhost')) {
-        apiUrl = `${PRODUCTION_BACKEND_URL}/api`;
+        // Use current host for production
+        const protocol = window.location.protocol;
+        const host = window.location.host;
+        apiUrl = `${protocol}//${host}/api`;
         // Cache it
         (window as any).__API_BASE_URL__ = apiUrl;
       }
@@ -65,11 +93,28 @@ export const getApiBaseUrl = (): string => {
     apiUrl = process.env.NEXT_PUBLIC_API_URL;
   }
 
-  // Normalize the URL
+  // Normalize the URL - CRITICAL: Always return absolute URL
   if (apiUrl) {
-    // Ensure it ends with /api
+    // Ensure it's a full URL (starts with http:// or https://)
+    if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+      // If it's a relative URL, make it absolute using current host
+      if (typeof window !== 'undefined') {
+        const protocol = window.location.protocol;
+        const host = window.location.host;
+        // Handle both /api and api formats
+        const cleanPath = apiUrl.startsWith('/') ? apiUrl : `/${apiUrl}`;
+        apiUrl = `${protocol}//${host}${cleanPath}`;
+      } else {
+        // Server-side: can't determine host, return as-is (shouldn't happen)
+        console.warn('API URL is relative on server-side:', apiUrl);
+      }
+    }
+    
+    // Ensure it ends with /api (but don't double it)
     if (apiUrl.endsWith('/api')) {
       return apiUrl;
+    } else if (apiUrl.endsWith('/api/')) {
+      return apiUrl.slice(0, -1); // Remove trailing slash
     } else if (apiUrl.endsWith('/')) {
       return `${apiUrl}api`;
     } else {
@@ -78,6 +123,17 @@ export const getApiBaseUrl = (): string => {
   }
 
   // Final fallback: development localhost
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // If running on localhost, use the backend URL (port 3001)
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `${DEVELOPMENT_BACKEND_URL}/api`;
+    }
+    // Otherwise use current host (production)
+    const protocol = window.location.protocol;
+    const host = window.location.host;
+    return `${protocol}//${host}/api`;
+  }
   return `${DEVELOPMENT_BACKEND_URL}/api`;
 };
 

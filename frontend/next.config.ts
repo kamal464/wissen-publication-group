@@ -1,10 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // For SSR deployment (Cloud Run)
-  output: 'standalone', // Required for Docker/Cloud Run deployment
+  // For EC2 deployment with PM2 - do NOT use standalone mode
+  // Standalone mode is only for Docker/Cloud Run
+  // output: 'standalone', // DISABLED for EC2 deployment
   images: {
-    unoptimized: false, // Can use optimized images with SSR
+    unoptimized: false,
   },
   trailingSlash: true,
   // Note: NEXT_PUBLIC_* variables are automatically available

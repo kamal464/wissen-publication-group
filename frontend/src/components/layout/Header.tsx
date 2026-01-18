@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Sidebar } from 'primereact/sidebar';
+import { ClientOnly } from '@/components/ClientOnly';
 import TopNewsBar from './TopNewsBar';
 import NavMenu from './NavMenu';
 import type { NavMenuItemProps } from './NavMenuItem';
@@ -14,7 +15,7 @@ const menuItems: NavMenuItemProps[] = [
   { label: 'Journals', href: '/journals' },
   { label: 'Guidelines', href: '/instructions' }, // Using /instructions as guidelines page
   { label: 'Submit Manuscript', href: '/submit-manuscript', variant: 'cta' },
-  { label: 'Contact Us', href: '/contact' },
+  { label: 'Contact Us', href: '/contact' }, // ✅ DEPLOYMENT TEST v2
   // Commented out items:
   // { label: 'Articles', href: '/articles' },
   // { label: 'Editorial Board', href: '/editorial-board' },
@@ -36,7 +37,7 @@ export default function Header() {
   };
 
   return (
-    <header className="header-wrapper">
+    <header className="header-wrapper" suppressHydrationWarning>
       {!isSearchOpen && <TopNewsBar />}
 
       <div className="header">

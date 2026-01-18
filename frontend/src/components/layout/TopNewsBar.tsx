@@ -14,8 +14,10 @@ interface NewsItem {
 export default function TopNewsBar() {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     loadNews();
   }, []);
 
@@ -46,15 +48,16 @@ export default function TopNewsBar() {
     }
   };
 
-  if (loading || newsItems.length === 0) {
-    return null; // Don't show bar if no news
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted || loading || newsItems.length === 0) {
+    return null; // Don't show bar if no news or not mounted
   }
 
   return (
-    <div className="top-bar" role="banner">
+    <div className="top-bar" role="banner" suppressHydrationWarning>
       <div className="top-bar__container">
         <div className="top-bar__news" aria-live="polite">
-          <span className="top-bar__badge">LATEST NEWS</span>
+          <span className="top-bar__badge" suppressHydrationWarning>LATEST NEWS</span>
           <div className="top-bar__ticker">
             <div className="top-bar__ticker-track">
               {[...newsItems, ...newsItems].map((item, index) => (
@@ -62,8 +65,9 @@ export default function TopNewsBar() {
                   key={`${item.id}-${index}`}
                   href={item.link || '#'}
                   className="top-bar__ticker-item"
+                  suppressHydrationWarning
                 >
-                  {item.title}
+                  <span suppressHydrationWarning>{item.title}</span>
                 </Link>
               ))}
             </div>
@@ -74,7 +78,7 @@ export default function TopNewsBar() {
             <button type="button" className="top-bar__language-btn" suppressHydrationWarning>
               ENG
             </button>
-            <span className="top-bar__divider">|</span>
+            <span className="top-bar__divider" suppressHydrationWarning>|</span>
             <button type="button" className="top-bar__language-btn" suppressHydrationWarning>
               中文
             </button>

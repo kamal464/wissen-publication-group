@@ -1,13 +1,54 @@
 import axios from 'axios';
 import { getApiBaseUrl } from '../lib/apiConfig';
 
-const API_BASE_URL = getApiBaseUrl();
-
+// Create axios instance with lazy baseURL evaluation
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: '/api', // Default relative URL, will be overridden
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+// Override request interceptor to set baseURL dynamically
+// This MUST run first to set the baseURL before other interceptors
+const baseUrlInterceptor = api.interceptors.request.use((config) => {
+  // Get fresh API base URL on each request
+  const apiBaseUrl = getApiBaseUrl();
+  
+  // Debug logging (remove in production if needed)
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    console.log('[API] Resolved baseURL:', apiBaseUrl);
+  }
+  
+  // Always use absolute URL - CRITICAL for production
+  if (apiBaseUrl.startsWith('http://') || apiBaseUrl.startsWith('https://')) {
+    // Already absolute - use it directly
+    config.baseURL = apiBaseUrl;
+  } else if (typeof window !== 'undefined') {
+    // Convert relative to absolute using current host
+    const protocol = window.location.protocol;
+    const host = window.location.host;
+    const absoluteUrl = `${protocol}//${host}${apiBaseUrl.startsWith('/') ? '' : '/'}${apiBaseUrl}`;
+    config.baseURL = absoluteUrl;
+    
+    if (window.location.hostname !== 'localhost') {
+      console.log('[API] Converted to absolute URL:', absoluteUrl);
+    }
+  } else {
+    // Server-side: use as-is (shouldn't happen but fallback)
+    config.baseURL = apiBaseUrl;
+  }
+  
+  // Ensure baseURL is never just '/api' or 'api' - must be full URL
+  if (config.baseURL && !config.baseURL.startsWith('http://') && !config.baseURL.startsWith('https://')) {
+    if (typeof window !== 'undefined') {
+      const protocol = window.location.protocol;
+      const host = window.location.host;
+      config.baseURL = `${protocol}//${host}${config.baseURL.startsWith('/') ? '' : '/'}${config.baseURL}`;
+    }
+  }
+  
+  return config;
 });
 
 // Request interceptor for adding auth token

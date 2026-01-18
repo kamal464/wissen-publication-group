@@ -237,7 +237,10 @@ export class AdminController {
       throw new Error('No file uploaded');
     }
 
-    const fileUrl = `/uploads/${file.filename}`;
+    // Upload to S3 (consistent with journal image uploads)
+    const uploadResult = await this.s3Service.uploadFile(file, 'board-members');
+    const fileUrl = uploadResult.url;
+    
     const updated = await this.adminService.updateBoardMember(id, { imageUrl: fileUrl });
     return {
       success: true,

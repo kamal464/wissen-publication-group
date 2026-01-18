@@ -28,6 +28,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
    * Ensures the connection string is compatible with PgBouncer (connection pooler)
    * by adding ?pgbouncer=true which disables prepared statements
    * This fixes the "prepared statement does not exist" error
+   * 
+   * Note: For AWS RDS, we typically don't need pgbouncer=true unless using a connection pooler
    */
   private static ensurePgbouncerCompatibility(url: string): string {
     if (!url) return url;
@@ -41,7 +43,24 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
         return url;
       }
       
-      // Add pgbouncer=true parameter
+      // Check if this is an AWS RDS connection
+      // RDS endpoints typically contain .rds.amazonaws.com
+      const isRDS = urlObj.hostname.includes('.rds.amazonaws.com');
+      
+      // For RDS connections, only add pgbouncer if not using SSL or if explicitly needed
+      // Most RDS connections use SSL and don't need pgbouncer=true
+      if (isRDS) {
+        // If sslmode is already set, preserve it and don't add pgbouncer
+        // RDS connections work fine without pgbouncer=true
+        if (urlObj.searchParams.has('sslmode')) {
+          return url; // Return as-is for RDS with SSL
+        }
+        // If no sslmode but it's RDS, we might still want to add it for compatibility
+        // But typically RDS doesn't need pgbouncer=true
+        return url;
+      }
+      
+      // For non-RDS connections (like Supabase, localhost, etc.), add pgbouncer=true
       urlObj.searchParams.set('pgbouncer', 'true');
       return urlObj.toString();
     } catch (error) {
@@ -50,6 +69,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       if (url.includes('pgbouncer=true')) {
         return url;
       }
+      
+      // Check if it's RDS connection (simple string check)
+      if (url.includes('.rds.amazonaws.com')) {
+        // RDS connections typically don't need pgbouncer=true
+        return url;
+      }
+      
+      // For other connections, add pgbouncer=true
       if (url.includes('?')) {
         return `${url}&pgbouncer=true`;
       }
