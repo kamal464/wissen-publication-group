@@ -28,7 +28,7 @@ import { AwsModule } from '../aws/aws.module';
         }
       },
       limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB
+        fileSize: Infinity, // No file size limit
       },
     }),
   ],

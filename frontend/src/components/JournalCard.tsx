@@ -95,13 +95,13 @@ const JournalCard = memo(function JournalCard({
               {journal.title}
             </h2>
             
+            {journal.content && (
+              <div className="journal-card__description" style={{ marginTop: '0.5rem', marginBottom: '0.75rem' }}>
+                {journal.content}
+              </div>
+            )}
+            
             <div className="journal-card__info">
-              {journal.issn && (
-                <div className="journal-card__info-item">
-                  <span className="journal-card__info-label">ISSN:</span>
-                  <span className="journal-card__info-value">{journal.issn}</span>
-                </div>
-              )}
               {(journal as any).doi && (
                 <div className="journal-card__info-item">
                   <span className="journal-card__info-label">DOI:</span>

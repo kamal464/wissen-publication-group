@@ -40,14 +40,14 @@ export default function JournalSlider() {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
     
-    const svg = `<svg width="1680" height="720" xmlns="http://www.w3.org/2000/svg">
+    const svg = `<svg width="1680" height="500" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="grad${index}" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" style="stop-color:${scheme.bg};stop-opacity:1" />
           <stop offset="100%" style="stop-color:${scheme.bg}dd;stop-opacity:1" />
         </linearGradient>
       </defs>
-      <rect width="1680" height="720" fill="url(#grad${index})"/>
+      <rect width="1680" height="500" fill="url(#grad${index})"/>
       <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="${scheme.text}" text-anchor="middle" dominant-baseline="middle">${escapedTitle}</text>
     </svg>`;
     
@@ -63,7 +63,7 @@ export default function JournalSlider() {
 
     const updateSliderWidth = () => {
       const viewportWidth = window.innerWidth;
-      const calculatedHeight = Math.min((viewportWidth * 736) / 1520, 736);
+      const calculatedHeight = Math.min((viewportWidth * 400) / 1520, 400);
       
       const elements = {
         slider: document.querySelector('.journal-slider') as HTMLElement,
@@ -159,11 +159,11 @@ export default function JournalSlider() {
 
   const getStaticJournals = (): Journal[] => {
     return [
-      { id: 1, title: 'Slide 1', coverImage: '/images/slides/image (1).png', description: '', shortcode: '' },
-      { id: 2, title: 'Slide 2', coverImage: '/images/slides/image (1).png', description: '', shortcode: '' },
-      { id: 3, title: 'Slide 3', coverImage: '/images/slides/image (1).png', description: '', shortcode: '' },
-      { id: 4, title: 'Slide 4', coverImage: '/images/slides/image (1).png', description: '', shortcode: '' },
-      { id: 5, title: 'Slide 5', coverImage: '/images/slides/image (1).png', description: '', shortcode: '' },
+      { id: 1, title: 'Slide 1', coverImage: '/images/slides/WhatsApp Image 2025-12-07 at 8.09.28 PM.jpeg', description: '', shortcode: '' },
+      { id: 2, title: 'Slide 2', coverImage: '/images/slides/WhatsApp Image 2025-12-07 at 8.09.28 PM.jpeg', description: '', shortcode: '' },
+      { id: 3, title: 'Slide 3', coverImage: '/images/slides/WhatsApp Image 2025-12-07 at 8.09.28 PM.jpeg', description: '', shortcode: '' },
+      { id: 4, title: 'Slide 4', coverImage: '/images/slides/WhatsApp Image 2025-12-07 at 8.09.28 PM.jpeg', description: '', shortcode: '' },
+      { id: 5, title: 'Slide 5', coverImage: '/images/slides/WhatsApp Image 2025-12-07 at 8.09.28 PM.jpeg', description: '', shortcode: '' },
     ];
   };
 
@@ -252,8 +252,8 @@ export default function JournalSlider() {
           itemTemplate={journalTemplate}
           circular={true}
           autoplayInterval={4000}
-          showIndicators={true}
-          showNavigators={true}
+          showIndicators={false}
+          showNavigators={false}
           className="journal-slider__carousel"
           pt={{
             root: { className: 'custom-carousel' },
@@ -314,8 +314,8 @@ export default function JournalSlider() {
           overflow: visible;
           width: 100vw !important;
           max-width: 100vw !important;
-          height: calc(100vw * 736 / 1520);
-          max-height: 736px;
+          height: calc(100vw * 400 / 1520);
+          max-height: 450px;
           background: #f3f4f6;
           margin: 0 !important;
           padding: 0 !important;

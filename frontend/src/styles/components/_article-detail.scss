@@ -1,15 +1,16 @@
 // Breadcrumb Component Styles
 .breadcrumb {
-  margin: 1.5rem 0;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #e5e5e5;
+  margin: 0;
+  padding: 1rem 0;
+  background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+  border-bottom: 1px solid #e5e7eb;
 
   &-list {
     list-style: none;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
     margin: 0;
     padding: 0 2rem;
     max-width: 1400px;
@@ -25,28 +26,41 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    font-weight: 500;
   }
 
   &-link {
-    color: #0066cc;
+    color: #6b7280;
     text-decoration: none;
-    transition: color 0.2s;
+    transition: all 0.2s ease;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
 
     &:hover {
-      color: #004499;
-      text-decoration: underline;
+      color: #1558a7;
+      background: rgba(21, 88, 167, 0.08);
     }
   }
 
   &-separator {
-    color: #666;
+    color: #9ca3af;
     user-select: none;
+    font-weight: 400;
+    margin: 0 0.25rem;
+
+    &::before {
+      content: '›';
+      font-size: 1.1rem;
+    }
   }
 
   &-current {
-    color: #333;
-    font-weight: 500;
+    color: #1558a7;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    background: rgba(21, 88, 167, 0.06);
+    border-radius: 4px;
   }
 }
 

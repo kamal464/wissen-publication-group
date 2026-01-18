@@ -57,7 +57,7 @@ export default function InstructionsPage() {
         <div className="container mx-auto px-3 md:px-4 lg:px-6 py-4 md:py-6">
           {/* Hero Section */}
           <section className="text-center py-4 md:py-6 lg:py-8">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-900 mb-3 md:mb-4">
                 Instructions to Authors
               </h1>
@@ -70,11 +70,11 @@ export default function InstructionsPage() {
           {/* Quick Start */}
           <section className="mb-5 md:mb-6">
             <Card className="surface-card border-round-xl shadow-3">
-              <div className="p-4 md:p-6 lg:p-8 text-center" style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)', borderRadius: '12px' }}>
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 md:mb-4">
+              <div className="p-4 md:p-6 lg:p-8 text-center" style={{ background: 'white', borderRadius: '12px' }}>
+                <h2 className="text-2xl md:text-3xl font-bold text-900 mb-3 md:mb-4">
                   Quick Start Guide
                 </h2>
-                <p className="text-white text-lg md:text-xl mb-4 md:mb-5 opacity-90 line-height-3">
+                <p className="text-600 text-lg md:text-xl mb-4 md:mb-5 line-height-3">
                   Follow these comprehensive guidelines to ensure your manuscript meets our publication 
                   standards and expedite the review process.
                 </p>
@@ -83,7 +83,8 @@ export default function InstructionsPage() {
                     label="Submit Your Manuscript" 
                     icon="pi pi-send" 
                     className="p-button-lg surface-0 text-primary border-none font-semibold"
-                    style={{ padding: '0.75rem 2rem' }}
+                    style={{ padding: '0.75rem 2rem', gap: '0.5rem' }}
+                    iconPos="left"
                   />
                 </Link>
               </div>
@@ -100,19 +101,23 @@ export default function InstructionsPage() {
                 value={submissionSteps} 
                 content={(item) => (
                   <Card className="mb-3 shadow-2 border-round-lg">
-                    <div className="flex align-items-center gap-3 p-3">
+                    <div className="flex align-items-start justify-content-center gap-3 p-3" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', width: '100%' }}>
                       <div 
                         className="flex align-items-center justify-content-center border-circle text-white"
                         style={{ 
                           backgroundColor: item.color,
                           width: '3rem',
                           height: '3rem',
-                          minWidth: '3rem'
+                          minWidth: '3rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
                         }}
                       >
-                        <i className={`${item.icon} text-2xl`}></i>
+                        <i className={`${item.icon} text-2xl`} style={{ display: 'block', textAlign: 'center' }}></i>
                       </div>
-                      <h3 className="text-xl md:text-2xl font-semibold text-900 m-0">
+                      <h3 className="text-xl md:text-2xl font-semibold text-900 m-0" style={{ textAlign: 'center', flex: 1 }}>
                         {item.title}
                       </h3>
                     </div>
@@ -415,49 +420,49 @@ export default function InstructionsPage() {
                 <p className="text-600 mb-4 md:mb-5 line-height-3">
                   Before submitting, ensure you have completed the following:
                 </p>
-                <div className="grid">
-                  <div className="col-12 md:col-6">
-                    <div className="flex align-items-center gap-2 mb-3">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', textAlign: 'left' }}>
+                  <div style={{ textAlign: 'left', marginLeft: 0, paddingLeft: 0, width: '100%' }}>
+                    <div className="flex align-items-center gap-2 mb-3" style={{ display: 'flex', justifyContent: 'flex-start', marginLeft: 0, textAlign: 'left', width: '100%' }}>
                       <i className="pi pi-check-square text-primary text-xl"></i>
-                      <span className="text-900">Manuscript follows formatting guidelines</span>
+                      <span className="text-900" style={{ textAlign: 'left', display: 'block' }}>Manuscript follows formatting guidelines</span>
                     </div>
-                    <div className="flex align-items-center gap-2 mb-3">
+                    <div className="flex align-items-center gap-2 mb-3" style={{ display: 'flex', justifyContent: 'flex-start', marginLeft: 0, textAlign: 'left', width: '100%' }}>
                       <i className="pi pi-check-square text-primary text-xl"></i>
-                      <span className="text-900">All authors have approved the submission</span>
+                      <span className="text-900" style={{ textAlign: 'left', display: 'block' }}>All authors have approved the submission</span>
                     </div>
-                    <div className="flex align-items-center gap-2 mb-3">
+                    <div className="flex align-items-center gap-2 mb-3" style={{ display: 'flex', justifyContent: 'flex-start', marginLeft: 0, textAlign: 'left', width: '100%' }}>
                       <i className="pi pi-check-square text-primary text-xl"></i>
-                      <span className="text-900">Abstract is within word limit (150-250 words)</span>
+                      <span className="text-900" style={{ textAlign: 'left', display: 'block' }}>Abstract is within word limit (150-250 words)</span>
                     </div>
-                    <div className="flex align-items-center gap-2 mb-3">
+                    <div className="flex align-items-center gap-2 mb-3" style={{ display: 'flex', justifyContent: 'flex-start', marginLeft: 0, textAlign: 'left', width: '100%' }}>
                       <i className="pi pi-check-square text-primary text-xl"></i>
-                      <span className="text-900">4-6 keywords included</span>
+                      <span className="text-900" style={{ textAlign: 'left', display: 'block' }}>4-6 keywords included</span>
                     </div>
-                    <div className="flex align-items-center gap-2 mb-3">
+                    <div className="flex align-items-center gap-2 mb-3" style={{ display: 'flex', justifyContent: 'flex-start', marginLeft: 0, textAlign: 'left', width: '100%' }}>
                       <i className="pi pi-check-square text-primary text-xl"></i>
-                      <span className="text-900">Figures and tables are high quality</span>
+                      <span className="text-900" style={{ textAlign: 'left', display: 'block' }}>Figures and tables are high quality</span>
                     </div>
                   </div>
-                  <div className="col-12 md:col-6">
-                    <div className="flex align-items-center gap-2 mb-3">
+                  <div style={{ textAlign: 'left', marginLeft: 0, paddingLeft: 0, width: '100%' }}>
+                    <div className="flex align-items-center gap-2 mb-3" style={{ display: 'flex', justifyContent: 'flex-start', marginLeft: 0, textAlign: 'left', width: '100%' }}>
                       <i className="pi pi-check-square text-primary text-xl"></i>
-                      <span className="text-900">References formatted consistently</span>
+                      <span className="text-900" style={{ textAlign: 'left', display: 'block' }}>References formatted consistently</span>
                     </div>
-                    <div className="flex align-items-center gap-2 mb-3">
+                    <div className="flex align-items-center gap-2 mb-3" style={{ display: 'flex', justifyContent: 'flex-start', marginLeft: 0, textAlign: 'left', width: '100%' }}>
                       <i className="pi pi-check-square text-primary text-xl"></i>
-                      <span className="text-900">Ethics approval obtained (if applicable)</span>
+                      <span className="text-900" style={{ textAlign: 'left', display: 'block' }}>Ethics approval obtained (if applicable)</span>
                     </div>
-                    <div className="flex align-items-center gap-2 mb-3">
+                    <div className="flex align-items-center gap-2 mb-3" style={{ display: 'flex', justifyContent: 'flex-start', marginLeft: 0, textAlign: 'left', width: '100%' }}>
                       <i className="pi pi-check-square text-primary text-xl"></i>
-                      <span className="text-900">Conflicts of interest disclosed</span>
+                      <span className="text-900" style={{ textAlign: 'left', display: 'block' }}>Conflicts of interest disclosed</span>
                     </div>
-                    <div className="flex align-items-center gap-2 mb-3">
+                    <div className="flex align-items-center gap-2 mb-3" style={{ display: 'flex', justifyContent: 'flex-start', marginLeft: 0, textAlign: 'left', width: '100%' }}>
                       <i className="pi pi-check-square text-primary text-xl"></i>
-                      <span className="text-900">Cover letter prepared</span>
+                      <span className="text-900" style={{ textAlign: 'left', display: 'block' }}>Cover letter prepared</span>
                     </div>
-                    <div className="flex align-items-center gap-2 mb-3">
+                    <div className="flex align-items-center gap-2 mb-3" style={{ display: 'flex', justifyContent: 'flex-start', marginLeft: 0, textAlign: 'left', width: '100%' }}>
                       <i className="pi pi-check-square text-primary text-xl"></i>
-                      <span className="text-900">All required files ready</span>
+                      <span className="text-900" style={{ textAlign: 'left', display: 'block' }}>All required files ready</span>
                     </div>
                   </div>
                 </div>
@@ -467,28 +472,23 @@ export default function InstructionsPage() {
 
           {/* CTA */}
           <section className="mb-5 md:mb-6">
-            <Card className="surface-card shadow-3 border-round-xl">
-              <div className="p-4 md:p-6 text-center">
+            <Card className="surface-card shadow-3 border-round-xl" style={{ margin: '0 auto', maxWidth: '100%', width: '100%' }}>
+              <div className="p-4 md:p-6 lg:p-8 text-center">
                 <h2 className="text-2xl md:text-3xl font-bold text-900 mb-3 md:mb-4">
                   Ready to Submit?
                 </h2>
-                <p className="text-600 mb-4 md:mb-5 text-lg line-height-3 max-w-2xl mx-auto">
+                <p className="text-600 mb-4 md:mb-5 text-lg line-height-3 max-w-2xl mx-auto text-center" style={{ textAlign: 'center', marginLeft: 'auto', marginRight: 'auto', display: 'block' }}>
                   If you have followed all the guidelines and prepared your manuscript, 
                   you're ready to submit!
                 </p>
-                <div className="flex flex-column md:flex-row gap-3 justify-content-center align-items-center">
-                  <Link href="/submit-manuscript">
-                    <Button 
-                      label="Submit Manuscript" 
-                      icon="pi pi-upload" 
-                      className="p-button-lg w-full md:w-auto"
-                    />
-                  </Link>
+                <div className="flex justify-content-center align-items-center" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
                   <Link href="/contact">
                     <Button 
                       label="Need Help?" 
                       icon="pi pi-question-circle" 
                       className="p-button-lg p-button-outlined w-full md:w-auto"
+                      style={{ gap: '0.5rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', margin: '0 auto' }}
+                      iconPos="left"
                     />
                   </Link>
                 </div>

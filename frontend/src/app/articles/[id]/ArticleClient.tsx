@@ -374,11 +374,6 @@ export default function ArticleDetailPage() {
                     >
                       {article.journal.title}
                     </Link>
-                    {article.journal.issn && (
-                      <span className="article__journal-issn">
-                        (ISSN: {article.journal.issn})
-                      </span>
-                    )}
                   </div>
 
                   {article.publishedAt && (

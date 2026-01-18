@@ -74,10 +74,10 @@ export default function MainContent() {
       <LatestNewsSection />
 
       {/* For Authors Section */}
-      <section className="py-16 bg-white">
+      <section className="py-8 bg-white">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">For Researchers</span>
+          <div className="text-center mb-8">
+            <span className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#1558a7' }}>For Researchers</span>
             <h2 className="text-4xl font-bold text-gray-800 mb-4 mt-2">
               Publish With Us
             </h2>
@@ -86,14 +86,14 @@ export default function MainContent() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {forAuthors.map((item, index) => (
               <div 
                 key={index}
                 className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 hover:shadow-lg transition-shadow duration-300"
               >
                 <div className="flex items-start mb-4">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-blue-600 text-white">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg text-white" style={{ backgroundColor: '#1558a7' }}>
                     <i className={`${item.icon} text-2xl`}></i>
                   </div>
                 </div>
@@ -102,9 +102,10 @@ export default function MainContent() {
                 <Link href={item.link}>
                   <Button 
                     label={item.cta}
-                    className="p-button-text p-button-sm"
+                    className="p-button-text p-button-sm custom-link-btn"
                     icon="pi pi-arrow-right"
                     iconPos="right"
+                    style={{ color: '#1558a7' }}
                   />
                 </Link>
               </div>
@@ -114,11 +115,11 @@ export default function MainContent() {
       </section>
 
       {/* About Us Teaser Section */}
-      <section className="py-20 bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900 text-white relative overflow-hidden">
+      <section className="py-8 text-white relative overflow-hidden" style={{ background: '#1558a7' }}>
         {/* Decorative background elements */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-400 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full blur-3xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
         </div>
         
         <div className="container mx-auto px-4 relative z-10">
@@ -139,8 +140,8 @@ export default function MainContent() {
               </p>
               <div className="grid grid-cols-2 gap-4 mb-8">
                 {aboutHighlights.map((highlight, index) => (
-                  <div key={index} className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors duration-300">
-                    <div className="flex-shrink-0">
+                  <div key={index} className="flex items-center p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors duration-300">
+                    <div className="flex-shrink-0 mr-3">
                       <i className={`${highlight.icon} text-xl text-green-400`}></i>
                     </div>
                     <span className="text-sm text-blue-100 font-medium">{highlight.text}</span>
@@ -200,8 +201,8 @@ export default function MainContent() {
       </section>
 
       {/* Editorial Excellence Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4 pl-64 md:pl-96 lg:pl-[300px] xl:pl-[500px] 2xl:pl-[700px]">
+      <section className="py-4 bg-gray-50">
+        <div className="container mx-auto px-4 pl-48 md:pl-72 lg:pl-[200px] xl:pl-[400px] 2xl:pl-[600px]">
           <div className="max-w-4xl mx-auto text-center">
             <i className="pi pi-star text-5xl text-yellow-500 mb-4"></i>
             <h2 className="text-4xl font-bold text-gray-800 mb-4 text-center">
@@ -216,7 +217,8 @@ export default function MainContent() {
                 <Button 
                   label="Contact Us"
                   icon="pi pi-envelope"
-                  className="p-button-outlined p-button-lg"
+                  className="p-button-outlined p-button-lg contact-us-btn"
+                  iconPos="left"
                 />
               </Link>
             </div>
@@ -224,15 +226,21 @@ export default function MainContent() {
         </div>
       </section>
 
+      <style jsx>{`
+        :global(.contact-us-btn .p-button-icon) {
+          margin-right: 0.5rem;
+        }
+      `}</style>
+
       {/* Final CTA Section */}
-      <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
+      <section className="py-8 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-4">
-          <div className="relative bg-gradient-to-br from-blue-800 via-indigo-800 to-blue-900 rounded-3xl p-12 md:p-16 text-center text-white shadow-2xl overflow-hidden cta-section-white-text">
+          <div className="relative rounded-3xl p-12 md:p-16 text-center text-white shadow-2xl overflow-hidden cta-section-white-text" style={{ background: '#1558a7' }}>
             {/* Decorative background elements */}
             <div className="absolute inset-0 opacity-8">
-              <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
-              <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-500 rounded-full blur-3xl"></div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-600 rounded-full blur-3xl"></div>
+              <div className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
+              <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full blur-3xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}></div>
             </div>
             
             {/* Subtle grid pattern overlay */}

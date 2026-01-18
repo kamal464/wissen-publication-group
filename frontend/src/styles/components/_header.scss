@@ -141,22 +141,27 @@
 // Main header
 .header {
   background: white;
-  box-shadow: get-shadow(sm);
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: map.get($z-index, sticky);
+  overflow: visible;
   
   &__container {
-    @include container;
-    @include flex-between;
-    height: 72px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 70px;
     position: relative;
+    overflow: visible;
   }
   
   // Logo section
   &__logo {
     @include flex-center;
     text-decoration: none;
+    outline: none;
     
     &:hover {
       text-decoration: none;
@@ -164,11 +169,11 @@
   }
   
   &__logo-image {
-    height: 120px;
+    height: 190px;
     width: auto;
     object-fit: contain;
     display: block;
-    padding-top: 8px;
+    padding-top: 19px;
   }
   
   // Legacy styles - kept for backward compatibility if needed elsewhere
@@ -216,14 +221,18 @@
     background: transparent;
     border: none;
     padding: 0;
+    padding-bottom: 0;
     box-shadow: none;
 
     .p-menubar-root-list {
       display: flex;
       align-items: center;
-      gap: get-spacing(5);
+      gap: get-spacing(3);
       padding: 0;
+      padding-top: get-spacing(1.5);
+      padding-bottom: 0;
       background: transparent;
+      margin-bottom: 0;
     }
 
     .p-menuitem {
@@ -233,7 +242,8 @@
     .p-menuitem-content,
     .p-menuitem-link {
       background: transparent;
-      padding: 0;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
     }
 
     .p-menubar-button {
@@ -243,10 +253,11 @@
   
   &__nav-link {
     color: neutral(gray-700);
-    font-size: get-font-size(sm);
-  font-weight: map.get($font-weight, medium);
+    font-size: 1rem;
+    font-weight: map.get($font-weight, medium);
     text-decoration: none;
-  transition: color map.get($transitions, fast);
+    transition: color map.get($transitions, fast);
+    padding: 0.5rem 0;
     
     &:hover {
       color: $primary-blue;
@@ -267,9 +278,11 @@
       font-size: get-font-size(sm);
       box-shadow: none;
       color: neutral(white);
+      background: #1558a7;
 
       &:hover {
         text-decoration: none;
+        background: #104477;
       }
     }
 
@@ -493,7 +506,8 @@
 @include respond-to(sm) {
   .header {
     &__container {
-      height: 72px;
+      height: 70px;
+      padding: 0 16px;
     }
     
     &__logo-icon {

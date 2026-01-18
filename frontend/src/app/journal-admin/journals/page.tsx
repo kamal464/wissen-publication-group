@@ -26,6 +26,7 @@ interface Journal {
   citationsValue?: string;
   acceptanceRate?: string;
   conferenceUrl?: string;
+  content?: string;
   bannerImage?: string;
   flyerImage?: string;
   flyerPdf?: string;
@@ -88,6 +89,7 @@ export default function ManageJournalInformation() {
           citationsValue: foundJournal.citationsValue || '',
           acceptanceRate: foundJournal.acceptanceRate || '',
           conferenceUrl: foundJournal.conferenceUrl || '',
+          content: foundJournal.content || '',
           bannerImage: foundJournal.bannerImage || '',
           flyerImage: foundJournal.flyerImage || '',
           flyerPdf: foundJournal.flyerPdf || '',
@@ -558,6 +560,16 @@ export default function ManageJournalInformation() {
                     onChange={(e) => setJournal({ ...journal, conferenceUrl: e.target.value })}
                     className="w-full"
                     placeholder="Enter conference URL"
+                  />
+                </div>
+                <div className="flex flex-col sm:col-span-2">
+                  <label className="block mb-2 text-sm font-medium text-gray-700">Content</label>
+                  <InputTextarea
+                    value={journal.content || ''}
+                    onChange={(e) => setJournal({ ...journal, content: e.target.value })}
+                    className="w-full"
+                    rows={5}
+                    placeholder="Enter journal content"
                   />
                 </div>
               </div>

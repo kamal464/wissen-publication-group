@@ -16,6 +16,7 @@ export type Journal = {
   updatedAt?: string;
   createdAt?: string;
   // Content Management Fields
+  content?: string;
   aimsScope?: string;
   guidelines?: string;
   editorialBoard?: string;

@@ -276,12 +276,15 @@
     color: neutral(gray-900);
     line-height: map.get($line-height, tight);
     
-    // Truncate long titles
-  display: -webkit-box;
-  line-clamp: 2;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+    // Truncate long titles - 2 lines max with ellipsis
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
     
     // Hover effect
     transition: color map.get($transitions, fast);

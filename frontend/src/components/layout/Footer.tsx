@@ -1,12 +1,11 @@
 export default function Footer() {
-  // Use static year to avoid hydration mismatches
-  // Update this manually each year or use a build-time constant
-  const currentYear = 2025;
+  // Automatically updates to current year
+  const currentYear = new Date().getFullYear();
   return (
     <footer className="bg-gray-800 text-white py-8" suppressHydrationWarning>
       <div className="container mx-auto px-4">
         <div className="text-center">
-          <p suppressHydrationWarning>&copy; {currentYear} Wissen Publication Group. All rights reserved.</p>
+          <p className="text-white" style={{ color: '#ffffff' }} suppressHydrationWarning>&copy; {currentYear} Wissen Publication Group. All rights reserved.</p>
         </div>
       </div>
     </footer>

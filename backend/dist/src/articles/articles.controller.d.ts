@@ -1,9 +1,11 @@
 import { ArticlesService } from './articles.service';
+import { S3Service } from '../aws/s3.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 export declare class ArticlesController {
     private readonly articlesService;
-    constructor(articlesService: ArticlesService);
+    private readonly s3Service;
+    constructor(articlesService: ArticlesService, s3Service: S3Service);
     create(createArticleDto: CreateArticleDto): Promise<{
         journal: {
             id: number;

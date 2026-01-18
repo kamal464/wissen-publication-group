@@ -102,16 +102,14 @@
     .form-label {
       font-weight: 600;
       color: #2c3e50;
-      margin-bottom: 0.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      display: block;
       font-size: 0.95rem;
 
       &.required::after {
-        content: '*';
+        content: ' *';
         color: #ef4444;
-        margin-left: 0.25rem;
+        margin-left: 0;
       }
 
       .help-text {
@@ -384,7 +382,7 @@
         strong {
           display: block;
           color: #1e293b;
-          margin-bottom: 0.25rem;
+          margin-bottom: 0.75rem;
           font-size: 0.95rem;
         }
 

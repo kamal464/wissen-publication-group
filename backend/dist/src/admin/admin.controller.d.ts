@@ -1,7 +1,9 @@
 import { AdminService } from './admin.service';
+import { S3Service } from '../aws/s3.service';
 export declare class AdminController {
     private readonly adminService;
-    constructor(adminService: AdminService);
+    private readonly s3Service;
+    constructor(adminService: AdminService, s3Service: S3Service);
     login(credentials: {
         username: string;
         password: string;

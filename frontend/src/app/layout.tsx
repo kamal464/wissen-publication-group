@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import "../styles/globals.scss";
 import "primereact/resources/themes/lara-light-blue/theme.css";
@@ -8,6 +9,14 @@ import { ReduxProvider } from "@/store/Provider";
 import { InjectApiUrl } from "@/components/InjectApiUrl";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ErrorFallback } from "@/components/ErrorFallback";
+
+// Configure Inter font with all weights for flexibility
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "Wissen Publication Group - Scientific Journals & Research",
@@ -34,7 +43,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           `
         }} />
       </head>
-      <body className="antialiased min-h-screen" suppressHydrationWarning>
+      <body className={`${inter.variable} antialiased min-h-screen`} suppressHydrationWarning>
         {/* Inject API URL - client-side only, no rendering */}
         <InjectApiUrl />
         <ErrorBoundary fallback={<ErrorFallback />}>

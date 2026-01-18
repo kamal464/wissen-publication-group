@@ -14,15 +14,16 @@
   --primary-900: #1e3a8a;
 }
 
-/* Base styles - Times New Roman */
+/* Base styles - Inter Sans-serif */
 html,
 body {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
+  background-color: #f8f9fa !important;
 }
 
-/* Override all elements to use Times New Roman, but exclude icons */
+/* Override all elements to use Inter, but exclude icons */
 * {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Preserve PrimeIcons font - icons should not use Times New Roman */
@@ -48,6 +49,43 @@ span.pi,
 i.pi::before,
 span.pi::before {
   font-family: 'primeicons' !important;
+}
+
+/* ============================================
+   CARD & WHITE BACKGROUND COMPONENTS
+   ============================================ */
+/* Ensure all cards remain white against grey background */
+.card,
+[class*="card"],
+.p-card,
+.p-panel,
+.p-dialog,
+.p-sidebar,
+.p-overlaypanel,
+.p-menu,
+.p-menubar,
+.journal-card,
+.subject-card,
+.article-card,
+.p-datatable,
+.p-paginator {
+  background-color: white !important;
+}
+
+/* Ensure form elements and dropdowns remain white */
+.p-inputtext,
+.p-inputtextarea,
+.p-dropdown,
+.p-dropdown-panel,
+.p-multiselect,
+.p-multiselect-panel,
+.p-autocomplete-panel,
+.p-calendar-panel,
+.p-listbox,
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  background-color: white !important;
 }
 
 /* Utility classes */
@@ -77,7 +115,7 @@ span.pi::before {
 .p-button,
 .p-button-label,
 .p-button-text {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Preserve icon font in button icons */
@@ -95,7 +133,7 @@ span.pi::before {
 .p-dropdown-trigger,
 .p-multiselect-label,
 .p-multiselect-trigger {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Tables */
@@ -106,7 +144,7 @@ span.pi::before {
 .p-datatable-tbody > tr > td,
 .p-datatable-tfoot > tr > td,
 .p-column-header-content {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Preserve icon font in table sort icons */
@@ -121,7 +159,7 @@ span.pi::before {
 .p-dialog-title,
 .p-dialog-content,
 .p-dialog-footer {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Dropdowns */
@@ -131,7 +169,7 @@ span.pi::before {
 .p-dropdown-items-wrapper,
 .p-dropdown-filter-container,
 .p-dropdown-filter {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Forms */
@@ -141,7 +179,7 @@ span.pi::before {
 .p-checkbox-label,
 .p-radiobutton-label,
 .p-inputgroup-addon {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Headings in PrimeReact components */
@@ -152,7 +190,7 @@ h1, h2, h3, h4, h5, h6,
 .p-panel-title,
 .p-accordion-header-text,
 .p-tabview-title {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Menus */
@@ -161,7 +199,7 @@ h1, h2, h3, h4, h5, h6,
 .p-menuitem-link,
 .p-menuitem-text,
 .p-submenu-header {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Preserve icon font in menu icons */
@@ -180,26 +218,26 @@ h1, h2, h3, h4, h5, h6,
 .p-toast-message,
 .p-toast-summary,
 .p-toast-detail {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Overlay Panels */
 .p-overlaypanel,
 .p-overlaypanel-content {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Tooltips */
 .p-tooltip,
 .p-tooltip-text {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* File Upload */
 .p-fileupload,
 .p-fileupload-buttonbar,
 .p-fileupload-content {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Calendar/DatePicker */
@@ -210,7 +248,7 @@ h1, h2, h3, h4, h5, h6,
 .p-datepicker-calendar,
 .p-datepicker-month,
 .p-datepicker-year {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Paginator */
@@ -221,14 +259,14 @@ h1, h2, h3, h4, h5, h6,
 .p-paginator-prev,
 .p-paginator-next,
 .p-paginator-last {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Tree */
 .p-tree,
 .p-treenode-label,
 .p-treenode-content {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Panel */
@@ -237,7 +275,7 @@ h1, h2, h3, h4, h5, h6,
 .p-panel-title,
 .p-panel-content,
 .p-panel-footer {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Accordion */
@@ -246,7 +284,7 @@ h1, h2, h3, h4, h5, h6,
 .p-accordion-header,
 .p-accordion-header-link,
 .p-accordion-content {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* TabView */
@@ -254,7 +292,7 @@ h1, h2, h3, h4, h5, h6,
 .p-tabview-nav,
 .p-tabview-nav-link,
 .p-tabview-panel {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Card */
@@ -264,20 +302,20 @@ h1, h2, h3, h4, h5, h6,
 .p-card-subtitle,
 .p-card-content,
 .p-card-footer {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* DataView */
 .p-dataview,
 .p-dataview-header,
 .p-dataview-content {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Splitter */
 .p-splitter,
 .p-splitter-panel {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Sidebar */
@@ -285,26 +323,26 @@ h1, h2, h3, h4, h5, h6,
 .p-sidebar-header,
 .p-sidebar-content,
 .p-sidebar-footer {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Breadcrumb */
 .p-breadcrumb,
 .p-breadcrumb-list,
 .p-breadcrumb-item {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Steps */
 .p-steps,
 .p-steps-item,
 .p-steps-title {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Rating */
 .p-rating {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Preserve icon font in rating icons */
@@ -316,50 +354,50 @@ h1, h2, h3, h4, h5, h6,
 /* Slider */
 .p-slider,
 .p-slider-handle {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* ProgressBar */
 .p-progressbar,
 .p-progressbar-label {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Badge */
 .p-badge {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Tag */
 .p-tag {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Chip */
 .p-chip,
 .p-chip-text {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Avatar */
 .p-avatar {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Skeleton */
 .p-skeleton {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Divider */
 .p-divider,
 .p-divider-content {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* ScrollPanel */
 .p-scrollpanel {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Carousel */
@@ -367,7 +405,7 @@ h1, h2, h3, h4, h5, h6,
 .p-carousel-header,
 .p-carousel-content,
 .p-carousel-footer {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Galleria */
@@ -375,118 +413,118 @@ h1, h2, h3, h4, h5, h6,
 .p-galleria-header,
 .p-galleria-content,
 .p-galleria-footer {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Image */
 .p-image {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* AvatarGroup */
 .p-avatargroup {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* BlockUI */
 .p-blockui {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* ProgressSpinner */
 .p-progressspinner {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* InlineMessage */
 .p-inline-message,
 .p-inline-message-text {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* ConfirmDialog */
 .p-confirm-dialog,
 .p-confirm-dialog-message {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* ContextMenu */
 .p-contextmenu,
 .p-contextmenu-list,
 .p-contextmenu-item {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* TieredMenu */
 .p-tieredmenu,
 .p-tieredmenu-list,
 .p-tieredmenu-item {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* MegaMenu */
 .p-megamenu,
 .p-megamenu-list,
 .p-megamenu-item {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Bar */
 .p-bar {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Dock */
 .p-dock,
 .p-dock-list,
 .p-dock-item {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* SpeedDial */
 .p-speeddial,
 .p-speeddial-button,
 .p-speeddial-action {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Terminal */
 .p-terminal,
 .p-terminal-content,
 .p-terminal-prompt {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* CodeHighlighter */
 .p-codehighlighter {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* OrganizationChart */
 .p-organizationchart,
 .p-organizationchart-node-content {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* PickList */
 .p-picklist,
 .p-picklist-list,
 .p-picklist-item {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* OrderList */
 .p-orderlist,
 .p-orderlist-list,
 .p-orderlist-item {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* DataScroller */
 .p-datascroller,
 .p-datascroller-list,
 .p-datascroller-item {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Timeline */
@@ -494,53 +532,53 @@ h1, h2, h3, h4, h5, h6,
 .p-timeline-event,
 .p-timeline-event-content,
 .p-timeline-event-opposite {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Chart */
 .p-chart {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Knob */
 .p-knob {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* ColorPicker */
 .p-colorpicker,
 .p-colorpicker-preview {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Editor */
 .p-editor-container,
 .p-editor-content {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* InputSwitch */
 .p-inputswitch {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* ToggleButton */
 .p-togglebutton,
 .p-togglebutton-label {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* SelectButton */
 .p-selectbutton,
 .p-selectbutton-button,
 .p-selectbutton-button-label {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* TriStateCheckbox */
 .p-tristatecheckbox,
 .p-tristatecheckbox-label {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* AutoComplete */
@@ -548,7 +586,7 @@ h1, h2, h3, h4, h5, h6,
 .p-autocomplete-input,
 .p-autocomplete-panel,
 .p-autocomplete-item {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Chips */
@@ -556,7 +594,7 @@ h1, h2, h3, h4, h5, h6,
 .p-chips-input-token,
 .p-chips-token,
 .p-chips-token-label {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* CascadeSelect */
@@ -564,14 +602,14 @@ h1, h2, h3, h4, h5, h6,
 .p-cascadeselect-label,
 .p-cascadeselect-panel,
 .p-cascadeselect-item {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Listbox */
 .p-listbox,
 .p-listbox-list,
 .p-listbox-item {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* MultiSelect */
@@ -579,109 +617,109 @@ h1, h2, h3, h4, h5, h6,
 .p-multiselect-label,
 .p-multiselect-panel,
 .p-multiselect-item {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Password */
 .p-password,
 .p-password-input {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* InputMask */
 .p-inputmask {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* KeyFilter */
 .p-keyfilter {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* InputGroup */
 .p-inputgroup,
 .p-inputgroup-addon {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* InputGroupAddon */
 .p-inputgroup-addon {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* FloatLabel */
 .p-float-label,
 .p-float-label-label {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Textarea */
 .p-inputtextarea {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* InputNumber */
 .p-inputnumber,
 .p-inputnumber-input,
 .p-inputnumber-button {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* InputOtp */
 .p-inputotp,
 .p-inputotp-input {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Mention */
 .p-mention,
 .p-mention-panel,
 .p-mention-item {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* VirtualScroller */
 .p-virtualscroller,
 .p-virtualscroller-content {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* DeferredContent */
 .p-deferred-content {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Ripple */
 .p-ripple {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* FocusTrap */
 .p-focustrap {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* StyleClass */
 .p-styleclass {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* AnimateOnScroll */
 .p-animateonscroll {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* FocusTrap */
 .p-focustrap {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* StyleClass */
 .p-styleclass {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* AnimateOnScroll */
 .p-animateonscroll {
-  font-family: 'Times New Roman', Times, serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }

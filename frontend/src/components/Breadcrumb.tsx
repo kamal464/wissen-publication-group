@@ -21,9 +21,7 @@ export default function Breadcrumb({ items }: BreadcrumbProps) {
                 <Link href={item.href} className="breadcrumb-link">
                   {item.label}
                 </Link>
-                <span className="breadcrumb-separator" aria-hidden="true">
-                  /
-                </span>
+                <span className="breadcrumb-separator" aria-hidden="true"></span>
               </>
             ) : (
               <span className="breadcrumb-current" aria-current="page">

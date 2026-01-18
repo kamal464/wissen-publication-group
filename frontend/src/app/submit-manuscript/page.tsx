@@ -350,7 +350,6 @@ export default function SubmitManuscriptPage() {
                   <div className="form-group full-width">
                     <label htmlFor="abstract" className="form-label required">
                       Abstract
-                      <span className="char-count">{form.abstract.length} / 500 characters (minimum 100)</span>
                     </label>
                     <InputTextarea 
                       id="abstract" 
@@ -486,20 +485,18 @@ export default function SubmitManuscriptPage() {
                 <div className="form-group full-width">
                   <label htmlFor="pdf" className="form-label required">
                     Upload Manuscript
-                    <span className="help-text">(PDF, Word, PNG, or JPEG - Max 10 MB)</span>
                   </label>
                   
                   <FileUpload
                     ref={fileUploadRef}
                     name="pdf"
                     accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/jpg"
-                    maxFileSize={10000000}
                     onSelect={handleFileSelect}
                     emptyTemplate={
                       <div className="upload-placeholder">
                         <i className="pi pi-cloud-upload" style={{ fontSize: '3rem', color: '#6366f1' }}></i>
                         <p className="upload-text">Drag and drop your file here</p>
-                        <p className="upload-subtext">PDF, Word, PNG, or JPEG (Max 10MB)</p>
+                        <p className="upload-subtext">PDF, Word, PNG, or JPEG</p>
                       </div>
                     }
                     chooseOptions={{ icon: 'pi pi-file', className: 'p-button-primary' }}

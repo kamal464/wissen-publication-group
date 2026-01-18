@@ -229,18 +229,21 @@
           display: flex;
           gap: 0.5rem;
           margin-top: 1rem;
-          flex-wrap: wrap;
+          flex-wrap: nowrap;
+          align-items: flex-start;
 
           i {
             color: #6366f1;
             font-size: 1rem;
             margin-top: 0.25rem;
+            flex-shrink: 0;
           }
 
           .expertise-tags {
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
+            flex: 1;
           }
 
           .expertise-tag {
@@ -262,13 +265,29 @@
     padding: 3rem 0;
     animation: fadeInUp 0.6s ease 0.6s both;
 
-    .join-card {
-      background: linear-gradient(135deg, #6366f1, #4f46e5);
+    .join-card,
+    .join-card.p-card,
+    .p-card.join-card {
+      background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
       color: white;
       border-radius: 20px;
       padding: 3rem;
       text-align: center;
       box-shadow: 0 10px 40px rgba(99, 102, 241, 0.3);
+      border: none !important;
+      outline: none !important;
+      
+      &::before,
+      &::after {
+        border: none !important;
+        outline: none !important;
+      }
+      
+      .p-card-body,
+      .p-card-content {
+        border: none !important;
+        outline: none !important;
+      }
 
       .join-icon {
         width: 80px;

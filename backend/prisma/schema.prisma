@@ -54,6 +54,7 @@ model Journal {
   citationsValue String?
   acceptanceRate String?
   conferenceUrl String?
+  content String? @db.Text
   
   // Homepage Specific Fields
   editorName String?

@@ -632,6 +632,7 @@ export class AdminService {
     if (journalData.citationsValue !== undefined) updateData.citationsValue = journalData.citationsValue;
     if (journalData.acceptanceRate !== undefined) updateData.acceptanceRate = journalData.acceptanceRate;
     if (journalData.conferenceUrl !== undefined) updateData.conferenceUrl = journalData.conferenceUrl;
+    if (journalData.content !== undefined) updateData.content = journalData.content;
 
     // Add homepage specific fields if provided
     if (journalData.editorName !== undefined) updateData.editorName = journalData.editorName;
@@ -1486,6 +1487,7 @@ export class AdminService {
         biography: memberData.biography || memberData.editorBiography,
         imageUrl: memberData.imageUrl || memberData.editorPhoto,
         profileUrl: memberData.profileUrl,
+        tags: memberData.tags,
         journalId: journalId,
         isActive: true
       }
@@ -1509,6 +1511,7 @@ export class AdminService {
     if (memberData.imageUrl !== undefined) updateData.imageUrl = memberData.imageUrl;
     if (memberData.editorPhoto !== undefined) updateData.imageUrl = memberData.editorPhoto;
     if (memberData.profileUrl !== undefined) updateData.profileUrl = memberData.profileUrl;
+    if (memberData.tags !== undefined) updateData.tags = memberData.tags;
     if (memberData.isActive !== undefined) updateData.isActive = memberData.isActive;
 
     return await this.prisma.boardMember.update({

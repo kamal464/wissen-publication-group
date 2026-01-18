@@ -166,10 +166,10 @@ export default function JournalCovers() {
   }
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-8 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-8 md:mb-12">
-          <span className="inline-block text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3 px-4 py-2 bg-blue-50 rounded-full">
+        <div className="text-center mb-8 md:mb-10">
+          <span className="inline-block text-sm font-semibold uppercase tracking-wide mb-3 px-4 py-2 bg-blue-50 rounded-full" style={{ color: '#1558a7' }}>
             FEATURED JOURNALS
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 mt-2">
@@ -184,13 +184,16 @@ export default function JournalCovers() {
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div className="mb-4 md:mb-0">
-            <p className="text-lg text-gray-700 font-medium">
+            {/* <p className="text-lg text-gray-700 font-medium">
               1500+ articles indexed in various sites and also cited by various authors around the world.
-            </p>
+            </p> */}
           </div>
           <Link 
             href="/journals"
-            className="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+            className="inline-flex items-center font-semibold transition-colors"
+            style={{ color: '#1558a7' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = '#104477'}
+            onMouseLeave={(e) => e.currentTarget.style.color = '#1558a7'}
           >
             View All Journals
             <i className="pi pi-arrow-right ml-2"></i>
@@ -294,7 +297,7 @@ export default function JournalCovers() {
           right: 0;
           background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.85) 100%);
           padding: 0.875rem 0.625rem;
-          display: flex;
+          display: none;
           flex-direction: column;
           gap: 0.3rem;
         }

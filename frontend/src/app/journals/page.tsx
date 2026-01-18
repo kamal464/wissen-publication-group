@@ -1,13 +1,10 @@
 'use client';
 
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import JournalCard from '@/components/JournalCard';
-import { InputText } from 'primereact/inputtext';
-import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
-import { Paginator, PaginatorPageChangeEvent } from 'primereact/paginator';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setError, setJournals, setLoading } from '@/store/slices/journalsSlice';
 import { Journal } from '@/types';
@@ -124,12 +121,7 @@ export default function JournalsPage() {
   const { items, loading, error } = useAppSelector((state) => state.journals);
 
   const [isClient, setIsClient] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
-  const [sortBy, setSortBy] = useState<string>('title-asc');
-  const [first, setFirst] = useState(0);
-  const [rows, setRows] = useState(9);
   const [allocatedShortcodes, setAllocatedShortcodes] = useState<Set<string>>(new Set());
   const [shortcodeToJournalName, setShortcodeToJournalName] = useState<Map<string, string>>(new Map());
   const [shortcodeToJournalId, setShortcodeToJournalId] = useState<Map<string, number>>(new Map());
@@ -340,32 +332,10 @@ export default function JournalsPage() {
   // Removed auto-refresh on focus/visibility change to prevent unwanted refreshes
   // If you need to refresh data, use the manual "Refresh" button instead
 
-  const subjectOptions = useMemo(() => {
-    const uniqueSubjects = new Set<string>();
-
-    items.forEach((journal) => {
-      uniqueSubjects.add(getSubjectLabel(journal, shortcodeToUserCategory));
-    });
-
-    return [
-      { label: 'All Subjects', value: 'all' },
-      ...Array.from(uniqueSubjects)
-        .filter(Boolean)
-        .map((subject) => ({
-          label: subject,
-          value: subject,
-        })),
-    ];
-  }, [items]);
-
-  const filteredAndSortedJournals = useMemo(() => {
+  const displayedJournals = useMemo(() => {
     if (!items.length) return [];
     
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    const hasSearch = normalizedSearch.length > 0;
-    const hasSubjectFilter = selectedSubject !== 'all';
-
-    // First filter: Only show journals with allocated users (have shortcode and user)
+    // Only show journals with allocated users (have shortcode and user)
     let filtered = items.filter((journal) => {
       // Method 1: Check if journal has a shortcode field that matches allocated shortcode
       const journalShortcode = journal.shortcode || '';
@@ -391,106 +361,19 @@ export default function JournalsPage() {
       return false;
     });
     
-    
-    // Additional filters
-    if (hasSearch || hasSubjectFilter) {
-      filtered = filtered.filter((journal) => {
-        // Subject filter
-        if (hasSubjectFilter) {
-          const subject = getSubjectLabel(journal, shortcodeToUserCategory);
-          if (subject.toLowerCase() !== selectedSubject.toLowerCase()) {
-            return false;
-          }
-        }
-
-        // Search filter
-        if (hasSearch) {
-          const haystack = [
-            journal.title,
-            journal.description,
-            journal.publisher,
-            journal.issn,
-            journal.accessType,
-            journal.subjectArea,
-            journal.category,
-          ]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-
-          return haystack.includes(normalizedSearch);
-        }
-
-        return true;
-      });
-    }
-
-    // Sort
-    const sorted = [...filtered];
-    const [sortField, sortOrder] = sortBy.split('-');
-
-    sorted.sort((a, b) => {
-      let aValue: string | number = '';
-      let bValue: string | number = '';
-
-      switch (sortField) {
-        case 'title':
-          aValue = a.title?.toLowerCase() || '';
-          bValue = b.title?.toLowerCase() || '';
-          break;
-        case 'issn':
-          aValue = a.issn || '';
-          bValue = b.issn || '';
-          break;
-        case 'impact':
-          aValue = a.impactFactor || 0;
-          bValue = b.impactFactor || 0;
-          break;
-        case 'recent':
-          aValue = new Date(a.createdAt || 0).getTime();
-          bValue = new Date(b.createdAt || 0).getTime();
-          break;
-        default:
-          aValue = a.title?.toLowerCase() || '';
-          bValue = b.title?.toLowerCase() || '';
-      }
-
-      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
-      return 0;
+    // Sort by title alphabetically
+    const sorted = [...filtered].sort((a, b) => {
+      const aTitle = a.title?.toLowerCase() || '';
+      const bTitle = b.title?.toLowerCase() || '';
+      return aTitle.localeCompare(bTitle);
     });
 
     return sorted;
-  }, [items, searchTerm, selectedSubject, sortBy, allocatedShortcodes, shortcodeToJournalName, shortcodeToJournalId, shortcodeToUserCategory]);
-
-  const paginatedJournals = useMemo(() => {
-    return filteredAndSortedJournals.slice(first, first + rows);
-  }, [filteredAndSortedJournals, first, rows]);
-
-  const handleSubjectChange = (event: DropdownChangeEvent) => {
-    setSelectedSubject(event.value ?? 'all');
-    setFirst(0); // Reset to first page
-  };
-
-  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-    setFirst(0); // Reset to first page
-  };
-
-  const handleSortChange = (event: DropdownChangeEvent) => {
-    setSortBy(event.value ?? 'title-asc');
-    setFirst(0); // Reset to first page
-  };
+  }, [items, allocatedShortcodes, shortcodeToJournalName, shortcodeToJournalId]);
 
   const handleRefresh = useCallback(() => {
     fetchJournals();
-    setFirst(0);
   }, [fetchJournals]);
-
-  const onPageChange = (event: PaginatorPageChangeEvent) => {
-    setFirst(event.first);
-    setRows(event.rows);
-  };
 
   const renderCard = useCallback((journal: Journal) => {
     const subject = getSubjectLabel(journal, shortcodeToUserCategory);
@@ -549,122 +432,6 @@ export default function JournalsPage() {
       <main className="journals-page px-4 py-12 md:px-8 lg:px-12 flex justify-center">
         <section className="journal-list w-full">
 
-          <div className="journal-list__controls">
-            <div className="flex w-full flex-col gap-4 md:flex-row">
-              <div className="relative flex-1">
-                <span className="p-input-icon-left w-full">
-                  <i className="pi pi-search" aria-hidden="true" />
-                  {isClient ? (
-                    <InputText
-                      value={searchTerm}
-                      onChange={handleSearchChange}
-                      placeholder="Search journals by title, ISSN, or publisher"
-                      className="journal-list__search-input"
-                      aria-label="Search journals"
-                    />
-                  ) : (
-                    <input
-                      type="search"
-                      className="journal-list__search-input"
-                      placeholder="Search journals by title, ISSN, or publisher"
-                      aria-label="Search journals"
-                      disabled
-                      aria-hidden="true"
-                    />
-                  )}
-                </span>
-              </div>
-
-              <div className="journal-list__subject-dropdown-wrapper">
-                {isClient ? (
-                  <Dropdown
-                    value={selectedSubject}
-                    options={subjectOptions}
-                    onChange={handleSubjectChange}
-                    className="journal-list__subject-dropdown"
-                    placeholder="Filter by subject"
-                    showClear={selectedSubject !== 'all'}
-                    aria-label="Filter journals by subject"
-                  />
-                ) : (
-                  <select
-                    className="journal-list__subject-dropdown journal-list__subject-dropdown--fallback"
-                    disabled
-                    aria-hidden="true"
-                    aria-label="Filter journals by subject"
-                  >
-                    <option>All Subjects</option>
-                  </select>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {isClient && (
-                <Dropdown
-                  value={sortBy}
-                  options={[
-                    { label: 'Title (A-Z)', value: 'title-asc' },
-                    { label: 'Title (Z-A)', value: 'title-desc' },
-                    { label: 'Recently Added', value: 'recent-desc' },
-                    { label: 'Impact Factor (High-Low)', value: 'impact-desc' },
-                    { label: 'Impact Factor (Low-High)', value: 'impact-asc' },
-                  ]}
-                  onChange={handleSortChange}
-                  placeholder="Sort by"
-                  className="w-[200px]"
-                />
-              )}
-              
-              <div className="journal-list__view-toggle">
-                <button
-                  type="button"
-                  className={`journal-list__view-btn ${
-                    viewMode === 'list' ? 'journal-list__view-btn--active' : ''
-                  }`.trim()}
-                  onClick={() => setViewMode('list')}
-                  aria-label="Show journals in list view"
-                  suppressHydrationWarning
-                >
-                  <i className="pi pi-list" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  className={`journal-list__view-btn ${
-                    viewMode === 'grid' ? 'journal-list__view-btn--active' : ''
-                  }`.trim()}
-                  onClick={() => setViewMode('grid')}
-                  aria-label="Show journals in grid view"
-                  suppressHydrationWarning
-                >
-                  <i className="pi pi-th-large" aria-hidden="true" />
-                </button>
-              </div>
-              
-              <div suppressHydrationWarning>
-                <Button
-                  label="Refresh"
-                  icon="pi pi-refresh"
-                  size="small"
-                  outlined
-                  onClick={handleRefresh}
-                  className="ml-2"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Results Count */}
-          {!loading && filteredAndSortedJournals.length > 0 && (
-            <div className="mt-6 flex items-center justify-between text-sm text-neutral-600">
-              <span>
-                Showing <strong>{first + 1}</strong> to <strong>{Math.min(first + rows, filteredAndSortedJournals.length)}</strong> of{' '}
-                <strong>{filteredAndSortedJournals.length}</strong> journal{filteredAndSortedJournals.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-          )}
-
           {error && (
             <div
               role="alert"
@@ -692,7 +459,7 @@ export default function JournalsPage() {
             }`}
           >
             {loading && !items.length &&
-              Array.from({ length: rows }).map((_, index) => (
+              Array.from({ length: 9 }).map((_, index) => (
                 <article key={`placeholder-${index}`} className="journal-card journal-card--loading">
                   <div className="journal-card__image-container" />
                   <div className="journal-card__content">
@@ -702,42 +469,15 @@ export default function JournalsPage() {
                 </article>
               ))}
 
-            {!loading && paginatedJournals.map((journal) => renderCard(journal))}
+            {!loading && displayedJournals.map((journal) => renderCard(journal))}
           </div>
 
-          {/* Pagination */}
-          {!loading && filteredAndSortedJournals.length > rows && (
-            <div className="mt-8">
-              <Paginator
-                first={first}
-                rows={rows}
-                totalRecords={filteredAndSortedJournals.length}
-                rowsPerPageOptions={[9, 18, 27, 36]}
-                onPageChange={onPageChange}
-                template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-              />
-            </div>
-          )}
-
-          {!loading && !filteredAndSortedJournals.length && (
+          {!loading && !displayedJournals.length && (
             <div className="mt-10 rounded-lg border border-neutral-200 bg-neutral-50 p-8 text-center">
               <h3 className="text-lg font-semibold text-neutral-800">No journals found</h3>
               <p className="mt-2 text-sm text-neutral-600">
-                Try adjusting your filters or search keywords to discover more journals.
+                No journals are currently available. Please check back later.
               </p>
-              <div suppressHydrationWarning>
-                <Button
-                  label="Clear filters"
-                  icon="pi pi-filter-slash"
-                  className="mt-4"
-                  outlined
-                  onClick={() => {
-                    setSelectedSubject('all');
-                    setSearchTerm('');
-                    handleRefresh();
-                  }}
-                />
-              </div>
             </div>
           )}
         </section>

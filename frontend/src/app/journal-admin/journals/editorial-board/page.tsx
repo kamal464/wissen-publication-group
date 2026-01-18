@@ -28,6 +28,7 @@ interface BoardMember {
   biography?: string;
   imageUrl?: string;
   profileUrl?: string;
+  tags?: string;
   isActive?: boolean;
 }
 
@@ -102,8 +103,11 @@ export default function EditorialBoardPage() {
     }
   };
 
-  const getImageUrl = (imagePath: string | undefined) => {
-    if (!imagePath) return null;
+  const getImageUrl = (imagePath: string | undefined | null) => {
+    // Return null if path is undefined, null, empty, or the string "undefined"
+    if (!imagePath || imagePath === 'undefined' || imagePath === 'null' || imagePath.trim() === '') {
+      return null;
+    }
     
     // If it's already a data URI, return as is
     if (imagePath.startsWith('data:')) {
@@ -135,6 +139,7 @@ export default function EditorialBoardPage() {
       biography: '',
       imageUrl: '',
       profileUrl: '',
+      tags: '',
       isActive: true
     });
     setShowDialog(true);
@@ -245,6 +250,8 @@ export default function EditorialBoardPage() {
         description: selectedMember.description,
         biography: selectedMember.biography,
         profileUrl: selectedMember.profileUrl,
+        tags: selectedMember.tags,
+        imageUrl: selectedMember.imageUrl && !selectedMember.imageUrl.startsWith('data:') ? selectedMember.imageUrl : undefined,
         isActive: selectedMember.isActive !== false
       };
 
@@ -288,6 +295,11 @@ export default function EditorialBoardPage() {
         toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Board member added successfully' });
       } else {
         // Update existing member
+        // If imageUrl was uploaded via the upload handler, make sure it's included
+        if (selectedMember.imageUrl && !selectedMember.imageUrl.startsWith('data:')) {
+          memberData.imageUrl = selectedMember.imageUrl;
+        }
+        console.log('Updating member with data:', memberData);
         await adminAPI.updateBoardMember(selectedMember.id, memberData);
         toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Board member updated successfully' });
       }
@@ -303,14 +315,53 @@ export default function EditorialBoardPage() {
   };
 
   const photoBodyTemplate = (rowData: BoardMember) => {
-    const imageUrl = getImageUrl(rowData.imageUrl);
+    // Check multiple possible field names for the image
+    // Prefer profileUrl first (most reliable), then fall back to others
+    const rawImagePath = (rowData as any).profileUrl || 
+                        (rowData as any).imageUrl || 
+                        (rowData as any).image || 
+                        (rowData as any).photo || 
+                        (rowData as any).photoUrl ||
+                        (rowData as any).photoPath;
+    
+    // Filter out invalid values: undefined, null, empty string, or the string "undefined"/"null"
+    const imagePath = (rawImagePath && 
+                      rawImagePath !== 'undefined' && 
+                      rawImagePath !== 'null' && 
+                      typeof rawImagePath === 'string' && 
+                      rawImagePath.trim() !== '' &&
+                      !rawImagePath.includes('/undefined') &&
+                      !rawImagePath.includes('/null'))
+      ? rawImagePath 
+      : null;
+    
+    // Only process if we have a valid path
+    const imageUrl = imagePath ? getImageUrl(imagePath) : null;
+    
+    console.log('Photo template for member:', {
+      name: rowData.name,
+      imageUrl: (rowData as any).imageUrl,
+      profileUrl: (rowData as any).profileUrl,
+      image: (rowData as any).image,
+      photo: (rowData as any).photo,
+      photoUrl: (rowData as any).photoUrl,
+      imagePath,
+      finalImageUrl: imageUrl,
+      allFields: Object.keys(rowData),
+      fullRowData: rowData
+    });
+    
     return imageUrl ? (
       <img 
         src={imageUrl} 
         alt={rowData.name} 
         className="w-16 h-20 object-cover rounded"
         onError={(e) => {
-          console.error('Image load error in table:', rowData.imageUrl);
+          console.error('Image load error in table:', {
+            imagePath,
+            imageUrl,
+            memberName: rowData.name
+          });
           const target = e.target as HTMLImageElement;
           target.style.display = 'none';
           // Show placeholder instead
@@ -320,7 +371,11 @@ export default function EditorialBoardPage() {
           target.parentNode?.replaceChild(placeholder, target);
         }}
         onLoad={() => {
-          console.log('Image loaded successfully in table:', rowData.imageUrl);
+          console.log('Image loaded successfully in table:', {
+            imagePath,
+            imageUrl,
+            memberName: rowData.name
+          });
         }}
       />
     ) : (
@@ -573,6 +628,15 @@ export default function EditorialBoardPage() {
                 onChange={(e) => setSelectedMember({ ...selectedMember, profileUrl: e.target.value })}
                 className="w-full"
                 placeholder="Enter profile URL"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="block mb-2 text-sm font-medium text-gray-700">Tags</label>
+              <InputText
+                value={selectedMember.tags || ''}
+                onChange={(e) => setSelectedMember({ ...selectedMember, tags: e.target.value })}
+                className="w-full"
+                placeholder="Enter tags (comma-separated)"
               />
             </div>
           </div>

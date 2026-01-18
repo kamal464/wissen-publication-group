@@ -1,10 +1,12 @@
 import { PrismaService } from '../prisma/prisma.service';
+import { S3Service } from '../aws/s3.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { SubmitManuscriptDto } from './dto/submit-manuscript.dto';
 export declare class ArticlesService {
     private prisma;
-    constructor(prisma: PrismaService);
+    private s3Service;
+    constructor(prisma: PrismaService, s3Service: S3Service);
     findAll(journalId?: number, search?: string, status?: string, showInInpressCards?: boolean, inPressMonth?: string, inPressYear?: string, sortBy?: string, sortOrder?: 'asc' | 'desc', page?: number, limit?: number): Promise<{
         data: ({
             journal: {
