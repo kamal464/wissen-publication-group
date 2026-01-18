@@ -27,30 +27,44 @@ export function InjectApiUrl() {
         const metaTag = document.querySelector('meta[name="api-base-url"]');
         if (metaTag) {
           apiUrl = metaTag.getAttribute('content');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[API] Found API URL from meta tag:', apiUrl);
+          }
         }
 
         // Priority 3: Try process.env (for build-time replacement)
         if (!apiUrl) {
           apiUrl = process.env.NEXT_PUBLIC_API_URL || null;
+          if (process.env.NODE_ENV === 'development' && apiUrl) {
+            console.log('[API] Found API URL from process.env:', apiUrl);
+          }
         }
 
         // Priority 4: Try __NEXT_DATA__ (Next.js runtime env)
         if (!apiUrl && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_API_URL) {
           apiUrl = (window as any).__NEXT_DATA__.env.NEXT_PUBLIC_API_URL;
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[API] Found API URL from __NEXT_DATA__:', apiUrl);
+          }
         }
 
         // Priority 4.5: If API URL is set but doesn't match current origin, use current origin instead
         // This prevents CORS errors when accessing via IP but API URL is set to domain
+        // BUT: Only apply this in production, not in development (localhost)
         if (apiUrl) {
           try {
             const apiUrlObj = new URL(apiUrl);
             const currentOrigin = `${window.location.protocol}//${window.location.host}`;
             const apiOrigin = `${apiUrlObj.protocol}//${apiUrlObj.host}`;
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
             
-            // If origins don't match, use current origin to avoid CORS
-            if (apiOrigin !== currentOrigin) {
+            // Only override in production (not localhost) to avoid breaking local development
+            if (apiOrigin !== currentOrigin && !isLocalhost) {
               console.log(`[API] Origin mismatch detected. API URL origin: ${apiOrigin}, Current origin: ${currentOrigin}. Using current origin.`);
               apiUrl = `${currentOrigin}/api`;
+            } else if (apiOrigin !== currentOrigin && isLocalhost) {
+              // In development, keep the configured API URL (likely localhost:3001)
+              console.log(`[API] Development mode: Using configured API URL: ${apiUrl}`);
             }
           } catch (e) {
             // If URL parsing fails, fall through to Priority 5

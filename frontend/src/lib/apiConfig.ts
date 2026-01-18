@@ -124,6 +124,12 @@ export const getApiBaseUrl = (): string => {
 
   // Final fallback: development localhost
   if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // If running on localhost, use the backend URL (port 3001)
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `${DEVELOPMENT_BACKEND_URL}/api`;
+    }
+    // Otherwise use current host (production)
     const protocol = window.location.protocol;
     const host = window.location.host;
     return `${protocol}//${host}/api`;
