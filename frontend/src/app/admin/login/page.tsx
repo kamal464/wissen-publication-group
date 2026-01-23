@@ -51,8 +51,8 @@ export default function AdminLogin() {
       <div className="w-full max-w-xl bg-white/95 backdrop-blur-md rounded-2xl border border-gray-100 shadow-2xl">
         <div className="h-1 w-full bg-gradient-to-r from-blue-600 via-fuchsia-500 to-purple-600 rounded-t-2xl" />
         <div className="p-6 sm:p-8">
-          <div className="text-center mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-purple-600 mx-auto mb-3 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <div className="text-center mb-6 flex flex-col items-center">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-purple-600 mb-3 flex items-center justify-center shadow-lg shadow-blue-500/20">
               <i className="pi pi-shield text-white text-2xl" />
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Admin Portal</h1>
