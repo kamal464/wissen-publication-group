@@ -66,17 +66,8 @@ export default function JournalDetailPage() {
       
       switch (section) {
         case 'home':
-          // Fetch recently published articles for home
-          try {
-            const articlesResponse = await adminAPI.getArticles({ 
-              journalId: journal.id,
-              limit: 5,
-              status: 'PUBLISHED'
-            });
-            setArticles((articlesResponse.data as any[]) || []);
-        } catch (err) {
-            console.error('Error loading articles:', err);
-          }
+          // Home section - no articles needed
+          setArticles([]);
           setSectionContent(journal.homePageContent || journal.journalDescription || journal.description || '');
           break;
 
@@ -645,63 +636,6 @@ export default function JournalDetailPage() {
                       `Welcome to ${journal.title}. This journal publishes original peer-reviewed articles in the field.`
                   }} />
                     </div>
-
-                {/* Recently Published Articles Card */}
-                <div style={{
-                  backgroundColor: 'rgb(255, 255, 255)',
-                  borderRadius: '8px',
-                  boxShadow: 'rgba(0, 0, 0, 0.08) 0px 2px 8px',
-                  padding: '32px',
-                  marginLeft: '-20px'
-                }}>
-                  <h2 style={{
-                    fontSize: '24px',
-                    fontWeight: '600',
-                    color: '#0B3C78',
-                    marginBottom: '20px'
-                  }}>
-                    Recently Published Articles
-                  </h2>
-                  {articles.length > 0 ? (
-                    <ul style={{
-                      listStyle: 'none',
-                      padding: 0,
-                      margin: 0
-                    }}>
-                      {articles.map((article) => (
-                        <li key={article.id} style={{
-                          marginBottom: '16px',
-                          paddingLeft: '24px',
-                          position: 'relative'
-                        }}>
-                          <span style={{
-                            position: 'absolute',
-                            left: 0,
-                            top: '6px',
-                            width: '6px',
-                            height: '6px',
-                            backgroundColor: '#1E5DA8',
-                            borderRadius: '50%'
-                          }}></span>
-                          <Link href={`/articles/${article.id}`} style={{
-                            color: '#0B3C78',
-                            textDecoration: 'none',
-                            fontSize: '15px',
-                            lineHeight: '1.6',
-                            transition: 'color 0.2s'
-                          }} onMouseEnter={(e) => e.currentTarget.style.color = '#1E5DA8'}
-                             onMouseLeave={(e) => e.currentTarget.style.color = '#0B3C78'}>
-                            {article.title}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p style={{ color: '#6B7280', fontSize: '15px' }}>
-                      No articles published yet.
-                    </p>
-                                  )}
-                                </div>
               </>
             )}
 
