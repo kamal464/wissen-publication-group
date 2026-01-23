@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
     unoptimized: false,
   },
   trailingSlash: true,
+  // Fix lockfile warning by explicitly setting the root
+  outputFileTracingRoot: require('path').join(__dirname),
   // Note: NEXT_PUBLIC_* variables are automatically available
   // Removed Turbopack from build to ensure env vars are properly replaced
 };
