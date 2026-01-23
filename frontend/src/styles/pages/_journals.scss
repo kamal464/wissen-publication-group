@@ -4,7 +4,7 @@
 
 // Blue Header Banner
 .journals-hero-banner {
-  text-align: left;
+  text-align: center;
   color: #fff;
   background: #1558a7;
   padding: 0;
@@ -27,7 +27,7 @@
     color: white;
     display: flex;
     align-items: baseline;
-  
+    justify-content: center;
     flex-wrap: wrap;
     gap: 0.5rem;
     
@@ -203,13 +203,21 @@
 // Grid Layout Helpers
 .journal-list__grid {
   display: grid;
-  gap: 1.25rem;
+  gap: 2.5rem;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   overflow: hidden;
   background-color: #f8f9fa !important;
   padding: 1.25rem;
+  
+  @media (max-width: 768px) {
+    gap: 2rem;
+  }
+  
+  @media (max-width: 640px) {
+    gap: 1.5rem;
+  }
   
   // Ensure grid items don't overflow
   > * {

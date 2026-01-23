@@ -83,6 +83,39 @@ const extractJournals = (payload: unknown): Journal[] => {
   return [];
 };
 
+// Deduplicate journals array - prioritize by ID, then shortcode, then title
+const deduplicateJournals = (journals: Journal[]): Journal[] => {
+  const seen = new Map<string | number, Journal>();
+  
+  for (const journal of journals) {
+    // Priority 1: Use ID if available (most reliable)
+    if (journal.id && journal.id > 0) {
+      if (!seen.has(journal.id)) {
+        seen.set(journal.id, journal);
+      }
+      continue;
+    }
+    
+    // Priority 2: Use shortcode if available
+    if (journal.shortcode) {
+      if (!seen.has(`shortcode:${journal.shortcode}`)) {
+        seen.set(`shortcode:${journal.shortcode}`, journal);
+      }
+      continue;
+    }
+    
+    // Priority 3: Use title as fallback (less reliable, but better than duplicates)
+    const titleKey = journal.title?.toLowerCase().trim();
+    if (titleKey) {
+      if (!seen.has(`title:${titleKey}`)) {
+        seen.set(`title:${titleKey}`, journal);
+      }
+    }
+  }
+  
+  return Array.from(seen.values());
+};
+
 type AxiosErrorLike = {
   isAxiosError?: boolean;
   message?: string;
@@ -197,6 +230,10 @@ export default function JournalsPage() {
       ]);
       
       const normalized = extractJournals(journalsRes.data ?? journalsRes);
+      
+      // STEP 1: Deduplicate normalized journals first (by ID, then shortcode, then title)
+      const deduplicatedNormalized = deduplicateJournals(normalized);
+      
       const shortcodes = (shortcodesRes.data || []) as Array<{ 
         shortcode: string; 
         journalName: string; 
@@ -240,11 +277,11 @@ export default function JournalsPage() {
         const journalName = shortcodeMap.get(shortcode) || '';
         const journalId = shortcodeToJournalId.get(shortcode);
         
-        // Check if a Journal record already exists for this shortcode
-        const existingJournal = normalized.find(j => 
+        // Check if a Journal record already exists for this shortcode (use deduplicated array)
+        const existingJournal = deduplicatedNormalized.find(j => 
           j.shortcode === shortcode || 
           (journalId && j.id === journalId) ||
-          j.title?.toLowerCase() === journalName.toLowerCase()
+          j.title?.toLowerCase().trim() === journalName.toLowerCase().trim()
         );
         
         // If no Journal record exists, create a virtual one
@@ -260,8 +297,8 @@ export default function JournalsPage() {
         }
       });
       
-      // Combine real and virtual journals
-      let allJournals = [...normalized, ...virtualJournals];
+      // Combine real and virtual journals, then deduplicate again
+      let allJournals = deduplicateJournals([...deduplicatedNormalized, ...virtualJournals]);
       
       // Fetch full journal details for all journals with valid IDs to get all content fields
       // Use journal ID (most reliable) or try shortcode as fallback
@@ -317,7 +354,10 @@ export default function JournalsPage() {
         })
       );
       
-      dispatch(setJournals(journalsWithDetails));
+      // STEP 2: Deduplicate final journals array before dispatching (safety net)
+      const finalJournals = deduplicateJournals(journalsWithDetails);
+      
+      dispatch(setJournals(finalJournals));
     } catch (fetchError) {
       dispatch(setError(getErrorMessage(fetchError)));
     } finally {
@@ -335,8 +375,11 @@ export default function JournalsPage() {
   const displayedJournals = useMemo(() => {
     if (!items.length) return [];
     
+    // STEP 3: Deduplicate items first (final safety net)
+    const deduplicatedItems = deduplicateJournals(items);
+    
     // Only show journals with allocated users (have shortcode and user)
-    let filtered = items.filter((journal) => {
+    let filtered = deduplicatedItems.filter((journal) => {
       // Method 1: Check if journal has a shortcode field that matches allocated shortcode
       const journalShortcode = journal.shortcode || '';
       if (allocatedShortcodes.has(journalShortcode)) {
@@ -361,8 +404,11 @@ export default function JournalsPage() {
       return false;
     });
     
+    // STEP 4: Deduplicate filtered results (in case filtering created duplicates)
+    const deduplicatedFiltered = deduplicateJournals(filtered);
+    
     // Sort by title alphabetically
-    const sorted = [...filtered].sort((a, b) => {
+    const sorted = [...deduplicatedFiltered].sort((a, b) => {
       const aTitle = a.title?.toLowerCase() || '';
       const bTitle = b.title?.toLowerCase() || '';
       return aTitle.localeCompare(bTitle);
