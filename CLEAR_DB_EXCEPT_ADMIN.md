@@ -14,30 +14,55 @@
 
 ```bash
 cd /var/www/wissen-publication-group/backend && \
-echo "=== STEP 1: Backup admin user ===" && \
+echo "=== STEP 1: Load database connection ===" && \
+# Load DATABASE_URL from .env
+export $(grep -v '^#' .env | grep DATABASE_URL | xargs) && \
+# Extract connection details if DATABASE_URL is not set
+if [ -z "$DATABASE_URL" ]; then
+  DB_USER=$(grep DB_USER .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "postgres")
+  DB_PASSWORD=$(grep DB_PASSWORD .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "")
+  DB_NAME=$(grep DB_NAME .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "wissen_publication_group")
+  DB_HOST=$(grep DB_HOST .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "localhost")
+  DB_PORT=$(grep DB_PORT .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "5432")
+  export PGPASSWORD="$DB_PASSWORD"
+  DB_CONN="psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME"
+else
+  DB_CONN="psql \"$DATABASE_URL\""
+fi && \
+echo "Database connection configured" && \
+echo "" && \
+echo "=== STEP 2: Backup admin user ===" && \
 # Export admin user data
-psql $DATABASE_URL -c "SELECT id, \"userName\", password, \"createdAt\", \"updatedAt\" FROM \"User\" WHERE \"userName\" = 'admin';" > /tmp/admin_backup.txt && \
+$DB_CONN -c "SELECT id, \"userName\", password, \"createdAt\", \"updatedAt\" FROM \"User\" WHERE \"userName\" = 'admin';" > /tmp/admin_backup.txt 2>/dev/null && \
 echo "Admin user backed up to /tmp/admin_backup.txt" && \
 echo "" && \
-echo "=== STEP 2: Clear all tables except User ===" && \
-# Clear all tables except User
-psql $DATABASE_URL << 'EOF'
+echo "=== STEP 3: Clear all tables except User ===" && \
+# Clear all tables except User - handle foreign keys properly
+$DB_CONN << 'EOF'
 -- Disable foreign key checks temporarily
 SET session_replication_role = 'replica';
 
--- Clear all tables except User
-TRUNCATE TABLE "Article" CASCADE;
-TRUNCATE TABLE "Journal" CASCADE;
-TRUNCATE TABLE "BoardMember" CASCADE;
-TRUNCATE TABLE "Message" CASCADE;
-TRUNCATE TABLE "JournalShortcode" CASCADE;
+-- Delete in order: child tables first, then parent tables
+DELETE FROM "Author";
+DELETE FROM "Article";
+DELETE FROM "BoardMember";
+DELETE FROM "Journal";
+DELETE FROM "Message";
+DELETE FROM "Contact";
+DELETE FROM "News";
+DELETE FROM "Notification";
+DELETE FROM "WebPage";
+DELETE FROM "JournalShortcode";
+
+-- Delete all users except admin
+DELETE FROM "User" WHERE "userName" != 'admin';
 
 -- Re-enable foreign key checks
 SET session_replication_role = 'origin';
 EOF
 echo "" && \
-echo "=== STEP 3: Verify admin user still exists ===" && \
-psql $DATABASE_URL -c "SELECT id, \"userName\" FROM \"User\" WHERE \"userName\" = 'admin';" && \
+echo "=== STEP 4: Verify admin user still exists ===" && \
+$DB_CONN -c "SELECT id, \"userName\" FROM \"User\" WHERE \"userName\" = 'admin';" && \
 echo "" && \
 echo "✅ Database cleared! Admin user preserved."
 ```
@@ -78,16 +103,38 @@ git reset --hard origin/main && \
 echo "" && \
 echo "=== STEP 4: Backup and Clear Database ===" && \
 cd backend && \
+# Load DATABASE_URL from .env
+export $(grep -v '^#' .env | grep DATABASE_URL | xargs) && \
+# Extract connection details if DATABASE_URL is not set
+if [ -z "$DATABASE_URL" ]; then
+  DB_USER=$(grep DB_USER .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "postgres")
+  DB_PASSWORD=$(grep DB_PASSWORD .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "")
+  DB_NAME=$(grep DB_NAME .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "wissen_publication_group")
+  DB_HOST=$(grep DB_HOST .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "localhost")
+  DB_PORT=$(grep DB_PORT .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "5432")
+  export PGPASSWORD="$DB_PASSWORD"
+  DB_CONN="psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME"
+else
+  DB_CONN="psql \"$DATABASE_URL\""
+fi && \
 # Backup admin
-psql $DATABASE_URL -c "SELECT id, \"userName\", password, \"createdAt\", \"updatedAt\" FROM \"User\" WHERE \"userName\" = 'admin';" > /tmp/admin_backup.txt && \
-# Clear database
-psql $DATABASE_URL << 'EOF'
+$DB_CONN -c "SELECT id, \"userName\", password, \"createdAt\", \"updatedAt\" FROM \"User\" WHERE \"userName\" = 'admin';" > /tmp/admin_backup.txt 2>/dev/null || echo "Admin backup skipped" && \
+# Clear database - handle foreign keys properly
+$DB_CONN << 'EOF'
 SET session_replication_role = 'replica';
-TRUNCATE TABLE "Article" CASCADE;
-TRUNCATE TABLE "Journal" CASCADE;
-TRUNCATE TABLE "BoardMember" CASCADE;
-TRUNCATE TABLE "Message" CASCADE;
-TRUNCATE TABLE "JournalShortcode" CASCADE;
+-- Delete in order: child tables first, then parent tables
+DELETE FROM "Author";
+DELETE FROM "Article";
+DELETE FROM "BoardMember";
+DELETE FROM "Journal";
+DELETE FROM "Message";
+DELETE FROM "Contact";
+DELETE FROM "News";
+DELETE FROM "Notification";
+DELETE FROM "WebPage";
+DELETE FROM "JournalShortcode";
+-- Delete all users except admin
+DELETE FROM "User" WHERE "userName" != 'admin';
 SET session_replication_role = 'origin';
 EOF
 echo "" && \
@@ -124,7 +171,18 @@ echo "✅ Deployment complete! Database cleared except admin."
 After clearing, verify admin still exists:
 
 ```bash
-psql $DATABASE_URL -c "SELECT id, \"userName\", \"createdAt\" FROM \"User\" WHERE \"userName\" = 'admin';"
+# First load connection
+cd /var/www/wissen-publication-group/backend && \
+export $(grep -v '^#' .env | grep DATABASE_URL | xargs) && \
+if [ -z "$DATABASE_URL" ]; then
+  DB_USER=$(grep DB_USER .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "postgres")
+  DB_PASSWORD=$(grep DB_PASSWORD .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "")
+  DB_NAME=$(grep DB_NAME .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "wissen_publication_group")
+  export PGPASSWORD="$DB_PASSWORD"
+  psql -h localhost -U $DB_USER -d $DB_NAME -c "SELECT id, \"userName\", \"createdAt\" FROM \"User\" WHERE \"userName\" = 'admin';"
+else
+  psql "$DATABASE_URL" -c "SELECT id, \"userName\", \"createdAt\" FROM \"User\" WHERE \"userName\" = 'admin';"
+fi
 ```
 
 ---

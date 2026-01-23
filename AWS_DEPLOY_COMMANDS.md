@@ -695,6 +695,103 @@ echo "✅ Ready to deploy! Run the deployment command now."
 
 ---
 
+---
+
+## 🗄️ **CLEAR DATABASE & DEPLOY (Production Reset):**
+
+**⚠️ WARNING: This clears ALL data except admin user!**
+
+```bash
+cd /var/www/wissen-publication-group && \
+echo "=== STEP 1: Fix Disk Space ===" && \
+df -h / && \
+npm cache clean --force 2>/dev/null || true && \
+sudo journalctl --vacuum-time=3d 2>/dev/null || true && \
+pm2 flush 2>/dev/null || true && \
+echo "" && \
+echo "=== STEP 2: Fix PostgreSQL ===" && \
+sudo systemctl restart postgresql && \
+sleep 5 && \
+echo "" && \
+echo "=== STEP 3: Pull Latest Code ===" && \
+GIT_TERMINAL_PROMPT=0 git fetch origin main && \
+git reset --hard origin/main && \
+echo "" && \
+echo "=== STEP 4: Backup and Clear Database (Keep Admin Only) ===" && \
+cd backend && \
+# Load DATABASE_URL from .env
+export $(grep -v '^#' .env | grep DATABASE_URL | xargs) && \
+# Extract connection details if DATABASE_URL is not set or doesn't work
+if [ -z "$DATABASE_URL" ]; then
+  DB_USER=$(grep DB_USER .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "postgres")
+  DB_PASSWORD=$(grep DB_PASSWORD .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "")
+  DB_NAME=$(grep DB_NAME .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "wissen_publication_group")
+  DB_HOST=$(grep DB_HOST .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "localhost")
+  DB_PORT=$(grep DB_PORT .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" || echo "5432")
+  export PGPASSWORD="$DB_PASSWORD"
+  DB_CONN="psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME"
+else
+  DB_CONN="psql \"$DATABASE_URL\""
+fi && \
+# Backup admin user
+$DB_CONN -c "SELECT id, \"userName\", password, \"createdAt\", \"updatedAt\" FROM \"User\" WHERE \"userName\" = 'admin';" > /tmp/admin_backup.txt 2>/dev/null || echo "Admin backup skipped" && \
+# Clear all tables except User - handle foreign keys properly
+$DB_CONN << 'EOF'
+-- Disable foreign key checks
+SET session_replication_role = 'replica';
+
+-- Delete in order: child tables first, then parent tables
+DELETE FROM "Author";
+DELETE FROM "Article";
+DELETE FROM "BoardMember";
+DELETE FROM "Journal";
+DELETE FROM "Message";
+DELETE FROM "Contact";
+DELETE FROM "News";
+DELETE FROM "Notification";
+DELETE FROM "WebPage";
+DELETE FROM "JournalShortcode";
+
+-- Delete all users except admin
+DELETE FROM "User" WHERE "userName" != 'admin';
+
+-- Re-enable foreign key checks
+SET session_replication_role = 'origin';
+EOF
+echo "" && \
+echo "=== STEP 5: Verify Admin User ===" && \
+$DB_CONN -c "SELECT id, \"userName\" FROM \"User\" WHERE \"userName\" = 'admin';" && \
+echo "" && \
+echo "=== STEP 6: Apply Migrations ===" && \
+npx prisma migrate deploy || echo "Migration issue - continuing..." && \
+npx prisma generate && \
+echo "" && \
+echo "=== STEP 7: Build Backend ===" && \
+npm install --no-audit --no-fund --loglevel=error && \
+npm run build && \
+echo "" && \
+echo "=== STEP 8: Build Frontend ===" && \
+cd ../frontend && \
+npm install --no-audit --no-fund --loglevel=error && \
+npm run build && \
+echo "" && \
+echo "=== STEP 9: Restart Services ===" && \
+cd .. && \
+pm2 restart all || (pm2 start dist/src/main.js --name wissen-backend --update-env && cd frontend && pm2 start npm --name wissen-frontend -- start --update-env && cd ..) && \
+sleep 5 && \
+pm2 save && \
+sudo systemctl reload nginx && \
+echo "" && \
+echo "=== STEP 10: Verify Deployment ===" && \
+pm2 list && \
+curl -s http://localhost:3001/api/health && echo "" && \
+curl -s -o /dev/null -w "Frontend: HTTP %{http_code}\n" http://localhost:3000 && \
+echo "" && \
+echo "✅ Database cleared and deployment complete!"
+```
+
+---
+
 **Server IP:** 54.165.116.208  
 **Deployment Path:** /var/www/wissen-publication-group  
 **PM2 Processes:** wissen-backend, wissen-frontend
