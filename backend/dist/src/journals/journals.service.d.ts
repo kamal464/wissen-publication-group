@@ -239,7 +239,6 @@ export declare class JournalsService {
             name: string;
             email: string;
             affiliation: string | null;
-            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -263,10 +262,6 @@ export declare class JournalsService {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
-        issueId: number | null;
-        showInInpressCards: boolean;
-        inPressMonth: string | null;
-        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -285,6 +280,5 @@ export declare class JournalsService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
-        schemaSyncTest: string | null;
     })[]>;
 }

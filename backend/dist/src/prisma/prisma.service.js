@@ -38,11 +38,21 @@ let PrismaService = PrismaService_1 = class PrismaService extends client_1.Prism
             if (urlObj.searchParams.has('pgbouncer')) {
                 return url;
             }
+            const isRDS = urlObj.hostname.includes('.rds.amazonaws.com');
+            if (isRDS) {
+                if (urlObj.searchParams.has('sslmode')) {
+                    return url;
+                }
+                return url;
+            }
             urlObj.searchParams.set('pgbouncer', 'true');
             return urlObj.toString();
         }
         catch (error) {
             if (url.includes('pgbouncer=true')) {
+                return url;
+            }
+            if (url.includes('.rds.amazonaws.com')) {
                 return url;
             }
             if (url.includes('?')) {

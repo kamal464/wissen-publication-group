@@ -161,7 +161,8 @@ let AdminController = class AdminController {
         if (!file) {
             throw new Error('No file uploaded');
         }
-        const fileUrl = `/uploads/${file.filename}`;
+        const uploadResult = await this.s3Service.uploadFile(file, 'board-members');
+        const fileUrl = uploadResult.url;
         const updated = await this.adminService.updateBoardMember(id, { imageUrl: fileUrl });
         return {
             success: true,

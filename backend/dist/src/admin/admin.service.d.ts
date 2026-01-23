@@ -73,7 +73,6 @@ export declare class AdminService {
                 name: string;
                 email: string;
                 affiliation: string | null;
-                affiliationNumber: number | null;
             }[];
         } & {
             id: number;
@@ -97,10 +96,6 @@ export declare class AdminService {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
-            issueId: number | null;
-            showInInpressCards: boolean;
-            inPressMonth: string | null;
-            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -119,7 +114,6 @@ export declare class AdminService {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
-            schemaSyncTest: string | null;
         })[];
     }>;
     getSearchAnalytics(): Promise<{
@@ -193,7 +187,6 @@ export declare class AdminService {
             name: string;
             email: string;
             affiliation: string | null;
-            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -217,10 +210,6 @@ export declare class AdminService {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
-        issueId: number | null;
-        showInInpressCards: boolean;
-        inPressMonth: string | null;
-        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -239,9 +228,61 @@ export declare class AdminService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
-        schemaSyncTest: string | null;
     }>;
-    createJournal(journalData: any): Promise<any>;
+    createJournal(journalData: any): Promise<{
+        id: number;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
+        issn: string | null;
+        shortcode: string | null;
+        description: string;
+        coverImage: string | null;
+        publisher: string | null;
+        accessType: string | null;
+        subjectArea: string | null;
+        category: string | null;
+        discipline: string | null;
+        impactFactor: string | null;
+        aimsScope: string | null;
+        guidelines: string | null;
+        editorialBoard: string | null;
+        homePageContent: string | null;
+        currentIssueContent: string | null;
+        archiveContent: string | null;
+        articlesInPress: string | null;
+        metaTitle: string | null;
+        metaDescription: string | null;
+        metaKeywords: string | null;
+        doi: string | null;
+        indexing: string | null;
+        bannerImage: string | null;
+        flyerImage: string | null;
+        flyerPdf: string | null;
+        googleIndexingImage: string | null;
+        journalImpactFactor: string | null;
+        articleProcessingCharge: string | null;
+        icv: string | null;
+        pubmedId: string | null;
+        indexingAbstracting: string | null;
+        email: string | null;
+        classification: string | null;
+        citationsValue: string | null;
+        acceptanceRate: string | null;
+        conferenceUrl: string | null;
+        editorName: string | null;
+        editorAffiliation: string | null;
+        editorImage: string | null;
+        impactFactorValue: string | null;
+        citationsPercentage: string | null;
+        acceptancePercentage: string | null;
+        googleAnalyticsTitle: string | null;
+        googleAnalyticsValue: string | null;
+        googleAnalyticsUrl: string | null;
+        articleFormats: string | null;
+        journalDescription: string | null;
+        pubmedArticles: string | null;
+    }>;
     updateJournal(journalId: number, journalData: any): Promise<any>;
     deleteJournal(journalId: number): Promise<{
         id: number;
@@ -322,6 +363,7 @@ export declare class AdminService {
         journalName: string | null;
         isActive: boolean;
     } | null>;
+    private generateUniqueShortcode;
     createUser(userData: any): Promise<{
         id: number;
         createdAt: Date;
@@ -377,7 +419,6 @@ export declare class AdminService {
             name: string;
             email: string;
             affiliation: string | null;
-            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -401,10 +442,6 @@ export declare class AdminService {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
-        issueId: number | null;
-        showInInpressCards: boolean;
-        inPressMonth: string | null;
-        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -423,7 +460,6 @@ export declare class AdminService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
-        schemaSyncTest: string | null;
     })[]>;
     getSubmission(id: number): Promise<({
         journal: {
@@ -486,7 +522,6 @@ export declare class AdminService {
             name: string;
             email: string;
             affiliation: string | null;
-            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -510,10 +545,6 @@ export declare class AdminService {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
-        issueId: number | null;
-        showInInpressCards: boolean;
-        inPressMonth: string | null;
-        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -532,7 +563,6 @@ export declare class AdminService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
-        schemaSyncTest: string | null;
     }) | null>;
     getJournalShortcodes(): Promise<{
         id: number;
@@ -617,10 +647,6 @@ export declare class AdminService {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
-            issueId: number | null;
-            showInInpressCards: boolean;
-            inPressMonth: string | null;
-            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -639,7 +665,6 @@ export declare class AdminService {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
-            schemaSyncTest: string | null;
         })[];
         journals: {
             id: number;
