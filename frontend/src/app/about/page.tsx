@@ -10,11 +10,23 @@ export default function AboutPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const imagesPerView = 4;
   
-  // Create 10 image placeholders using wissen-logo.jpeg
-  const imagePlaceholders = Array.from({ length: 10 }, (_, i) => ({
-    id: i + 1,
-    placeholder: '/wissen-logo.jpeg'
-  }));
+  // Indexing images from /images/indexing folder
+  const indexingImages = [
+    { id: 1, src: '/images/indexing/a232a457-69ee-4f16-8522-14046968acf5.jpg', alt: 'Indexing Partner 1' },
+    { id: 2, src: '/images/indexing/a62a7b3f-0a8b-4b9c-8114-88b5c8fffda1.jpg', alt: 'Indexing Partner 2' },
+    { id: 3, src: '/images/indexing/6d58cda7-58ed-4078-88ca-9d53bb698c31.jpg', alt: 'Indexing Partner 3' },
+    { id: 4, src: '/images/indexing/7457b4eb-e178-42a3-af15-29af1d7386bb.jpg', alt: 'Indexing Partner 4' },
+    { id: 5, src: '/images/indexing/12f38938-1ebd-4b41-89fd-9bd241ba2632.jpg', alt: 'Indexing Partner 5' },
+    { id: 6, src: '/images/indexing/35b8ad54-8132-4af5-864b-270ea801f204.jpg', alt: 'Indexing Partner 6' },
+    { id: 7, src: '/images/indexing/ba10581d-5e2a-44b5-b72b-c89c2ab7e0a3.jpg', alt: 'Indexing Partner 7' },
+    { id: 8, src: '/images/indexing/9ff8733e-4f3c-495e-9ccd-e0a2fdd90ed6.jpg', alt: 'Indexing Partner 8' },
+    { id: 9, src: '/images/indexing/0535f555-dcc1-4a9d-89ff-d2c405e881a3.jpg', alt: 'Indexing Partner 9' },
+    { id: 10, src: '/images/indexing/c27f175c-904f-4e60-b429-df4c35b19267.jpg', alt: 'Indexing Partner 10' },
+    { id: 11, src: '/images/indexing/8e62c5c6-5a5f-4946-a768-4cb376900eb4.jpg', alt: 'Indexing Partner 11' },
+    { id: 12, src: '/images/indexing/de443c68-124f-40a0-9f3b-ead9cfb100c0.jpg', alt: 'Indexing Partner 12' }
+  ];
+  
+  const imagePlaceholders = indexingImages;
 
   // Duplicate images multiple times for seamless infinite scroll
   // Add enough duplicates to ensure smooth looping
@@ -360,7 +372,11 @@ export default function AboutPage() {
                           overflow: 'hidden',
                           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                           transition: 'transform 0.3s ease',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          padding: '12px',
+                          backgroundColor: '#f8f9fa'
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'scale(1.05)';
@@ -369,16 +385,34 @@ export default function AboutPage() {
                           e.currentTarget.style.transform = 'scale(1)';
                         }}
                       >
-                        <img
-                          src={actualImage.placeholder}
-                          alt={`Placeholder ${actualImage.id}`}
-                          style={{
-                            width: '100%',
-                            height: '150px',
-                            objectFit: 'cover',
-                            display: 'block'
-                          }}
-                        />
+                        <div style={{
+                          width: '100%',
+                          height: '150px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: '#ffffff',
+                          borderRadius: '4px',
+                          padding: '8px'
+                        }}>
+                          <img
+                            src={actualImage.src}
+                            alt={actualImage.alt}
+                            style={{
+                              maxWidth: '100%',
+                              maxHeight: '100%',
+                              width: 'auto',
+                              height: 'auto',
+                              objectFit: 'contain',
+                              objectPosition: 'center',
+                              display: 'block'
+                            }}
+                            onError={(e) => {
+                              // Fallback to placeholder if image fails to load
+                              (e.target as HTMLImageElement).src = '/wissen-logo.jpeg';
+                            }}
+                          />
+                        </div>
                       </div>
                     );
                   })}

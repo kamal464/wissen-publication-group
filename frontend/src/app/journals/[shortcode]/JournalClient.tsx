@@ -23,6 +23,7 @@ export default function JournalDetailPage() {
   const [archiveIssues, setArchiveIssues] = useState<Map<number, any[]>>(new Map());
   const [contentLoading, setContentLoading] = useState(false);
   const [expandedAbstracts, setExpandedAbstracts] = useState<Set<number>>(new Set());
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Fetch journal data
   useEffect(() => {
@@ -233,6 +234,221 @@ export default function JournalDetailPage() {
         }
   }, [activeSection, journal, loadSectionContent, searchParams]);
 
+  // Close menu when clicking outside or pressing Escape
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isMenuOpen) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden'; // Prevent body scroll when sidebar is open
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen]);
+
+  // Inject responsive styles
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    
+    const styleId = 'journal-responsive-styles';
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      
+      .journal-sidebar {
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      /* Desktop Navigation - Hide on mobile */
+      @media (max-width: 768px) {
+        .journal-desktop-nav {
+          display: none !important;
+        }
+        
+        .journal-submit-btn-desktop {
+          display: none !important;
+        }
+        
+        .journal-hamburger-btn {
+          display: flex !important;
+        }
+      }
+      
+      /* Mobile - Hide hamburger on desktop */
+      @media (min-width: 769px) {
+        .journal-hamburger-btn {
+          display: none !important;
+        }
+        
+        .journal-desktop-nav {
+          display: flex !important;
+        }
+        
+        .journal-submit-btn-desktop {
+          display: block !important;
+        }
+        
+        .journal-sidebar {
+          display: none !important;
+        }
+      }
+      
+      @media (max-width: 768px) {
+        .journal-sidebar {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        .journal-main-content {
+          padding: 24px 16px !important;
+        }
+        
+        .journal-content-grid {
+          grid-template-columns: 1fr !important;
+          gap: 24px !important;
+        }
+        
+        .journal-left-column {
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow-x: hidden !important;
+        }
+        
+        .journal-introduction-card {
+          margin-left: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+          overflow-x: hidden !important;
+        }
+        
+        .journal-editorial-board-card {
+          margin-left: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+          overflow-x: hidden !important;
+          padding: 24px 16px !important;
+        }
+        
+        .journal-editorial-board-card .editors-grid {
+          grid-template-columns: 1fr !important;
+          gap: 1.5rem !important;
+        }
+        
+        .journal-editorial-board-card .editor-content {
+          flex-direction: column !important;
+          align-items: center !important;
+          text-align: center !important;
+          gap: 1rem !important;
+        }
+        
+        .journal-editorial-board-card .editor-avatar {
+          margin: 0 auto 1rem auto !important;
+        }
+      }
+      
+      @media (min-width: 769px) {
+        .journal-introduction-card {
+          margin-left: -20px !important;
+        }
+        
+        .journal-introduction-card * {
+          max-width: 100% !important;
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+          box-sizing: border-box !important;
+        }
+        
+        .journal-introduction-card h2 {
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+        }
+        
+        .journal-editorial-board-card {
+          margin-left: 98px !important;
+        }
+        
+        .journal-right-column {
+          width: 100% !important;
+          align-items: stretch !important;
+        }
+        
+        .journal-cover-card,
+        .journal-useful-links-card {
+          margin-left: 0 !important;
+          max-width: 100% !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
+        
+        .journal-cover-card button {
+          width: 100% !important;
+          padding: 12px 24px !important;
+        }
+      }
+      
+      @media (max-width: 640px) {
+        .journal-main-content {
+          padding: 20px 12px !important;
+        }
+        
+        .journal-content-grid {
+          gap: 20px !important;
+        }
+        
+        .journal-introduction-card {
+          padding: 24px 16px !important;
+        }
+        
+        .journal-editorial-board-card {
+          padding: 20px 12px !important;
+        }
+        
+        .journal-editorial-board-card .editors-grid {
+          gap: 1rem !important;
+        }
+        
+        .journal-cover-card {
+          padding: 12px !important;
+        }
+        
+        .journal-useful-links-card {
+          padding: 20px 16px !important;
+        }
+        
+        .journal-cover-card button {
+          font-size: 14px !important;
+          padding: 10px 20px !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      const existingStyle = document.getElementById(styleId);
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+    };
+  }, []);
+
   if (loading) {
     return (
       <div style={{
@@ -388,150 +604,616 @@ export default function JournalDetailPage() {
             />
           </Link>
 
-          {/* Menu Items - Center */}
-          <div style={{
+          {/* Desktop Navigation - Visible on desktop only */}
+          <nav className="journal-desktop-nav" style={{
             display: 'flex',
             alignItems: 'center',
             gap: '32px'
           }}>
-            <Link href={`/journals/${shortcode}`} style={{
-              color: '#000000',
-              textDecoration: 'none',
-              fontSize: '15px',
-              fontWeight: '500',
-              transition: 'all 0.2s',
-              outline: 'none'
-            }} onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#0B3C78';
-              e.currentTarget.style.textDecoration = 'underline';
-            }}
-               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#000000';
-                e.currentTarget.style.textDecoration = 'none';
-              }}>
+            <Link 
+              href={`/journals/${shortcode}`}
+              style={{
+                color: activeSection === 'home' ? '#1E5DA8' : '#000000',
+                textDecoration: 'none',
+                fontSize: '15px',
+                fontWeight: activeSection === 'home' ? '600' : '500',
+                transition: 'all 0.2s',
+                outline: 'none',
+                borderBottom: activeSection === 'home' ? '2px solid #1E5DA8' : '2px solid transparent',
+                paddingBottom: '4px'
+              }}
+              onMouseEnter={(e) => {
+                if (activeSection !== 'home') {
+                  e.currentTarget.style.color = '#1E5DA8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeSection !== 'home') {
+                  e.currentTarget.style.color = '#000000';
+                }
+              }}
+            >
               Journal Home
             </Link>
-            <Link href={`/journals/${shortcode}?section=aims-scope`} style={{
-              color: '#000000',
-              textDecoration: 'none',
-              fontSize: '15px',
-              fontWeight: '500',
-              transition: 'all 0.2s',
-              outline: 'none'
-            }} onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#0B3C78';
-              e.currentTarget.style.textDecoration = 'underline';
-            }}
-               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#000000';
-                e.currentTarget.style.textDecoration = 'none';
-              }}>
+            <Link 
+              href={`/journals/${shortcode}?section=aims-scope`}
+              style={{
+                color: activeSection === 'aims-scope' ? '#1E5DA8' : '#000000',
+                textDecoration: 'none',
+                fontSize: '15px',
+                fontWeight: activeSection === 'aims-scope' ? '600' : '500',
+                transition: 'all 0.2s',
+                outline: 'none',
+                borderBottom: activeSection === 'aims-scope' ? '2px solid #1E5DA8' : '2px solid transparent',
+                paddingBottom: '4px'
+              }}
+              onMouseEnter={(e) => {
+                if (activeSection !== 'aims-scope') {
+                  e.currentTarget.style.color = '#1E5DA8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeSection !== 'aims-scope') {
+                  e.currentTarget.style.color = '#000000';
+                }
+              }}
+            >
               Aims and Scope
             </Link>
-            <Link href={`/journals/${shortcode}?section=editorial-board`} style={{
-              color: '#000000',
-              textDecoration: 'none',
-              fontSize: '15px',
-              fontWeight: '500',
-              transition: 'all 0.2s',
-              outline: 'none'
-            }} onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#0B3C78';
-              e.currentTarget.style.textDecoration = 'underline';
-            }}
-               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#000000';
-                e.currentTarget.style.textDecoration = 'none';
-              }}>
+            <Link 
+              href={`/journals/${shortcode}?section=editorial-board`}
+              style={{
+                color: activeSection === 'editorial-board' ? '#1E5DA8' : '#000000',
+                textDecoration: 'none',
+                fontSize: '15px',
+                fontWeight: activeSection === 'editorial-board' ? '600' : '500',
+                transition: 'all 0.2s',
+                outline: 'none',
+                borderBottom: activeSection === 'editorial-board' ? '2px solid #1E5DA8' : '2px solid transparent',
+                paddingBottom: '4px'
+              }}
+              onMouseEnter={(e) => {
+                if (activeSection !== 'editorial-board') {
+                  e.currentTarget.style.color = '#1E5DA8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeSection !== 'editorial-board') {
+                  e.currentTarget.style.color = '#000000';
+                }
+              }}
+            >
               Editorial Board
             </Link>
-            <Link href={`/journals/${shortcode}?section=in-press`} style={{
-              color: '#000000',
-              textDecoration: 'none',
-              fontSize: '15px',
-              fontWeight: '500',
-              transition: 'all 0.2s',
-              outline: 'none'
-            }} onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#0B3C78';
-              e.currentTarget.style.textDecoration = 'underline';
-            }}
-               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#000000';
-                e.currentTarget.style.textDecoration = 'none';
-              }}>
+            <Link 
+              href={`/journals/${shortcode}?section=in-press`}
+              style={{
+                color: activeSection === 'in-press' ? '#1E5DA8' : '#000000',
+                textDecoration: 'none',
+                fontSize: '15px',
+                fontWeight: activeSection === 'in-press' ? '600' : '500',
+                transition: 'all 0.2s',
+                outline: 'none',
+                borderBottom: activeSection === 'in-press' ? '2px solid #1E5DA8' : '2px solid transparent',
+                paddingBottom: '4px'
+              }}
+              onMouseEnter={(e) => {
+                if (activeSection !== 'in-press') {
+                  e.currentTarget.style.color = '#1E5DA8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeSection !== 'in-press') {
+                  e.currentTarget.style.color = '#000000';
+                }
+              }}
+            >
               In Press
             </Link>
-            <Link href={`/journals/${shortcode}?section=current-issue`} style={{
-              color: '#000000',
-              textDecoration: 'none',
-              fontSize: '15px',
-              fontWeight: '500',
-              transition: 'all 0.2s',
-              outline: 'none'
-            }} onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#0B3C78';
-              e.currentTarget.style.textDecoration = 'underline';
-            }}
-               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#000000';
-                e.currentTarget.style.textDecoration = 'none';
-              }}>
+            <Link 
+              href={`/journals/${shortcode}?section=current-issue`}
+              style={{
+                color: activeSection === 'current-issue' ? '#1E5DA8' : '#000000',
+                textDecoration: 'none',
+                fontSize: '15px',
+                fontWeight: activeSection === 'current-issue' ? '600' : '500',
+                transition: 'all 0.2s',
+                outline: 'none',
+                borderBottom: activeSection === 'current-issue' ? '2px solid #1E5DA8' : '2px solid transparent',
+                paddingBottom: '4px'
+              }}
+              onMouseEnter={(e) => {
+                if (activeSection !== 'current-issue') {
+                  e.currentTarget.style.color = '#1E5DA8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeSection !== 'current-issue') {
+                  e.currentTarget.style.color = '#000000';
+                }
+              }}
+            >
               Current Issue
             </Link>
-            <Link href={`/journals/${shortcode}?section=archive`} style={{
-              color: '#000000',
-              textDecoration: 'none',
-              fontSize: '15px',
-              fontWeight: '500',
-              transition: 'all 0.2s',
-              outline: 'none'
-            }} onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#0B3C78';
-              e.currentTarget.style.textDecoration = 'underline';
-            }}
-               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#000000';
-                e.currentTarget.style.textDecoration = 'none';
-              }}>
+            <Link 
+              href={`/journals/${shortcode}?section=archive`}
+              style={{
+                color: activeSection === 'archive' ? '#1E5DA8' : '#000000',
+                textDecoration: 'none',
+                fontSize: '15px',
+                fontWeight: activeSection === 'archive' ? '600' : '500',
+                transition: 'all 0.2s',
+                outline: 'none',
+                borderBottom: activeSection === 'archive' ? '2px solid #1E5DA8' : '2px solid transparent',
+                paddingBottom: '4px'
+              }}
+              onMouseEnter={(e) => {
+                if (activeSection !== 'archive') {
+                  e.currentTarget.style.color = '#1E5DA8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeSection !== 'archive') {
+                  e.currentTarget.style.color = '#000000';
+                }
+              }}
+            >
               Archive
             </Link>
-            <Link href={`/journals/${shortcode}?section=guidelines`} style={{
-              color: '#000000',
-              textDecoration: 'none',
-              fontSize: '15px',
-              fontWeight: '500',
-              transition: 'all 0.2s',
-              outline: 'none'
-            }} onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#0B3C78';
-              e.currentTarget.style.textDecoration = 'underline';
-            }}
-               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#000000';
-                e.currentTarget.style.textDecoration = 'none';
-              }}>
+            <Link 
+              href={`/journals/${shortcode}?section=guidelines`}
+              style={{
+                color: activeSection === 'guidelines' ? '#1E5DA8' : '#000000',
+                textDecoration: 'none',
+                fontSize: '15px',
+                fontWeight: activeSection === 'guidelines' ? '600' : '500',
+                transition: 'all 0.2s',
+                outline: 'none',
+                borderBottom: activeSection === 'guidelines' ? '2px solid #1E5DA8' : '2px solid transparent',
+                paddingBottom: '4px'
+              }}
+              onMouseEnter={(e) => {
+                if (activeSection !== 'guidelines') {
+                  e.currentTarget.style.color = '#1E5DA8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeSection !== 'guidelines') {
+                  e.currentTarget.style.color = '#000000';
+                }
+              }}
+            >
               Journal Guidelines
             </Link>
-            </div>
-            
-          {/* Submit Manuscript Button - Green */}
-          <Link href={`/submit-manuscript?journal=${shortcode}`} style={{
-            backgroundColor: '#20B486',
-            color: '#FFFFFF',
-            padding: '10px 24px',
-            borderRadius: '8px',
-            textDecoration: 'none',
-            fontSize: '15px',
-            fontWeight: '600',
-            transition: 'all 0.2s',
-            border: 'none',
-            outline: 'none'
-          }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1a9b73'}
-             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#20B486'}>
-            Submit Manuscript
-                    </Link>
+          </nav>
+
+          {/* Right side: Hamburger Menu (Mobile) and Submit Button */}
+          <div 
+            data-menu-container
+            className="journal-nav-right"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              position: 'relative'
+            }}
+          >
+            {/* Hamburger Menu Button - Mobile only */}
+            <button
+              className="journal-hamburger-btn"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              style={{
+                backgroundColor: 'transparent',
+                border: '1px solid #E5E9F2',
+                borderRadius: '8px',
+                padding: '10px 12px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#F3F4F6';
+                e.currentTarget.style.borderColor = '#1E5DA8';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.borderColor = '#E5E9F2';
+              }}
+              aria-label="Toggle navigation menu"
+            >
+              <i 
+                className={isMenuOpen ? 'pi pi-times' : 'pi pi-bars'} 
+                style={{ 
+                  fontSize: '20px', 
+                  color: '#374151' 
+                }}
+              ></i>
+            </button>
+
+            {/* Submit Manuscript Button - Desktop */}
+            <Link 
+              className="journal-submit-btn-desktop"
+              href={`/submit-manuscript?journal=${shortcode}`} 
+              style={{
+                backgroundColor: '#20B486',
+                color: '#FFFFFF',
+                padding: '10px 24px',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                fontSize: '15px',
+                fontWeight: '600',
+                transition: 'all 0.2s',
+                border: 'none',
+                outline: 'none'
+              }} 
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1a9b73'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#20B486'}
+            >
+              Submit Manuscript
+            </Link>
+
+            {/* Sidebar Overlay */}
+            {isMenuOpen && (
+              <div 
+                onClick={() => setIsMenuOpen(false)}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  zIndex: 9998,
+                  animation: 'fadeIn 0.3s ease-out'
+                }}
+              />
+            )}
+
+            {/* Sidebar Menu - Slides from right */}
+            <div 
+              className={`journal-sidebar ${isMenuOpen ? 'journal-sidebar-open' : ''}`}
+              style={{
+                position: 'fixed',
+                top: 0,
+                right: isMenuOpen ? '0' : '-100%',
+                width: '320px',
+                maxWidth: '85vw',
+                height: '100vh',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '-4px 0 12px rgba(0, 0, 0, 0.15)',
+                zIndex: 9999,
+                transition: 'right 0.3s ease-out',
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
+              {/* Sidebar Header */}
+              <div style={{
+                padding: '20px',
+                borderBottom: '1px solid #E5E9F2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                position: 'sticky',
+                top: 0,
+                backgroundColor: '#FFFFFF',
+                zIndex: 1
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#0B3C78',
+                  margin: 0
+                }}>
+                  Navigation
+                </h3>
+                <button
+                  onClick={() => setIsMenuOpen(false)}
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'background-color 0.2s',
+                    outline: 'none'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  aria-label="Close menu"
+                >
+                  <i className="pi pi-times" style={{ fontSize: '20px', color: '#374151' }}></i>
+                </button>
+              </div>
+
+              {/* Sidebar Navigation */}
+              <nav style={{
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '12px',
+                gap: '4px',
+                flex: 1,
+                overflowY: 'auto'
+              }}>
+                  <Link 
+                    href={`/journals/${shortcode}`}
+                    onClick={() => setIsMenuOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      borderRadius: '6px',
+                      color: activeSection === 'home' ? '#1E5DA8' : '#374151',
+                      backgroundColor: activeSection === 'home' ? '#E0F0FF' : 'transparent',
+                      textDecoration: 'none',
+                      fontSize: '15px',
+                      fontWeight: activeSection === 'home' ? '600' : '500',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeSection !== 'home') {
+                        e.currentTarget.style.backgroundColor = '#F3F4F6';
+                        e.currentTarget.style.color = '#1E5DA8';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeSection !== 'home') {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = '#374151';
+                      }
+                    }}
+                  >
+                    <i className="pi pi-home" style={{ fontSize: '16px' }}></i>
+                    <span>Journal Home</span>
+                  </Link>
+                  <Link 
+                    href={`/journals/${shortcode}?section=aims-scope`}
+                    onClick={() => setIsMenuOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      borderRadius: '6px',
+                      color: activeSection === 'aims-scope' ? '#1E5DA8' : '#374151',
+                      backgroundColor: activeSection === 'aims-scope' ? '#E0F0FF' : 'transparent',
+                      textDecoration: 'none',
+                      fontSize: '15px',
+                      fontWeight: activeSection === 'aims-scope' ? '600' : '500',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeSection !== 'aims-scope') {
+                        e.currentTarget.style.backgroundColor = '#F3F4F6';
+                        e.currentTarget.style.color = '#1E5DA8';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeSection !== 'aims-scope') {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = '#374151';
+                      }
+                    }}
+                  >
+                    <i className="pi pi-compass" style={{ fontSize: '16px' }}></i>
+                    <span>Aims and Scope</span>
+                  </Link>
+                  <Link 
+                    href={`/journals/${shortcode}?section=editorial-board`}
+                    onClick={() => setIsMenuOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      borderRadius: '6px',
+                      color: activeSection === 'editorial-board' ? '#1E5DA8' : '#374151',
+                      backgroundColor: activeSection === 'editorial-board' ? '#E0F0FF' : 'transparent',
+                      textDecoration: 'none',
+                      fontSize: '15px',
+                      fontWeight: activeSection === 'editorial-board' ? '600' : '500',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeSection !== 'editorial-board') {
+                        e.currentTarget.style.backgroundColor = '#F3F4F6';
+                        e.currentTarget.style.color = '#1E5DA8';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeSection !== 'editorial-board') {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = '#374151';
+                      }
+                    }}
+                  >
+                    <i className="pi pi-users" style={{ fontSize: '16px' }}></i>
+                    <span>Editorial Board</span>
+                  </Link>
+                  <Link 
+                    href={`/journals/${shortcode}?section=in-press`}
+                    onClick={() => setIsMenuOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      borderRadius: '6px',
+                      color: activeSection === 'in-press' ? '#1E5DA8' : '#374151',
+                      backgroundColor: activeSection === 'in-press' ? '#E0F0FF' : 'transparent',
+                      textDecoration: 'none',
+                      fontSize: '15px',
+                      fontWeight: activeSection === 'in-press' ? '600' : '500',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeSection !== 'in-press') {
+                        e.currentTarget.style.backgroundColor = '#F3F4F6';
+                        e.currentTarget.style.color = '#1E5DA8';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeSection !== 'in-press') {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = '#374151';
+                      }
+                    }}
+                  >
+                    <i className="pi pi-clock" style={{ fontSize: '16px' }}></i>
+                    <span>In Press</span>
+                  </Link>
+                  <Link 
+                    href={`/journals/${shortcode}?section=current-issue`}
+                    onClick={() => setIsMenuOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      borderRadius: '6px',
+                      color: activeSection === 'current-issue' ? '#1E5DA8' : '#374151',
+                      backgroundColor: activeSection === 'current-issue' ? '#E0F0FF' : 'transparent',
+                      textDecoration: 'none',
+                      fontSize: '15px',
+                      fontWeight: activeSection === 'current-issue' ? '600' : '500',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeSection !== 'current-issue') {
+                        e.currentTarget.style.backgroundColor = '#F3F4F6';
+                        e.currentTarget.style.color = '#1E5DA8';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeSection !== 'current-issue') {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = '#374151';
+                      }
+                    }}
+                  >
+                    <i className="pi pi-calendar" style={{ fontSize: '16px' }}></i>
+                    <span>Current Issue</span>
+                  </Link>
+                  <Link 
+                    href={`/journals/${shortcode}?section=archive`}
+                    onClick={() => setIsMenuOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      borderRadius: '6px',
+                      color: activeSection === 'archive' ? '#1E5DA8' : '#374151',
+                      backgroundColor: activeSection === 'archive' ? '#E0F0FF' : 'transparent',
+                      textDecoration: 'none',
+                      fontSize: '15px',
+                      fontWeight: activeSection === 'archive' ? '600' : '500',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeSection !== 'archive') {
+                        e.currentTarget.style.backgroundColor = '#F3F4F6';
+                        e.currentTarget.style.color = '#1E5DA8';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeSection !== 'archive') {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = '#374151';
+                      }
+                    }}
+                  >
+                    <i className="pi pi-archive" style={{ fontSize: '16px' }}></i>
+                    <span>Archive</span>
+                  </Link>
+                  <Link 
+                    href={`/journals/${shortcode}?section=guidelines`}
+                    onClick={() => setIsMenuOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      borderRadius: '6px',
+                      color: activeSection === 'guidelines' ? '#1E5DA8' : '#374151',
+                      backgroundColor: activeSection === 'guidelines' ? '#E0F0FF' : 'transparent',
+                      textDecoration: 'none',
+                      fontSize: '15px',
+                      fontWeight: activeSection === 'guidelines' ? '600' : '500',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeSection !== 'guidelines') {
+                        e.currentTarget.style.backgroundColor = '#F3F4F6';
+                        e.currentTarget.style.color = '#1E5DA8';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeSection !== 'guidelines') {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = '#374151';
+                      }
+                    }}
+                  >
+                    <i className="pi pi-book" style={{ fontSize: '16px' }}></i>
+                    <span>Journal Guidelines</span>
+                  </Link>
+                </nav>
+
+                {/* Submit Manuscript Button - Prominent in Sidebar */}
+                <div style={{
+                  padding: '16px 12px',
+                  borderTop: '1px solid #E5E9F2',
+                  backgroundColor: '#FFFFFF',
+                  position: 'sticky',
+                  bottom: 0
+                }}>
+                  <Link 
+                    href={`/submit-manuscript?journal=${shortcode}`}
+                    onClick={() => setIsMenuOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      backgroundColor: '#20B486',
+                      color: '#FFFFFF',
+                      padding: '14px 20px',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      fontSize: '15px',
+                      fontWeight: '600',
+                      transition: 'all 0.2s',
+                      border: 'none',
+                      outline: 'none',
+                      width: '100%'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1a9b73'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#20B486'}
+                  >
+                    <i className="pi pi-pencil" style={{ fontSize: '16px' }}></i>
+                    <span>Submit Manuscript</span>
+                  </Link>
                 </div>
+            </div>
+          </div>
+        </div>
       </nav>
 
       {/* HERO SECTION - Blue background */}
@@ -556,18 +1238,18 @@ export default function JournalDetailPage() {
                           </div>
 
       {/* MAIN CONTENT - Two Column Layout */}
-      <div style={{
+      <div className="journal-main-content" style={{
         maxWidth: '1400px',
         margin: '0 auto',
         padding: '40px 24px'
       }}>
-        <div style={{
+        <div className="journal-content-grid" style={{
           display: 'grid',
           gridTemplateColumns: '70% 30%',
           gap: '32px'
         }}>
           {/* LEFT COLUMN - 70% */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div className="journal-left-column" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* Error Message */}
             {error && activeSection !== 'home' && (
               <div style={{
@@ -608,12 +1290,15 @@ export default function JournalDetailPage() {
             {!contentLoading && activeSection === 'home' && (
               <>
                 {/* Introduction Card */}
-                <div style={{
+                <div className="journal-introduction-card" style={{
                   backgroundColor: 'rgb(255, 255, 255)',
                   borderRadius: '8px',
                   boxShadow: 'rgba(0, 0, 0, 0.08) 0px 2px 8px',
                   padding: '32px',
-                  marginLeft: '-20px'
+                  width: '100%',
+                  maxWidth: '100%',
+                  boxSizing: 'border-box',
+                  overflow: 'hidden'
                 }}>
                   <h2 style={{
                     fontSize: '24px',
@@ -630,7 +1315,10 @@ export default function JournalDetailPage() {
                     fontSize: '15px',
                     lineHeight: '1.8',
                     overflowWrap: 'break-word',
-                    whiteSpace: 'pre-wrap'
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                    maxWidth: '100%',
+                    overflow: 'hidden'
                   }} dangerouslySetInnerHTML={{ 
                     __html: sectionContent || 
                       `Welcome to ${journal.title}. This journal publishes original peer-reviewed articles in the field.`
@@ -667,12 +1355,15 @@ export default function JournalDetailPage() {
 
             {/* Editorial Board */}
             {!contentLoading && activeSection === 'editorial-board' && (
-              <div style={{
+              <div className="journal-editorial-board-card" style={{
                 backgroundColor: '#FFFFFF',
                 borderRadius: '8px',
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
                 padding: '32px',
-                marginLeft: '98px'
+                marginLeft: '98px',
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box'
               }}>
                 <h2 style={{
                   fontSize: '24px',
@@ -1483,9 +2174,9 @@ export default function JournalDetailPage() {
                 </div>
 
           {/* RIGHT COLUMN - 30% */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'flex-start' }}>
+          <div className="journal-right-column" style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'flex-start' }}>
             {/* Journal Cover Card */}
-            <div style={{
+            <div className="journal-cover-card" style={{
               backgroundColor: 'rgb(255, 255, 255)',
               borderRadius: '8px',
               boxShadow: 'rgba(0, 0, 0, 0.08) 0px 2px 8px',
@@ -1517,7 +2208,7 @@ export default function JournalDetailPage() {
                 width: '80%',
                 backgroundColor: 'rgb(30, 93, 168)',
                 color: 'rgb(255, 255, 255)',
-                padding: '12px 2px',
+                padding: '12px 24px',
                 borderRadius: '8px',
                 border: 'none',
                 fontSize: '15px',
@@ -1553,7 +2244,7 @@ export default function JournalDetailPage() {
           </div>
 
             {/* Useful Links Card */}
-            <div style={{
+            <div className="journal-useful-links-card" style={{
               backgroundColor: '#FFFFFF',
               borderRadius: '8px',
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
