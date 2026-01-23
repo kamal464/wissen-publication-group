@@ -26,18 +26,76 @@ let JournalsService = JournalsService_1 = class JournalsService {
     }
     async findAll() {
         try {
-            return await this.prisma.journal.findMany({
+            const journals = await this.prisma.journal.findMany({
                 include: {
                     _count: {
                         select: { articles: true },
                     },
                 },
+                orderBy: [
+                    { updatedAt: 'desc' },
+                    { id: 'desc' },
+                ],
             });
+            const deduplicated = this.deduplicateJournals(journals);
+            return deduplicated;
         }
         catch (error) {
             this.logger.error('Error fetching journals:', error);
             throw error;
         }
+    }
+    deduplicateJournals(journals) {
+        const seenByTitle = new Map();
+        const journalsWithoutTitle = [];
+        for (const journal of journals) {
+            const titleKey = journal.title?.toLowerCase().trim();
+            if (!titleKey) {
+                journalsWithoutTitle.push(journal);
+                continue;
+            }
+            const existing = seenByTitle.get(titleKey);
+            if (!existing) {
+                seenByTitle.set(titleKey, journal);
+            }
+            else {
+                const existingScore = this.getJournalCompletenessScore(existing);
+                const currentScore = this.getJournalCompletenessScore(journal);
+                if (currentScore > existingScore ||
+                    (currentScore === existingScore &&
+                        new Date(journal.updatedAt || journal.createdAt || 0) >
+                            new Date(existing.updatedAt || existing.createdAt || 0))) {
+                    seenByTitle.set(titleKey, journal);
+                }
+            }
+        }
+        return [...Array.from(seenByTitle.values()), ...journalsWithoutTitle];
+    }
+    getJournalCompletenessScore(journal) {
+        let score = 0;
+        if (journal.description && journal.description.trim())
+            score += 2;
+        if (journal.aimsScope && journal.aimsScope.trim())
+            score += 3;
+        if (journal.guidelines && journal.guidelines.trim())
+            score += 3;
+        if (journal.editorialBoard && journal.editorialBoard.trim())
+            score += 2;
+        if (journal.homePageContent && journal.homePageContent.trim())
+            score += 2;
+        if (journal.category && journal.category.trim())
+            score += 1;
+        if (journal.subjectArea && journal.subjectArea.trim())
+            score += 1;
+        if (journal.issn && journal.issn.trim())
+            score += 1;
+        if (journal.coverImage)
+            score += 1;
+        if (journal.bannerImage)
+            score += 1;
+        if (journal._count?.articles > 0)
+            score += 2;
+        return score;
     }
     findOne(id) {
         return this.prisma.journal.findUnique({

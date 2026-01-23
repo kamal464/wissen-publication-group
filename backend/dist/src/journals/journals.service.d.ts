@@ -58,64 +58,9 @@ export declare class JournalsService {
         journalDescription: string | null;
         pubmedArticles: string | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
-    findAll(): Promise<({
-        _count: {
-            articles: number;
-        };
-    } & {
-        id: number;
-        title: string;
-        createdAt: Date;
-        updatedAt: Date;
-        issn: string | null;
-        shortcode: string | null;
-        description: string;
-        coverImage: string | null;
-        publisher: string | null;
-        accessType: string | null;
-        subjectArea: string | null;
-        category: string | null;
-        discipline: string | null;
-        impactFactor: string | null;
-        aimsScope: string | null;
-        guidelines: string | null;
-        editorialBoard: string | null;
-        homePageContent: string | null;
-        currentIssueContent: string | null;
-        archiveContent: string | null;
-        articlesInPress: string | null;
-        metaTitle: string | null;
-        metaDescription: string | null;
-        metaKeywords: string | null;
-        doi: string | null;
-        indexing: string | null;
-        bannerImage: string | null;
-        flyerImage: string | null;
-        flyerPdf: string | null;
-        googleIndexingImage: string | null;
-        journalImpactFactor: string | null;
-        articleProcessingCharge: string | null;
-        icv: string | null;
-        pubmedId: string | null;
-        indexingAbstracting: string | null;
-        email: string | null;
-        classification: string | null;
-        citationsValue: string | null;
-        acceptanceRate: string | null;
-        conferenceUrl: string | null;
-        editorName: string | null;
-        editorAffiliation: string | null;
-        editorImage: string | null;
-        impactFactorValue: string | null;
-        citationsPercentage: string | null;
-        acceptancePercentage: string | null;
-        googleAnalyticsTitle: string | null;
-        googleAnalyticsValue: string | null;
-        googleAnalyticsUrl: string | null;
-        articleFormats: string | null;
-        journalDescription: string | null;
-        pubmedArticles: string | null;
-    })[]>;
+    findAll(): Promise<any[]>;
+    private deduplicateJournals;
+    private getJournalCompletenessScore;
     findOne(id: number): import("@prisma/client").Prisma.Prisma__JournalClient<({
         _count: {
             articles: number;
