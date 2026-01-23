@@ -83,37 +83,70 @@ const extractJournals = (payload: unknown): Journal[] => {
   return [];
 };
 
-// Deduplicate journals array - prioritize by ID, then shortcode, then title
+// Deduplicate journals array - prioritize by title (prefer more complete), then by ID
 const deduplicateJournals = (journals: Journal[]): Journal[] => {
-  const seen = new Map<string | number, Journal>();
+  const seenById = new Map<number, Journal>();
+  const seenByTitle = new Map<string, Journal>();
   
+  // Helper to calculate completeness score
+  const getCompletenessScore = (journal: Journal): number => {
+    let score = 0;
+    if (journal.description?.trim()) score += 2;
+    if (journal.aimsScope?.trim()) score += 3;
+    if (journal.guidelines?.trim()) score += 3;
+    if (journal.editorialBoard?.trim()) score += 2;
+    if (journal.homePageContent?.trim()) score += 2;
+    if (journal.category?.trim()) score += 1;
+    if (journal.subjectArea?.trim()) score += 1;
+    if (journal.issn?.trim()) score += 1;
+    if (journal.coverImage) score += 1;
+    if (journal.bannerImage) score += 1;
+    return score;
+  };
+  
+  // First pass: deduplicate by ID
   for (const journal of journals) {
-    // Priority 1: Use ID if available (most reliable)
     if (journal.id && journal.id > 0) {
-      if (!seen.has(journal.id)) {
-        seen.set(journal.id, journal);
-      }
-      continue;
-    }
-    
-    // Priority 2: Use shortcode if available
-    if (journal.shortcode) {
-      if (!seen.has(`shortcode:${journal.shortcode}`)) {
-        seen.set(`shortcode:${journal.shortcode}`, journal);
-      }
-      continue;
-    }
-    
-    // Priority 3: Use title as fallback (less reliable, but better than duplicates)
-    const titleKey = journal.title?.toLowerCase().trim();
-    if (titleKey) {
-      if (!seen.has(`title:${titleKey}`)) {
-        seen.set(`title:${titleKey}`, journal);
+      if (!seenById.has(journal.id)) {
+        seenById.set(journal.id, journal);
+      } else {
+        // If duplicate ID found (shouldn't happen), prefer more complete
+        const existing = seenById.get(journal.id)!;
+        const existingScore = getCompletenessScore(existing);
+        const currentScore = getCompletenessScore(journal);
+        if (currentScore > existingScore) {
+          seenById.set(journal.id, journal);
+        }
       }
     }
   }
   
-  return Array.from(seen.values());
+  // Second pass: deduplicate by title (for journals with same title but different IDs)
+  const uniqueById = Array.from(seenById.values());
+  for (const journal of uniqueById) {
+    const titleKey = journal.title?.toLowerCase().trim();
+    if (titleKey) {
+      const existing = seenByTitle.get(titleKey);
+      if (!existing) {
+        seenByTitle.set(titleKey, journal);
+      } else {
+        // Same title found - prefer more complete journal
+        const existingScore = getCompletenessScore(existing);
+        const currentScore = getCompletenessScore(journal);
+        
+        // Prefer more complete, or newer if scores equal
+        if (currentScore > existingScore || 
+            (currentScore === existingScore && 
+             new Date(journal.updatedAt || journal.createdAt || '') > 
+             new Date(existing.updatedAt || existing.createdAt || ''))) {
+          seenByTitle.set(titleKey, journal);
+        }
+      }
+    }
+  }
+  
+  // Return deduplicated by title (this handles same-title duplicates)
+  return Array.from(seenByTitle.values());
 };
 
 type AxiosErrorLike = {
