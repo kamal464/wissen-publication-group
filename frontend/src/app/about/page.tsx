@@ -253,7 +253,8 @@ export default function AboutPage() {
               width: '100%',
               maxWidth: '1200px',
               margin: '0 auto',
-              padding: '2rem 0'
+              padding: '2rem 0',
+              overflow: 'visible'
             }}>
               {/* Navigation Arrow - Left */}
               <button
@@ -276,9 +277,11 @@ export default function AboutPage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '16px',
-                  zIndex: 10,
+                  zIndex: 20,
                   transition: 'all 0.3s ease',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                  visibility: 'visible',
+                  opacity: 1
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#3b82f6';
@@ -314,9 +317,11 @@ export default function AboutPage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '16px',
-                  zIndex: 10,
+                  zIndex: 20,
                   transition: 'all 0.3s ease',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                  visibility: 'visible',
+                  opacity: 1
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#3b82f6';
