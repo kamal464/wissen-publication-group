@@ -63,7 +63,7 @@ export default function JournalMetaManagement() {
           frequency: "Quarterly",
           peerReview: "Double-blind",
           indexing: "Scopus, Web of Science, PubMed",
-          copyright: "© 2024 Wissen Publication Group",
+          copyright: "© 2026 Wissen Publication Group",
           license: "CC BY 4.0",
           createdAt: "2024-01-01",
           updatedAt: "2024-01-15"
@@ -82,7 +82,7 @@ export default function JournalMetaManagement() {
           frequency: "Bi-monthly",
           peerReview: "Single-blind",
           indexing: "Scopus, Web of Science, IEEE Xplore",
-          copyright: "© 2024 Wissen Publication Group",
+          copyright: "© 2026 Wissen Publication Group",
           license: "CC BY 4.0",
           createdAt: "2024-01-15",
           updatedAt: "2024-02-01"
@@ -382,7 +382,7 @@ export default function JournalMetaManagement() {
                       value={selectedMeta.copyright}
                       onChange={(e) => setSelectedMeta({...selectedMeta, copyright: e.target.value})}
                       className="form-input"
-                      placeholder="© 2024 Publisher"
+                      placeholder="© 2026 Publisher"
                     />
                   </div>
                   <div className="form-group">

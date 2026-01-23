@@ -127,7 +127,7 @@ export default function JournalAdminLogin() {
       </div>
 
       <div className="w-full text-center text-gray-500 text-xs">
-        &copy; 2024 Wissen Publication Group. All rights reserved.
+        &copy; 2026 Wissen Publication Group. All rights reserved.
       </div>
     </div>
   );

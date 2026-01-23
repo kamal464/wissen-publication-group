@@ -69,7 +69,7 @@ export default function JournalHomePageManagement() {
           callToActionButton: "Submit Manuscript",
           callToActionLink: "/submit-manuscript",
           sidebarContent: "Latest articles, upcoming events, and journal statistics.",
-          footerContent: "© 2024 Journal of Advanced Research. All rights reserved.",
+          footerContent: "© 2026 Journal of Advanced Research. All rights reserved.",
           createdAt: "2024-01-01",
           updatedAt: "2024-01-15"
         },
@@ -90,7 +90,7 @@ export default function JournalHomePageManagement() {
           callToActionButton: "Submit Article",
           callToActionLink: "/submit-article",
           sidebarContent: "Engineering news, research highlights, and industry updates.",
-          footerContent: "© 2024 International Journal of Engineering. All rights reserved.",
+          footerContent: "© 2026 International Journal of Engineering. All rights reserved.",
           createdAt: "2024-01-15",
           updatedAt: "2024-02-01"
         }
