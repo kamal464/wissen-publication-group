@@ -9,7 +9,15 @@
   .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 2rem;
+    padding: 0 1rem;
+    
+    @media (min-width: 640px) {
+      padding: 0 1.5rem;
+    }
+    
+    @media (min-width: 1024px) {
+      padding: 0 2rem;
+    }
   }
 
   // Hero Section
@@ -48,21 +56,57 @@
     .intro-card {
       background: white;
       border-radius: 20px;
-      padding: 3rem;
+      padding: 1.5rem;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      
+      @media (min-width: 640px) {
+        padding: 2rem;
+      }
+      
+      @media (min-width: 768px) {
+        padding: 3rem;
+      }
 
       h2 {
-        font-size: 2rem;
+        font-size: 1.5rem;
         font-weight: 700;
         color: #1a1a1a;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        
+        @media (min-width: 640px) {
+          font-size: 1.75rem;
+          margin-bottom: 1.25rem;
+        }
+        
+        @media (min-width: 768px) {
+          font-size: 2rem;
+          margin-bottom: 1.5rem;
+        }
       }
 
       p {
-        font-size: 1.1rem;
+        font-size: 0.95rem;
         color: #666;
         line-height: 1.8;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        
+        @media (min-width: 640px) {
+          font-size: 1rem;
+          margin-bottom: 1.75rem;
+        }
+        
+        @media (min-width: 768px) {
+          font-size: 1.1rem;
+          margin-bottom: 2rem;
+        }
       }
 
       .responsibilities {
@@ -112,16 +156,65 @@
       background: white;
       border-radius: 20px;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-      padding: 2rem;
+      padding: 1rem;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      
+      @media (min-width: 640px) {
+        padding: 1.5rem;
+      }
+      
+      @media (min-width: 768px) {
+        padding: 2rem;
+      }
 
       .p-tabview-nav {
         border-bottom: 2px solid #e5e7eb;
+        display: flex;
+        flex-wrap: wrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        
+        &::-webkit-scrollbar {
+          display: none;
+        }
+        
+        @media (max-width: 768px) {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+        }
 
         .p-tabview-nav-link {
-          padding: 1rem 2rem;
+          padding: 0.75rem 1rem;
           font-weight: 600;
           color: #666;
           transition: all 0.3s ease;
+          white-space: nowrap;
+          font-size: 0.875rem;
+          flex-shrink: 0;
+          
+          @media (min-width: 640px) {
+            padding: 0.875rem 1.5rem;
+            font-size: 0.9375rem;
+          }
+          
+          @media (min-width: 768px) {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+          }
+          
+          i {
+            margin-right: 0.5rem;
+            
+            @media (max-width: 640px) {
+              margin-right: 0.25rem;
+              font-size: 0.875rem;
+            }
+          }
 
           &:hover {
             color: #6366f1;
@@ -135,17 +228,32 @@
       }
 
       .p-tabview-panels {
-        padding: 2rem 0;
+        padding: 1rem 0;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        
+        @media (min-width: 768px) {
+          padding: 2rem 0;
+        }
       }
     }
 
     .editors-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 2rem;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
 
       @media (max-width: 768px) {
         grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
+      
+      @media (max-width: 640px) {
+        gap: 1rem;
       }
     }
 
@@ -153,9 +261,21 @@
       background: white;
       border: 2px solid #e5e7eb;
       border-radius: 15px;
-      padding: 2rem;
+      padding: 1.25rem;
       transition: all 0.3s ease;
       animation: fadeInUp 0.5s ease both;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      
+      @media (min-width: 640px) {
+        padding: 1.5rem;
+      }
+      
+      @media (min-width: 768px) {
+        padding: 2rem;
+      }
 
       @for $i from 1 through 10 {
         &:nth-child(#{$i}) {
@@ -167,17 +287,29 @@
         border-color: #6366f1;
         box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
         transform: translateY(-5px);
+        
+        @media (max-width: 768px) {
+          transform: none;
+        }
       }
 
       .editor-content {
         display: flex;
-        gap: 1.5rem;
+        gap: 1rem;
         align-items: start;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        
+        @media (min-width: 640px) {
+          gap: 1.5rem;
+        }
 
-        @media (max-width: 480px) {
+        @media (max-width: 640px) {
           flex-direction: column;
           align-items: center;
           text-align: center;
+          gap: 1rem;
         }
       }
 
@@ -187,12 +319,23 @@
 
       .editor-info {
         flex: 1;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
 
         h3 {
-          font-size: 1.25rem;
+          font-size: 1.125rem;
           font-weight: 700;
           color: #1a1a1a;
           margin-bottom: 0.75rem;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          
+          @media (min-width: 640px) {
+            font-size: 1.25rem;
+          }
         }
 
         .editor-role,
@@ -202,21 +345,43 @@
           align-items: center;
           gap: 0.5rem;
           margin-bottom: 0.5rem;
-          font-size: 0.95rem;
+          font-size: 0.875rem;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          flex-wrap: wrap;
+          
+          @media (min-width: 640px) {
+            font-size: 0.95rem;
+            flex-wrap: nowrap;
+          }
 
           i {
             color: #6366f1;
-            font-size: 1rem;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+            
+            @media (min-width: 640px) {
+              font-size: 1rem;
+            }
           }
 
           span {
             color: #666;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
           }
 
           a {
             color: #6366f1;
             text-decoration: none;
             transition: color 0.3s ease;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-size: 0.875rem;
+            
+            @media (min-width: 640px) {
+              font-size: 0.95rem;
+            }
 
             &:hover {
               color: #4f46e5;
@@ -229,14 +394,19 @@
           display: flex;
           gap: 0.5rem;
           margin-top: 1rem;
-          flex-wrap: nowrap;
+          flex-wrap: wrap;
           align-items: flex-start;
+          width: 100%;
 
           i {
             color: #6366f1;
-            font-size: 1rem;
+            font-size: 0.875rem;
             margin-top: 0.25rem;
             flex-shrink: 0;
+            
+            @media (min-width: 640px) {
+              font-size: 1rem;
+            }
           }
 
           .expertise-tags {
@@ -244,16 +414,24 @@
             flex-wrap: wrap;
             gap: 0.5rem;
             flex: 1;
+            min-width: 0;
           }
 
           .expertise-tag {
             display: inline-block;
-            padding: 0.25rem 0.75rem;
+            padding: 0.25rem 0.625rem;
             background: #eff1ff;
             color: #6366f1;
             border-radius: 20px;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             font-weight: 500;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            
+            @media (min-width: 640px) {
+              font-size: 0.85rem;
+              padding: 0.25rem 0.75rem;
+            }
           }
         }
       }

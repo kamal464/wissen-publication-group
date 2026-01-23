@@ -62,6 +62,40 @@ export default function SubmitManuscriptPage() {
     setMounted(true);
   }, []);
 
+  // Fix dropdown panel positioning on mobile
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const handleDropdownOpen = () => {
+      const dropdownPanels = document.querySelectorAll('.p-dropdown-panel');
+      dropdownPanels.forEach((panel) => {
+        const htmlPanel = panel as HTMLElement;
+        if (window.innerWidth <= 640) {
+          htmlPanel.style.left = '1rem';
+          htmlPanel.style.right = '1rem';
+          htmlPanel.style.width = 'calc(100vw - 2rem)';
+          htmlPanel.style.maxWidth = 'calc(100vw - 2rem)';
+        }
+      });
+    };
+
+    // Use MutationObserver to watch for dropdown panel creation
+    const observer = new MutationObserver(handleDropdownOpen);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Also listen for click events on dropdown triggers
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.p-dropdown-trigger')) {
+        setTimeout(handleDropdownOpen, 100);
+      }
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   // Fetch journals from API
   useEffect(() => {
     const fetchJournals = async () => {
@@ -310,7 +344,6 @@ export default function SubmitManuscriptPage() {
                   <i className="pi pi-file-edit"></i>
                   Manuscript Details
                 </h2>
-                <Divider />
                 
                 <div className="form-row">
                   <div className="form-group full-width">
@@ -338,8 +371,8 @@ export default function SubmitManuscriptPage() {
                       value={form.journalId}
                       options={journals}
                       onChange={(e) => setForm({ ...form, journalId: e.value })}
-                      placeholder={loadingJournals ? "Loading journals..." : "Choose the most appropriate journal for your manuscript"}
-                      className="w-full"
+                      placeholder={loadingJournals ? "Loading journals..." : "Choose the most appropriate journal"}
+                      className="w-full journal-dropdown"
                       disabled={loadingJournals}
                       loading={loadingJournals}
                     />
@@ -357,7 +390,6 @@ export default function SubmitManuscriptPage() {
                       value={form.abstract} 
                       onChange={handleChange} 
                       rows={8}
-                      maxLength={500}
                       placeholder="Provide a concise summary of your research, including objectives, methods, results, and conclusions..."
                       className="w-full"
                     />
@@ -388,7 +420,6 @@ export default function SubmitManuscriptPage() {
                   <i className="pi pi-users"></i>
                   Author Information
                 </h2>
-                <Divider />
                 
                 {authors.map((author, index) => (
                   <div key={index} className="author-group">
@@ -449,7 +480,7 @@ export default function SubmitManuscriptPage() {
                       </div>
                       
                       <div className="form-group">
-                        <label htmlFor={`author-phone-${index}`} className="form-label required">
+                        <label htmlFor={`author-phone-${index}`} className="form-label">
                           Phone Number
                         </label>
                         <InputText
@@ -480,7 +511,6 @@ export default function SubmitManuscriptPage() {
                   <i className="pi pi-upload"></i>
                   Manuscript File
                 </h2>
-                <Divider />
                 
                 <div className="form-group full-width">
                   <label htmlFor="pdf" className="form-label required">
@@ -560,11 +590,10 @@ export default function SubmitManuscriptPage() {
                   <i className="pi pi-info-circle"></i>
                   Submission Guidelines
                 </h3>
-                <Divider />
                 
                 <div className="guideline-item">
                   <i className="pi pi-check-circle"></i>
-                  <div>
+                  <div style={{ marginLeft: '1.5rem' }}>
                     <strong>Manuscript Format</strong>
                     <p>Submit your manuscript in PDF format, properly formatted with clear headings and references.</p>
                   </div>

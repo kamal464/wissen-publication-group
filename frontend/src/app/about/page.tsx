@@ -259,13 +259,13 @@ export default function AboutPage() {
 
           {/* Image Carousel */}
           <section className="stats-section">
-            <h2 className="section-title">Our Impact</h2>
+            <h2 className="section-title">Indexing Services</h2>
             <div className="image-carousel-container" style={{
               position: 'relative',
               width: '100%',
               maxWidth: '1200px',
               margin: '0 auto',
-              padding: '2rem 0',
+              padding: '1rem 0',
               overflow: 'visible'
             }}>
               {/* Navigation Arrow - Left */}
@@ -352,7 +352,7 @@ export default function AboutPage() {
                 position: 'relative',
                 width: '100%',
                 overflow: 'hidden',
-                padding: '1rem 45px'
+                padding: '0.5rem 45px'
               }}>
                 <div className="carousel-track" style={{
                   display: 'flex',

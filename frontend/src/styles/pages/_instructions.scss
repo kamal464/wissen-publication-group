@@ -134,6 +134,70 @@
     }
   }
 
+  // Submission Process Section - Mobile Responsive
+  .submission-process-section {
+    .submission-timeline {
+      @media (max-width: 768px) {
+        .p-timeline-event {
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+        }
+
+        .p-timeline-event-connector {
+          left: 1.5rem !important;
+        }
+
+        .p-timeline-event-marker {
+          left: 0.5rem !important;
+          width: 1rem !important;
+          height: 1rem !important;
+        }
+      }
+    }
+
+    .submission-step-card {
+      @media (max-width: 768px) {
+        margin-bottom: 1rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+    }
+
+    .submission-step-content {
+      @media (max-width: 768px) {
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        padding: 12px !important;
+      }
+    }
+
+    .submission-step-icon {
+      @media (max-width: 768px) {
+        width: 2.5rem !important;
+        height: 2.5rem !important;
+        min-width: 2.5rem !important;
+        flex-shrink: 0 !important;
+      }
+    }
+
+    .submission-step-title {
+      @media (max-width: 768px) {
+        font-size: 0.9rem !important;
+        text-align: left !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        line-height: 1.4 !important;
+        hyphens: auto !important;
+      }
+
+      @media (max-width: 640px) {
+        font-size: 0.85rem !important;
+      }
+    }
+  }
+
   // Guidelines Section
   .guidelines-section {
     padding: 3rem 0;
@@ -277,6 +341,10 @@
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 1rem;
 
+        @media (max-width: 768px) {
+          grid-template-columns: 1fr !important;
+        }
+
         .checklist-item {
           display: flex;
           align-items: center;
@@ -300,6 +368,13 @@
             font-size: 1rem;
             color: #666;
           }
+        }
+      }
+
+      .submission-checklist-grid {
+        @media (max-width: 768px) {
+          grid-template-columns: 1fr !important;
+          gap: 0.75rem !important;
         }
       }
     }

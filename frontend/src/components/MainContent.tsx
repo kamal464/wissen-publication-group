@@ -202,13 +202,13 @@ export default function MainContent() {
 
       {/* Editorial Excellence Section */}
       <section className="py-4 bg-gray-50">
-        <div className="container mx-auto px-4 pl-48 md:pl-72 lg:pl-[200px] xl:pl-[400px] 2xl:pl-[600px]">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <i className="pi pi-star text-5xl text-yellow-500 mb-4"></i>
-            <h2 className="text-4xl font-bold text-gray-800 mb-4 text-center">
+            <i className="pi pi-star text-4xl sm:text-5xl text-yellow-500 mb-4"></i>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-4 text-center">
               Editorial Excellence
             </h2>
-            <p className="text-xl text-gray-600 mb-8 text-center">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-8 text-center px-4 sm:px-0">
               Our distinguished editorial board comprises leading experts from prestigious institutions worldwide, 
               ensuring rigorous peer review and maintaining the highest publication standards.
             </p>

@@ -312,8 +312,9 @@ export default function JournalDetailPage() {
       
       @media (max-width: 768px) {
         .journal-sidebar {
-          width: 100% !important;
-          max-width: 100% !important;
+          width: 50% !important;
+          max-width: 50% !important;
+          min-width: 280px !important;
         }
         .journal-main-content {
           padding: 24px 16px !important;
@@ -1138,7 +1139,7 @@ export default function JournalDetailPage() {
                       }
                     }}
                   >
-                    <i className="pi pi-archive" style={{ fontSize: '16px' }}></i>
+                    <i className="pi pi-inbox" style={{ fontSize: '16px' }}></i>
                     <span>Archive</span>
                   </Link>
                   <Link 

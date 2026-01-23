@@ -309,8 +309,10 @@
   
   // Mobile: prevent horizontal scroll
   @media (max-width: 768px) {
-    overflow-x: hidden;
-    max-width: 100%;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-width: 100% !important;
+    width: 100% !important;
   }
 
   // Grid view - horizontal layout with image on left
@@ -357,8 +359,10 @@
     box-sizing: border-box;
     
     @media (max-width: 768px) {
-      overflow-x: hidden;
-      max-width: 100%;
+      overflow-x: hidden !important;
+      overflow-y: visible !important;
+      max-width: 100% !important;
+      width: 100% !important;
     }
   }
 
@@ -518,8 +522,10 @@
     @media (max-width: 768px) {
       width: 100% !important;
       max-width: 100% !important;
-      overflow-x: hidden;
+      overflow-x: hidden !important;
+      overflow-y: visible !important;
       padding: 1rem;
+      min-width: 0 !important;
     }
 
     // Grid view - more compact padding
@@ -831,14 +837,14 @@
     padding-top: 1.5rem;
     border-top: none;
     width: 100%;
+    max-width: 100%;
     display: flex !important;
     flex-direction: column;
     visibility: visible !important;
     opacity: 1 !important;
-    overflow: visible !important;
+    overflow: hidden !important;
     flex-shrink: 0;
     box-sizing: border-box;
-    max-width: 100%;
 
     // Grid view - more compact spacing
     .journal-card--grid & {
@@ -847,10 +853,13 @@
     
     // Mobile: ensure proper containment
     @media (max-width: 768px) {
-      width: 100%;
-      max-width: 100%;
-      overflow-x: hidden;
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+      overflow-y: visible !important;
       padding-top: 1rem;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
     }
   }
   
@@ -859,12 +868,15 @@
     gap: 0.875rem;
     flex-wrap: wrap;
     width: 100%;
+    max-width: 100%;
     justify-content: flex-start;
     align-items: center;
     visibility: visible !important;
     opacity: 1 !important;
     box-sizing: border-box;
     overflow: hidden;
+    padding: 0;
+    margin: 0;
 
     // Grid view - more compact spacing
     .journal-card--grid & {
@@ -873,10 +885,15 @@
     
     // Mobile: stack buttons vertically, full width
     @media (max-width: 768px) {
-      flex-direction: column;
-      gap: 0.75rem;
-      width: 100%;
-      align-items: stretch;
+      flex-direction: column !important;
+      gap: 0.75rem !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      align-items: stretch !important;
+      flex-wrap: nowrap !important;
+      overflow: hidden !important;
+      padding: 0 !important;
+      margin: 0 !important;
     }
   }
   
@@ -902,17 +919,23 @@
     opacity: 1 !important;
     position: relative;
     z-index: 1;
+    overflow: hidden;
 
     // Mobile: full width buttons, touch-friendly
     @media (max-width: 768px) {
       width: 100% !important;
-      min-width: auto;
-      max-width: 100%;
-      flex: 1 1 auto;
-      padding: 0.75rem 1rem;
-      font-size: 0.85rem;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      flex: 1 1 100% !important;
+      padding: 0.875rem 0.75rem !important;
+      font-size: 0.875rem !important;
       gap: 0.5rem;
-      min-height: 44px; // Touch-friendly minimum height
+      min-height: 44px !important;
+      white-space: normal !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      overflow: hidden !important;
+      margin: 0 !important;
     }
 
     // Grid view - more compact buttons
@@ -924,10 +947,14 @@
       
       @media (max-width: 768px) {
         width: 100% !important;
-        min-width: auto;
-        flex: 1 1 auto;
-        padding: 0.75rem 1rem;
-        min-height: 44px;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        flex: 1 1 100% !important;
+        padding: 0.875rem 0.75rem !important;
+        font-size: 0.875rem !important;
+        min-height: 44px !important;
+        overflow: hidden !important;
+        margin: 0 !important;
       }
     }
     
@@ -988,8 +1015,18 @@
       box-sizing: border-box;
       
       @media (max-width: 768px) {
-        font-size: 0.85rem;
-        max-width: 100%;
+        font-size: 0.875rem !important;
+        max-width: 100% !important;
+        width: auto !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        text-overflow: clip !important;
+        overflow: hidden !important;
+        display: inline !important;
+        text-align: center;
+        flex: 1;
+        min-width: 0;
       }
     }
   }
@@ -1160,6 +1197,60 @@
 
     &:hover {
       border-color: #6366f1;
+    }
+  }
+}
+
+// Global mobile fix for journal card buttons to prevent overflow
+@media (max-width: 768px) {
+  .journal-card {
+    &__footer {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      overflow-x: hidden !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+    
+    &__actions {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      overflow: hidden !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      flex-direction: column !important;
+      gap: 0.75rem !important;
+    }
+    
+    &__action-btn {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      flex: 1 1 100% !important;
+      padding: 0.875rem 0.75rem !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      
+      span {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+      }
+    }
+    
+    &__content {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+      overflow-x: hidden !important;
     }
   }
 }

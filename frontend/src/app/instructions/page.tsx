@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Breadcrumb from '@/components/Breadcrumb';
@@ -42,6 +43,88 @@ export default function InstructionsPage() {
       color: '#10b981'
     }
   ];
+
+  // Inject responsive styles for submission process
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    
+    const styleId = 'instructions-responsive-styles';
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      @media (max-width: 768px) {
+        .submission-process-section .p-timeline {
+          padding-left: 0 !important;
+        }
+        
+        .submission-process-section .p-timeline-event {
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+          margin-bottom: 1rem !important;
+        }
+        
+        .submission-process-section .p-timeline-event-connector {
+          left: 1.5rem !important;
+        }
+        
+        .submission-process-section .p-timeline-event-marker {
+          left: 0.5rem !important;
+          width: 1rem !important;
+          height: 1rem !important;
+        }
+        
+        .submission-step-content {
+          flex-direction: row !important;
+          align-items: flex-start !important;
+          gap: 12px !important;
+          padding: 12px !important;
+        }
+        
+        .submission-step-icon {
+          width: 2.5rem !important;
+          height: 2.5rem !important;
+          min-width: 2.5rem !important;
+          flex-shrink: 0 !important;
+        }
+        
+        .submission-step-title {
+          font-size: 0.9rem !important;
+          text-align: left !important;
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+          line-height: 1.4 !important;
+          hyphens: auto !important;
+        }
+        
+        .submission-checklist-grid {
+          grid-template-columns: 1fr !important;
+          gap: 0.75rem !important;
+        }
+      }
+      
+      @media (max-width: 640px) {
+        .submission-step-title {
+          font-size: 0.85rem !important;
+        }
+        
+        .submission-step-icon {
+          width: 2rem !important;
+          height: 2rem !important;
+          min-width: 2rem !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      const existingStyle = document.getElementById(styleId);
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+    };
+  }, []);
 
   return (
     <>
@@ -92,18 +175,26 @@ export default function InstructionsPage() {
           </section>
 
           {/* Submission Process */}
-          <section className="mb-5 md:mb-6">
+          <section className="mb-5 md:mb-6 submission-process-section">
             <h2 className="text-2xl md:text-3xl font-bold text-900 mb-4 md:mb-5 text-center md:text-left">
               Submission Process
             </h2>
             <div className="p-3 md:p-4">
               <Timeline 
                 value={submissionSteps} 
+                className="submission-timeline"
                 content={(item) => (
-                  <Card className="mb-3 shadow-2 border-round-lg">
-                    <div className="flex align-items-start justify-content-center gap-3 p-3" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', width: '100%' }}>
+                  <Card className="mb-3 shadow-2 border-round-lg submission-step-card">
+                    <div className="submission-step-content" style={{ 
+                      display: 'flex', 
+                      alignItems: 'flex-start', 
+                      gap: '12px', 
+                      padding: '12px',
+                      width: '100%',
+                      boxSizing: 'border-box'
+                    }}>
                       <div 
-                        className="flex align-items-center justify-content-center border-circle text-white"
+                        className="submission-step-icon"
                         style={{ 
                           backgroundColor: item.color,
                           width: '3rem',
@@ -112,12 +203,24 @@ export default function InstructionsPage() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          flexShrink: 0
+                          flexShrink: 0,
+                          borderRadius: '50%',
+                          color: 'white'
                         }}
                       >
-                        <i className={`${item.icon} text-2xl`} style={{ display: 'block', textAlign: 'center' }}></i>
+                        <i className={item.icon} style={{ fontSize: '1.25rem' }}></i>
                       </div>
-                      <h3 className="text-xl md:text-2xl font-semibold text-900 m-0" style={{ textAlign: 'center', flex: 1 }}>
+                      <h3 className="submission-step-title" style={{ 
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: '#1f2937',
+                        margin: 0,
+                        flex: 1,
+                        textAlign: 'left',
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
+                        lineHeight: '1.5'
+                      }}>
                         {item.title}
                       </h3>
                     </div>
@@ -187,7 +290,7 @@ export default function InstructionsPage() {
                       <strong>Acknowledgments:</strong> Funding sources and contributors
                     </li>
                     <li className="mb-3">
-                      <strong>References:</strong> Follow APA, MLA, or Chicago style consistently
+                      <strong>References:</strong> Follow APA style consistently
                     </li>
                   </ol>
                 </div>
@@ -198,7 +301,7 @@ export default function InstructionsPage() {
                   <h3 className="text-xl font-semibold text-900 mb-3">Figures</h3>
                   <ul className="list-none p-0 m-0 line-height-3">
                     <li className="mb-2">Submit as separate high-resolution files (300 dpi minimum)</li>
-                    <li className="mb-2">Acceptable formats: TIFF, EPS, JPG, PNG</li>
+                    <li className="mb-2">Acceptable formats: JPG</li>
                     <li className="mb-2">Number consecutively (Figure 1, Figure 2, etc.)</li>
                     <li className="mb-2">Include clear captions below each figure</li>
                     <li className="mb-2">Ensure all text is legible and professionally formatted</li>
@@ -220,15 +323,10 @@ export default function InstructionsPage() {
                 <div className="p-3 md:p-4">
                   <h3 className="text-xl font-semibold text-900 mb-3">Citation Style</h3>
                   <p className="line-height-3 mb-3">
-                    Wissen Publication Group accepts multiple citation styles. Please choose one and use 
-                    it consistently throughout your manuscript:
+                    Wissen Publication Group accepts only APA style. Please use it consistently throughout your manuscript.
                   </p>
                   <ul className="list-none p-0 m-0 line-height-3 mb-4">
                     <li className="mb-2"><strong>APA Style:</strong> (Author, Year) format</li>
-                    <li className="mb-2"><strong>MLA Style:</strong> (Author Page) format</li>
-                    <li className="mb-2"><strong>Chicago Style:</strong> Footnote or author-date system</li>
-                    <li className="mb-2"><strong>IEEE Style:</strong> Numerical citation system</li>
-                    <li className="mb-2"><strong>Vancouver Style:</strong> Numerical sequential system</li>
                   </ul>
 
                   <h3 className="text-xl font-semibold text-900 mb-3">Reference List</h3>
@@ -243,9 +341,7 @@ export default function InstructionsPage() {
                   <h3 className="text-xl font-semibold text-900 mb-3">Example References</h3>
                   <div className="p-3 mb-3 surface-100 border-round border-1 border-300">
                     <strong>Journal Article:</strong><br/>
-                    <span className="text-sm">Smith, J., & Johnson, A. (2024). Research methodology in modern science. 
-                    <em>Journal of Scientific Research</em>, 45(3), 123-145. 
-                    https://doi.org/10.1234/jsr.2024.012</span>
+                    <span className="text-sm">Zhu Q.K., Farkas I., Buzas J. (2026). Effect of Baffle on the Performance of Solar Air Collectors. Journal Name, 5(2), 45–58. https://doi.org/10.xxxx/xxxx</span>
                   </div>
                   <div className="p-3 surface-100 border-round border-1 border-300">
                     <strong>Book:</strong><br/>
@@ -379,14 +475,13 @@ export default function InstructionsPage() {
                 <div className="p-3 md:p-4">
                   <h3 className="text-xl font-semibold text-900 mb-3">Article Processing Charges (APC)</h3>
                   <ul className="list-none p-0 m-0 line-height-3 mb-4">
-                    <li className="mb-2">Standard APC: $500-$1,500 (varies by journal)</li>
-                    <li className="mb-2">Waivers available for authors from developing countries</li>
-                    <li className="mb-2">Discounts for institutional members</li>
+                    <li className="mb-2">Standard APC: As mentioned in the journal guidelines</li>
                     <li className="mb-2">Fees cover peer review, editing, and publication</li>
                   </ul>
 
                   <h3 className="text-xl font-semibold text-900 mb-3">Open Access Licenses</h3>
                   <p className="mb-3 line-height-3">All articles published under Creative Commons licenses:</p>
+                  <p className="mb-3 line-height-3">Creative Commons Attribution 4.0 International (CC BY 4.0)</p>
                   <ul className="list-none p-0 m-0 line-height-3 mb-4">
                     <li className="mb-2">
                       <strong>CC BY:</strong> Allows distribution and adaptation with attribution
@@ -402,7 +497,7 @@ export default function InstructionsPage() {
                   <h3 className="text-xl font-semibold text-900 mb-3">Copyright</h3>
                   <ul className="list-none p-0 m-0 line-height-3">
                     <li className="mb-2">Authors retain copyright to their work</li>
-                    <li className="mb-2">Grant Wissen Publication Group license to publish</li>
+                    <li className="mb-2">Authors grant Wissen Publication Group a license to publish.</li>
                     <li className="mb-2">Authors can reuse their work freely</li>
                   </ul>
                 </div>
@@ -420,7 +515,7 @@ export default function InstructionsPage() {
                 <p className="text-600 mb-4 md:mb-5 line-height-3">
                   Before submitting, ensure you have completed the following:
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', textAlign: 'left' }}>
+                <div className="submission-checklist-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', textAlign: 'left' }}>
                   <div style={{ textAlign: 'left', marginLeft: 0, paddingLeft: 0, width: '100%' }}>
                     <div className="flex align-items-center gap-2 mb-3" style={{ display: 'flex', justifyContent: 'flex-start', marginLeft: 0, textAlign: 'left', width: '100%' }}>
                       <i className="pi pi-check-square text-primary text-xl"></i>

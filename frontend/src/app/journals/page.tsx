@@ -504,7 +504,7 @@ export default function JournalsPage() {
       <div className="journals-hero-banner">
         <div className="journals-hero-banner__content">
           <h1 className="journals-hero-banner__title">
-            Journals <span className="journals-hero-banner__subtitle">(Leading list of journals)</span>
+            Journals
           </h1>
         </div>
       </div>
