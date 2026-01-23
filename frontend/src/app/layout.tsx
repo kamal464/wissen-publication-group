@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  // Server-side: Read env var (available at runtime in Cloud Run, or from .env.local in dev)
+  // Server-side: Read env var (available at runtime on EC2, or from .env.local in dev)
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   
   return (

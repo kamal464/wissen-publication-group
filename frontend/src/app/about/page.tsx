@@ -74,7 +74,7 @@ export default function AboutPage() {
             <div className="hero-content">
               <h1>About Wissen Publication Group</h1>
               <p className="lead">
-                Advancing knowledge through excellence in academic publishing since 1998
+                Advancing knowledge through excellence in academic publishing
               </p>
             </div>
           </section>

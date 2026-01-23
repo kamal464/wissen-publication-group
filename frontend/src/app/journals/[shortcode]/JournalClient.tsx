@@ -377,7 +377,13 @@ export default function JournalDetailPage() {
             display: 'flex',
             alignItems: 'center',
             textDecoration: 'none',
-            outline: 'none'
+            outline: 'none',
+            border: 'none',
+            boxShadow: 'none'
+          }} onFocus={(e) => {
+            e.currentTarget.style.outline = 'none';
+            e.currentTarget.style.border = 'none';
+            e.currentTarget.style.boxShadow = 'none';
           }}>
             <img 
               src="/wissen-logo.png" 

@@ -338,16 +338,6 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                <div className="info-item">
-                  <div className="info-icon">
-                    <i className="pi pi-clock"></i>
-                  </div>
-                  <div className="info-content">
-                    <h4>Business Hours</h4>
-                    <p>Monday - Friday: 9:00 AM - 5:00 PM</p>
-                    <p>Saturday - Sunday: Closed</p>
-                  </div>
-                </div>
               </Card>
 
               <Card className="social-media-card">

@@ -48,6 +48,23 @@ const baseUrlInterceptor = api.interceptors.request.use((config) => {
     }
   }
   
+  // Normalize baseURL: remove trailing slash to prevent double slashes
+  if (config.baseURL && config.baseURL.endsWith('/')) {
+    config.baseURL = config.baseURL.slice(0, -1);
+  }
+  
+  // Normalize endpoint URL: ensure it starts with / and doesn't have double slashes
+  if (config.url) {
+    // Remove leading slash if baseURL already ends with /api
+    if (config.url.startsWith('/') && config.baseURL && config.baseURL.endsWith('/api')) {
+      // Keep the leading slash - it's correct
+    } else if (!config.url.startsWith('/')) {
+      config.url = `/${config.url}`;
+    }
+    // Remove any double slashes (except after http:// or https://)
+    config.url = config.url.replace(/([^:]\/)\/+/g, '$1');
+  }
+  
   return config;
 });
 

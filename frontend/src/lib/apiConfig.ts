@@ -54,18 +54,25 @@ export const getApiBaseUrl = (): string => {
       apiUrl = process.env.NEXT_PUBLIC_API_URL;
     }
 
-    // Priority 4.5: If API URL is set but doesn't match current origin, use current origin instead
-    // This prevents CORS errors when accessing via IP but API URL is set to domain
+    // Priority 4.5: If API URL is set but doesn't match current origin, handle appropriately
+    // In development (localhost), allow different ports (e.g., frontend 3000, backend 3001)
+    // In production, use current origin to avoid CORS
     if (apiUrl && typeof window !== 'undefined') {
       try {
         const apiUrlObj = new URL(apiUrl);
         const currentOrigin = `${window.location.protocol}//${window.location.host}`;
         const apiOrigin = `${apiUrlObj.protocol}//${apiUrlObj.host}`;
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         
-        // If origins don't match, use current origin to avoid CORS
-        if (apiOrigin !== currentOrigin) {
+        // Only override in production (not localhost) to allow different ports in development
+        if (apiOrigin !== currentOrigin && !isLocalhost) {
           console.log(`[API] Origin mismatch detected. API URL origin: ${apiOrigin}, Current origin: ${currentOrigin}. Using current origin.`);
           apiUrl = `${currentOrigin}/api`;
+          // Cache it
+          (window as any).__API_BASE_URL__ = apiUrl;
+        } else if (apiOrigin !== currentOrigin && isLocalhost) {
+          // In development, keep the configured API URL (likely localhost:3001)
+          console.log(`[API] Development mode: Using configured API URL: ${apiUrl}`);
           // Cache it
           (window as any).__API_BASE_URL__ = apiUrl;
         }

@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // For EC2 deployment with PM2 - do NOT use standalone mode
-  // Standalone mode is only for Docker/Cloud Run
+  // Standalone mode is for Docker containers (not used on EC2)
   // output: 'standalone', // DISABLED for EC2 deployment
   images: {
     unoptimized: false,

@@ -6,7 +6,6 @@ import { InputText } from 'primereact/inputtext';
 import { Password } from 'primereact/password';
 import { Button } from 'primereact/button';
 import { Message } from 'primereact/message';
-import { Divider } from 'primereact/divider';
 import { adminAPI } from '@/lib/api';
 
 export default function JournalAdminLogin() {
@@ -124,17 +123,6 @@ export default function JournalAdminLogin() {
               <div className="w-full py-3 rounded-xl bg-gray-200 animate-pulse h-12"></div>
             </div>
           )}
-
-          <Divider className="my-8" />
-
-          {/* Default Credentials Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-            <p className="text-sm text-blue-800 font-medium mb-2">Default Credentials:</p>
-            <div className="text-xs text-blue-700 space-y-1">
-              <p><strong>Username:</strong> admin</p>
-              <p><strong>Password:</strong> Bharath@321</p>
-            </div>
-          </div>
         </div>
       </div>
 

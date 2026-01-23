@@ -134,9 +134,9 @@ export default function MainContent() {
                 About Wissen Publication Group
               </h2>
               <p className="text-lg leading-relaxed mb-8" style={{ color: '#ffffff' }}>
-                Since 1998, we've been advancing knowledge through excellence in academic publishing. 
-                Our commitment to scholarly research and academic excellence has made us a trusted 
-                platform for researchers, academics, and institutions worldwide.
+                Wissen Publication Group is dedicated to advancing scholarly communication through high-quality academic publishing. 
+                We are committed to supporting researchers, academics, and institutions worldwide by providing ethical, transparent, 
+                and peer-reviewed publication platforms.
               </p>
               <div className="grid grid-cols-2 gap-4 mb-8">
                 {aboutHighlights.map((highlight, index) => (
@@ -263,7 +263,7 @@ export default function MainContent() {
                 Join our global community of researchers and publish your work with Wissen Publication Group today. 
                 Experience excellence in academic publishing.
               </p>
-              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 md:gap-6">
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-8 md:gap-12">
                 <Link href="/submit-manuscript" className="group">
                   <Button 
                     label="Submit Manuscript"

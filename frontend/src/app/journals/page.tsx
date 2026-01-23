@@ -424,8 +424,9 @@ export default function JournalsPage() {
       {/* Blue Header Banner */}
       <div className="journals-hero-banner">
         <div className="journals-hero-banner__content">
-          <h1 className="journals-hero-banner__title">Journals</h1>
-          <p className="journals-hero-banner__subtitle">Leading list of journals</p>
+          <h1 className="journals-hero-banner__title">
+            Journals <span className="journals-hero-banner__subtitle">(Leading list of journals)</span>
+          </h1>
         </div>
       </div>
       

@@ -1,14 +1,21 @@
-# 🔍 Troubleshoot Deployment - Site Not Loading
+# 🔍 Troubleshoot Deployment - AWS EC2
+## Site Not Loading - Diagnostic Guide
 
-Run these diagnostic commands in your browser terminal to find the issue:
+Run these diagnostic commands on your EC2 instance to find the issue:
+
+---
 
 ## Step 1: Check Instance Status
 
 ```bash
-# Check if instance is running
-echo "Instance Status:"
-aws ec2 describe-instance-status --instance-ids i-016ab2b939f5f7a3b --region us-east-1 --query 'InstanceStatuses[0].[InstanceStatus.Status,SystemStatus.Status]' --output table 2>&1 || echo "Instance is running"
+# Check if instance is running (from local machine with AWS CLI)
+aws ec2 describe-instance-status --instance-ids i-016ab2b939f5f7a3b --region us-east-1 --query 'InstanceStatuses[0].[InstanceStatus.Status,SystemStatus.Status]' --output table
+
+# Or check from EC2 console
+# AWS Console → EC2 → Instances → Check status
 ```
+
+---
 
 ## Step 2: Check Services Status
 
@@ -29,6 +36,8 @@ echo "=== PostgreSQL Status ==="
 sudo systemctl status postgresql --no-pager | head -10
 ```
 
+---
+
 ## Step 3: Check if Applications are Running
 
 ```bash
@@ -46,6 +55,8 @@ echo ""
 echo "=== Port Status ==="
 sudo netstat -tlnp | grep -E '3000|3001|80'
 ```
+
+---
 
 ## Step 4: Check Nginx Configuration
 
@@ -65,13 +76,21 @@ echo "=== Nginx Access Logs (last 10 lines) ==="
 sudo tail -10 /var/log/nginx/access.log
 ```
 
+---
+
 ## Step 5: Check Security Group
 
 ```bash
-# Verify security group allows HTTP
+# Verify security group allows HTTP (from local machine with AWS CLI)
 echo "=== Security Group Rules ==="
 aws ec2 describe-security-groups --group-ids sg-0bea1705b41dd4806 --region us-east-1 --query 'SecurityGroups[0].IpPermissions[*].[FromPort,ToPort,IpRanges[0].CidrIp]' --output table
+
+# Or check in AWS Console:
+# EC2 → Security Groups → wissen-app-sg → Inbound Rules
+# Should have: HTTP (80) from 0.0.0.0/0
 ```
+
+---
 
 ## Step 6: Quick Fix Commands
 
@@ -94,6 +113,8 @@ cat backend/.env | head -5
 cat frontend/.env.production
 ```
 
+---
+
 ## Step 7: Manual Start (If Needed)
 
 ```bash
@@ -106,6 +127,8 @@ pm2 startup
 # Verify Nginx config and reload
 sudo nginx -t && sudo systemctl reload nginx
 ```
+
+---
 
 ## Step 8: Check Application Logs
 
@@ -120,6 +143,8 @@ echo "=== Frontend Logs ==="
 pm2 logs wissen-frontend --lines 30 --nostream
 ```
 
+---
+
 ## Common Issues and Fixes
 
 ### Issue 1: PM2 Not Running
@@ -127,6 +152,7 @@ pm2 logs wissen-frontend --lines 30 --nostream
 cd /var/www/wissen-publication-group
 pm2 start ecosystem.config.js
 pm2 save
+pm2 startup
 ```
 
 ### Issue 2: Nginx Not Configured
@@ -139,12 +165,41 @@ sudo systemctl restart nginx
 ```bash
 # Check if apps are actually running
 ps aux | grep -E "node|npm" | grep -v grep
+
+# Check if ports are in use
+sudo netstat -tlnp | grep -E '3000|3001|80'
 ```
 
 ### Issue 4: Security Group Blocking
 The security group should allow port 80. Check in AWS Console:
 - EC2 → Security Groups → wissen-app-sg
 - Should have inbound rule: HTTP (80) from 0.0.0.0/0
+
+### Issue 5: Database Connection Failed
+```bash
+# Check PostgreSQL is running
+sudo systemctl status postgresql
+
+# Check database exists
+sudo -u postgres psql -l | grep wissen
+
+# Run migrations
+cd /var/www/wissen-publication-group/backend
+npx prisma migrate deploy
+```
+
+### Issue 6: Environment Variables Missing
+```bash
+# Check backend .env
+cat /var/www/wissen-publication-group/backend/.env
+
+# Check frontend .env.production
+cat /var/www/wissen-publication-group/frontend/.env.production
+
+# If missing, create them (see DEPLOYMENT_DOCUMENTATION.md)
+```
+
+---
 
 ## Complete Diagnostic Script
 
@@ -174,8 +229,78 @@ echo ""
 echo "6. Recent Errors:"
 sudo tail -5 /var/log/nginx/error.log
 echo ""
+echo "7. PM2 Logs (last 5 lines each):"
+pm2 logs wissen-backend --lines 5 --nostream
+pm2 logs wissen-frontend --lines 5 --nostream
+echo ""
 echo "=========================================="
 ```
 
-Run these commands and share the output so I can help fix the specific issue!
+---
 
+## AWS-Specific Checks
+
+### Check EC2 Instance Status
+```bash
+# From local machine with AWS CLI
+aws ec2 describe-instances --instance-ids i-016ab2b939f5f7a3b --region us-east-1 --query 'Reservations[0].Instances[0].[State.Name,PublicIpAddress]' --output table
+```
+
+### Check Security Group Rules
+```bash
+# From local machine with AWS CLI
+aws ec2 describe-security-groups --group-ids sg-0bea1705b41dd4806 --region us-east-1 --query 'SecurityGroups[0].IpPermissions[*].[IpProtocol,FromPort,ToPort,IpRanges[0].CidrIp]' --output table
+```
+
+### Check S3 Access
+```bash
+# Test S3 connection (from EC2)
+aws s3 ls s3://wissen-publication-group-files/ --region us-east-1
+```
+
+### Check CloudFront
+```bash
+# Test CloudFront URL
+curl -I https://d2qm3szai4trao.cloudfront.net/
+```
+
+---
+
+## Quick Recovery Steps
+
+If everything is down:
+
+```bash
+# 1. Restart all services
+cd /var/www/wissen-publication-group
+pm2 restart all
+sudo systemctl restart nginx
+sudo systemctl restart postgresql
+
+# 2. Check status
+pm2 status
+sudo systemctl status nginx postgresql
+
+# 3. Test locally
+curl http://localhost:3001/api/health
+curl http://localhost:3000
+
+# 4. If still not working, check logs
+pm2 logs --lines 50
+sudo tail -50 /var/log/nginx/error.log
+```
+
+---
+
+## Getting Help
+
+If issues persist:
+1. Check GitHub Actions logs: https://github.com/kamal464/wissen-publication-group/actions
+2. Review deployment documentation: `DEPLOYMENT_DOCUMENTATION.md`
+3. Check AWS Console for instance status
+4. Review PM2 and Nginx logs
+
+---
+
+**Last Updated**: 2025-01-20  
+**Platform**: AWS EC2

@@ -166,6 +166,18 @@
     &:hover {
       text-decoration: none;
     }
+    
+    &:focus {
+      outline: none;
+      border: none;
+      box-shadow: none;
+    }
+    
+    &:focus-visible {
+      outline: none;
+      border: none;
+      box-shadow: none;
+    }
   }
   
   &__logo-image {

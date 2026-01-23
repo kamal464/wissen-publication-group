@@ -709,6 +709,16 @@ h1, h2, h3, h4, h5, h6,
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
 }
 
+/* Remove focus border from logo links */
+.header__logo:focus,
+.header__logo:focus-visible,
+a[href="/"]:has(img[alt*="Wissen"]):focus,
+a[href="/"]:has(img[alt*="Wissen"]):focus-visible {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 /* FocusTrap */
 .p-focustrap {
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
@@ -722,4 +732,14 @@ h1, h2, h3, h4, h5, h6,
 /* AnimateOnScroll */
 .p-animateonscroll {
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
+}
+
+/* Remove focus border from logo links */
+.header__logo:focus,
+.header__logo:focus-visible,
+a[href="/"]:has(img[alt*="Wissen"]):focus,
+a[href="/"]:has(img[alt*="Wissen"]):focus-visible {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }

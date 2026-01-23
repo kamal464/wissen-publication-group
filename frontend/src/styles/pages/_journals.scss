@@ -7,15 +7,15 @@
   text-align: left;
   color: #fff;
   background: #1558a7;
-  padding: 0.1rem;
+  padding: 0;
   
   &__content {
     max-width: 1400px;
     margin: 0 auto;
-    padding-left: 0.5rem;
+    padding: 2rem 1.5rem;
     
     @media (max-width: 768px) {
-      padding-left: 0.5rem;
+      padding: 1.5rem 1rem;
     }
   }
   
@@ -23,23 +23,33 @@
     font-size: 3.5rem;
     font-weight: 400;
     margin: 0;
-    line-height: 1.2;
+    line-height: 1.3;
     color: white;
+    display: flex;
+    align-items: baseline;
+  
+    flex-wrap: wrap;
+    gap: 0.5rem;
     
     @media (max-width: 768px) {
       font-size: 2.5rem;
+      line-height: 1.4;
     }
   }
   
   &__subtitle {
-    font-size: 1.25rem;
-    margin-top: 0.75rem;
-    opacity: 1;
-    font-weight: 400;
-    color: white;
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.02em;
+    margin-left: 0.25rem;
     
     @media (max-width: 768px) {
-      font-size: 1.1rem;
+      font-size: 1.25rem;
+      margin-left: 0;
+      display: block;
+      width: 100%;
+      margin-top: 0.25rem;
     }
   }
 }
