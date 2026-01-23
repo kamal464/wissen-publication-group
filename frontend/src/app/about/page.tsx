@@ -262,11 +262,11 @@ export default function AboutPage() {
                 className="carousel-arrow carousel-arrow-left"
                 style={{
                   position: 'absolute',
-                  left: '10px',
+                  left: '5px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  width: '40px',
-                  height: '40px',
+                  width: '35px',
+                  height: '35px',
                   borderRadius: '50%',
                   border: '2px solid #3b82f6',
                   backgroundColor: 'white',
@@ -275,7 +275,7 @@ export default function AboutPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '18px',
+                  fontSize: '16px',
                   zIndex: 10,
                   transition: 'all 0.3s ease',
                   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
@@ -300,11 +300,11 @@ export default function AboutPage() {
                 className="carousel-arrow carousel-arrow-right"
                 style={{
                   position: 'absolute',
-                  right: '10px',
+                  right: '5px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  width: '40px',
-                  height: '40px',
+                  width: '35px',
+                  height: '35px',
                   borderRadius: '50%',
                   border: '2px solid #3b82f6',
                   backgroundColor: 'white',
@@ -313,7 +313,7 @@ export default function AboutPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '18px',
+                  fontSize: '16px',
                   zIndex: 10,
                   transition: 'all 0.3s ease',
                   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
@@ -335,12 +335,12 @@ export default function AboutPage() {
                 position: 'relative',
                 width: '100%',
                 overflow: 'hidden',
-                padding: '1rem 60px'
+                padding: '1rem 45px'
               }}>
                 <div className="carousel-track" style={{
                   display: 'flex',
-                  gap: '15px',
-                  transform: `translateX(calc(-${currentIndex} * ((100% - 45px) / ${imagesPerView} + 15px)))`,
+                  gap: '10px',
+                  transform: `translateX(calc(-${currentIndex} * ((100% - 90px) / ${imagesPerView} + 10px)))`,
                   transition: 'transform 0.6s ease-in-out'
                 }}>
                   {/* Render all images in a continuous row - duplicate enough for seamless loop */}
@@ -353,8 +353,9 @@ export default function AboutPage() {
                         key={`${actualImage.id}-${index}`}
                         className="carousel-image-item"
                         style={{
-                          flex: '0 0 calc(25% - 11.25px)',
-                          width: 'calc(25% - 11.25px)',
+                          flex: '0 0 calc(25% - 7.5px)',
+                          minWidth: 'calc(25% - 7.5px)',
+                          width: 'calc(25% - 7.5px)',
                           backgroundColor: '#fff',
                           borderRadius: '8px',
                           overflow: 'hidden',

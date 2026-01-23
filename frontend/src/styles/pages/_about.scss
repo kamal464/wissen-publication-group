@@ -227,6 +227,69 @@
       text-align: center;
       color: #1a1a1a;
       margin-bottom: 0.25rem;
+
+      @media (max-width: 768px) {
+        font-size: 2rem;
+      }
+    }
+
+    // Image Carousel Responsive Styles
+    .image-carousel-container {
+      @media (max-width: 768px) {
+        padding: 1rem 0;
+      }
+    }
+
+    .image-carousel-wrapper {
+      @media (max-width: 768px) {
+        padding: 1rem 40px !important;
+      }
+
+      @media (max-width: 480px) {
+        padding: 1rem 35px !important;
+      }
+    }
+
+    .carousel-arrow {
+      @media (max-width: 768px) {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 14px !important;
+        left: 5px !important;
+        right: 5px !important;
+      }
+
+      @media (max-width: 480px) {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 12px !important;
+        left: 2px !important;
+        right: 2px !important;
+      }
+    }
+
+    .carousel-image-item {
+      @media (max-width: 768px) {
+        flex: 0 0 calc(50% - 5px) !important;
+        min-width: calc(50% - 5px) !important;
+        width: calc(50% - 5px) !important;
+      }
+
+      @media (max-width: 480px) {
+        flex: 0 0 calc(100% - 0px) !important;
+        min-width: calc(100% - 0px) !important;
+        width: calc(100% - 0px) !important;
+      }
+    }
+
+    .carousel-track {
+      @media (max-width: 768px) {
+        gap: 10px !important;
+      }
+
+      @media (max-width: 480px) {
+        gap: 8px !important;
+      }
     }
 
     .stats-grid {
