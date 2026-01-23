@@ -680,6 +680,6 @@ sudo ss -tlnp | grep -E ":3000|:3001"
 
 ---
 
-**Last Updated:** January 18, 2026  
-**Server:** EC2 Instance (t3.small)  
+**Last Updated:** January 18, 2026 
+**Server:** EC2 Instance (t3.small)
 **Location:** /var/www/wissen-publication-group

@@ -15,7 +15,7 @@ echo "=== STEP 2: Generate Prisma client ===" && \
 npx prisma generate && \
 echo "" && \
 echo "=== STEP 3: Clear Database (Keep Admin) ===" && \
-cat > /tmp/clear-db-keep-admin.js << 'JS'
+cat > clear-db-keep-admin.js << 'JS'
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -73,13 +73,13 @@ async function clearDatabase() {
     await prisma.journalShortcode.deleteMany();
     console.log('✓ JournalShortcode cleared');
     
-    // Delete all users except admin
+    // Delete all users except admin (use notIn with admin usernames we found)
+    const adminUsernames = adminUsers.map(u => u.userName);
     const deletedUsers = await prisma.user.deleteMany({
       where: {
-        AND: [
-          { userName: { not: 'admin' } },
-          { userName: { not: { contains: 'admin', mode: 'insensitive' } } }
-        ]
+        userName: {
+          notIn: adminUsernames.length > 0 ? adminUsernames : ['admin']
+        }
       }
     });
     console.log(`✓ Deleted ${deletedUsers.count} non-admin users`);
@@ -184,13 +184,13 @@ async function clearDatabase() {
     await prisma.journalShortcode.deleteMany();
     console.log('✓ JournalShortcode cleared');
     
-    // Delete all users except admin
+    // Delete all users except admin (use notIn with admin usernames we found)
+    const adminUsernames = adminUsers.map(u => u.userName);
     const deletedUsers = await prisma.user.deleteMany({
       where: {
-        AND: [
-          { userName: { not: 'admin' } },
-          { userName: { not: { contains: 'admin', mode: 'insensitive' } } }
-        ]
+        userName: {
+          notIn: adminUsernames.length > 0 ? adminUsernames : ['admin']
+        }
       }
     });
     console.log(`✓ Deleted ${deletedUsers.count} non-admin users`);

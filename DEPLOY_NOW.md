@@ -55,7 +55,7 @@ echo "✅ Frontend built successfully!"
 ```bash
 cd /var/www/wissen-publication-group && \
 echo "=== Restarting PM2 services ===" && \
-pm2 restart all || (pm2 start backend/dist/src/main.js --name wissen-backend --update-env && cd frontend && pm2 start npm --name wissen-frontend -- start --update-env && cd ..) && \
+pm2 restart all || (pm2 start /var/www/wissen-publication-group/backend/dist/src/main.js --name wissen-backend --update-env && cd /var/www/wissen-publication-group/frontend && pm2 start npm --name wissen-frontend -- start --update-env) && \
 sleep 5 && \
 pm2 save && \
 echo "" && \
@@ -93,8 +93,8 @@ npm install --no-audit --no-fund --loglevel=error && \
 npm run build && \
 echo "" && \
 echo "=== STEP 4: Restart Services ===" && \
-cd .. && \
-pm2 restart all || (pm2 start backend/dist/src/main.js --name wissen-backend --update-env && cd frontend && pm2 start npm --name wissen-frontend -- start --update-env && cd ..) && \
+cd /var/www/wissen-publication-group && \
+pm2 restart all || (pm2 start /var/www/wissen-publication-group/backend/dist/src/main.js --name wissen-backend --update-env && cd /var/www/wissen-publication-group/frontend && pm2 start npm --name wissen-frontend -- start --update-env) && \
 sleep 5 && \
 pm2 save && \
 sudo systemctl reload nginx && \
@@ -152,10 +152,10 @@ npm install --no-audit --no-fund --loglevel=error
 ### PM2 Process Not Found?
 ```bash
 cd /var/www/wissen-publication-group && \
-pm2 start backend/dist/src/main.js --name wissen-backend --update-env && \
-cd frontend && \
+pm2 start /var/www/wissen-publication-group/backend/dist/src/main.js --name wissen-backend --update-env && \
+cd /var/www/wissen-publication-group/frontend && \
 pm2 start npm --name wissen-frontend -- start --update-env && \
-cd .. && \
+cd /var/www/wissen-publication-group && \
 pm2 save
 ```
 
