@@ -10,8 +10,11 @@ echo "" && \
 echo "=== STEP 2: Generate Prisma client ===" && \
 npx prisma generate && \
 echo "" && \
-echo "=== STEP 3: Clear Database Using Prisma ===" && \
-cat > /tmp/clear-db.js << 'JS'
+echo "=== STEP 3: Verify Prisma client exists ===" && \
+ls -la node_modules/@prisma/client 2>&1 | head -3 && \
+echo "" && \
+echo "=== STEP 4: Clear Database Using Prisma ===" && \
+cat > clear-db.js << 'JS'
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -99,8 +102,8 @@ async function clearDatabase() {
 
 clearDatabase();
 JS
-node /tmp/clear-db.js && \
-rm /tmp/clear-db.js && \
+node clear-db.js && \
+rm clear-db.js && \
 echo "" && \
 echo "✅ Database cleared using Prisma!"
 ```
@@ -129,7 +132,7 @@ echo "=== STEP 4: Clear Database Using Prisma ===" && \
 cd backend && \
 npm install --no-audit --no-fund --loglevel=error && \
 npx prisma generate && \
-cat > /tmp/clear-db.js << 'JS'
+cat > clear-db.js << 'JS'
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 (async () => {
@@ -152,7 +155,7 @@ const prisma = new PrismaClient();
   finally { await prisma.$disconnect(); }
 })();
 JS
-node /tmp/clear-db.js && rm /tmp/clear-db.js && \
+node clear-db.js && rm clear-db.js && \
 echo "" && \
 echo "=== STEP 5: Apply Migrations ===" && \
 npx prisma migrate deploy && \
