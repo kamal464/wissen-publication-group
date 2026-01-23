@@ -126,8 +126,119 @@ async function clearDatabase() {
 
 clearDatabase();
 JS
-node /tmp/clear-db-keep-admin.js && \
-rm /tmp/clear-db-keep-admin.js && \
+cat > clear-db-keep-admin.js << 'JS'
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+async function clearDatabase() {
+  try {
+    console.log('=== Backing up admin user(s) ===');
+    const adminUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { userName: 'admin' },
+          { userName: { contains: 'admin', mode: 'insensitive' } }
+        ]
+      }
+    });
+    
+    if (adminUsers.length > 0) {
+      console.log(`✅ Found ${adminUsers.length} admin user(s):`);
+      adminUsers.forEach(u => {
+        console.log(`   - ID: ${u.id}, Username: ${u.userName}`);
+      });
+    } else {
+      console.log('⚠️ No admin users found!');
+    }
+    
+    console.log('\n=== Clearing all tables (keeping admin users) ===');
+    
+    // Delete in order: child tables first
+    await prisma.author.deleteMany();
+    console.log('✓ Author cleared');
+    
+    await prisma.article.deleteMany();
+    console.log('✓ Article cleared');
+    
+    await prisma.boardMember.deleteMany();
+    console.log('✓ BoardMember cleared');
+    
+    await prisma.journal.deleteMany();
+    console.log('✓ Journal cleared');
+    
+    await prisma.message.deleteMany();
+    console.log('✓ Message cleared');
+    
+    await prisma.contact.deleteMany();
+    console.log('✓ Contact cleared');
+    
+    await prisma.news.deleteMany();
+    console.log('✓ News cleared');
+    
+    await prisma.notification.deleteMany();
+    console.log('✓ Notification cleared');
+    
+    await prisma.webPage.deleteMany();
+    console.log('✓ WebPage cleared');
+    
+    await prisma.journalShortcode.deleteMany();
+    console.log('✓ JournalShortcode cleared');
+    
+    // Delete all users except admin
+    const deletedUsers = await prisma.user.deleteMany({
+      where: {
+        AND: [
+          { userName: { not: 'admin' } },
+          { userName: { not: { contains: 'admin', mode: 'insensitive' } } }
+        ]
+      }
+    });
+    console.log(`✓ Deleted ${deletedUsers.count} non-admin users`);
+    
+    console.log('\n=== Verifying admin user(s) ===');
+    const adminCheck = await prisma.user.findMany({
+      where: {
+        OR: [
+          { userName: 'admin' },
+          { userName: { contains: 'admin', mode: 'insensitive' } }
+        ]
+      }
+    });
+    
+    if (adminCheck.length > 0) {
+      console.log('✅ Admin user(s) still exist:');
+      adminCheck.forEach(u => {
+        console.log(`   - ID: ${u.id}, Username: ${u.userName}`);
+      });
+    } else {
+      console.log('❌ ERROR: No admin users found after clear!');
+    }
+    
+    console.log('\n=== Final table counts ===');
+    const counts = {
+      Article: await prisma.article.count(),
+      Journal: await prisma.journal.count(),
+      BoardMember: await prisma.boardMember.count(),
+      User: await prisma.user.count(),
+      JournalShortcode: await prisma.journalShortcode.count()
+    };
+    console.log(counts);
+    
+    console.log('\n✅ Database cleared successfully! Only admin user(s) remain.');
+    
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+    console.error('Stack:', error.stack);
+    process.exit(1);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+clearDatabase();
+JS
+node clear-db-keep-admin.js && \
+rm clear-db-keep-admin.js && \
 echo "" && \
 echo "✅ Database cleared! Admin credentials preserved."
 ```
@@ -139,7 +250,7 @@ echo "✅ Database cleared! Admin credentials preserved."
 ```bash
 cd /var/www/wissen-publication-group/backend && \
 npx prisma generate && \
-cat > /tmp/clear-db.js << 'JS'
+cat > clear-db.js << 'JS'
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 (async () => {
@@ -166,7 +277,7 @@ const prisma = new PrismaClient();
   finally { await prisma.$disconnect(); }
 })();
 JS
-node /tmp/clear-db.js && rm /tmp/clear-db.js && \
+node clear-db.js && rm clear-db.js && \
 echo "✅ Database cleared!"
 ```
 
@@ -177,7 +288,7 @@ echo "✅ Database cleared!"
 ```bash
 cd /var/www/wissen-publication-group/backend && \
 npx prisma generate && \
-cat > /tmp/verify-db.js << 'JS'
+cat > verify-db.js << 'JS'
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 (async () => {
@@ -194,7 +305,7 @@ const prisma = new PrismaClient();
   await prisma.$disconnect();
 })();
 JS
-node /tmp/verify-db.js && rm /tmp/verify-db.js
+node verify-db.js && rm verify-db.js
 ```
 
 ---
