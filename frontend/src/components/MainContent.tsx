@@ -81,7 +81,7 @@ export default function MainContent() {
             <h2 className="text-4xl font-bold text-gray-800 mb-4 mt-2">
               Publish With Us
             </h2>
-            <p className="text-xl text-gray-600 max-w-6xl mx-auto text-center pl-40 whitespace-nowrap">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-6xl mx-auto text-center px-4 sm:px-8 md:px-16 lg:pl-40">
               Join thousands of researchers who trust Wissen Publication Group for their scholarly publications.
             </p>
           </div>
