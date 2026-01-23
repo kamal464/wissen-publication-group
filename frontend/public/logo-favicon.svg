@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Globe gradient -->
+    <linearGradient id="globeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#1e40af;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e3a8a;stop-opacity:1" />
+    </linearGradient>
+    <!-- Globe highlight -->
+    <linearGradient id="globeHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#93c5fd;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.3" />
+    </linearGradient>
+    <!-- Land gradient -->
+    <linearGradient id="landGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e5e7eb;stop-opacity:1" />
+    </linearGradient>
+    <!-- Book right page gradient -->
+    <linearGradient id="bookRightGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#d97706;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#b45309;stop-opacity:1" />
+    </linearGradient>
+    <!-- Orbital glow -->
+    <radialGradient id="orbitalGlow" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.2" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background glow -->
+  <circle cx="256" cy="256" r="250" fill="url(#orbitalGlow)" opacity="0.4"/>
+  
+  <!-- Globe base circle -->
+  <circle cx="256" cy="200" r="180" fill="url(#globeGradient)"/>
+  
+  <!-- Globe highlight (top left) -->
+  <ellipse cx="200" cy="140" rx="100" ry="80" fill="url(#globeHighlight)" opacity="0.6"/>
+  
+  <!-- Continents (simplified but recognizable) -->
+  <!-- North America -->
+  <path d="M 120 180 Q 140 160 160 180 Q 180 200 200 180 Q 220 160 240 180 Q 260 200 280 180 Q 300 160 320 180" 
+        fill="url(#landGradient)" stroke="#d1d5db" stroke-width="1.5"/>
+  <path d="M 140 200 Q 160 190 180 200 Q 200 210 220 200" 
+        fill="url(#landGradient)" stroke="#d1d5db" stroke-width="1.5"/>
+  
+  <!-- South America -->
+  <path d="M 200 240 Q 220 230 240 250 Q 260 270 280 250 Q 300 240 320 260" 
+        fill="url(#landGradient)" stroke="#d1d5db" stroke-width="1.5"/>
+  
+  <!-- Europe/Africa -->
+  <path d="M 300 200 Q 320 190 340 210 Q 360 230 380 220" 
+        fill="url(#landGradient)" stroke="#d1d5db" stroke-width="1.5"/>
+  <path d="M 320 240 Q 340 250 360 240 Q 380 250 390 260" 
+        fill="url(#landGradient)" stroke="#d1d5db" stroke-width="1.5"/>
+  
+  <!-- Asia -->
+  <path d="M 360 180 Q 380 170 400 190 Q 420 210 440 200" 
+        fill="url(#landGradient)" stroke="#d1d5db" stroke-width="1.5"/>
+  
+  <!-- Orbital rings around globe -->
+  <ellipse cx="256" cy="200" rx="200" ry="60" fill="none" stroke="#60a5fa" stroke-width="4" opacity="0.9" transform="rotate(-25 256 200)"/>
+  <ellipse cx="256" cy="200" rx="200" ry="50" fill="none" stroke="#60a5fa" stroke-width="4" opacity="0.9" transform="rotate(15 256 200)"/>
+  <ellipse cx="256" cy="200" rx="200" ry="70" fill="none" stroke="#60a5fa" stroke-width="4" opacity="0.9"/>
+  
+  <!-- Nodes on orbits -->
+  <circle cx="380" cy="220" r="10" fill="#1e40af" opacity="0.9"/>
+  <circle cx="132" cy="240" r="10" fill="#1e40af" opacity="0.9"/>
+  <circle cx="256" cy="120" r="10" fill="#1e40af" opacity="0.9"/>
+  <circle cx="320" cy="180" r="8" fill="#3b82f6" opacity="0.8"/>
+  <circle cx="192" cy="220" r="8" fill="#3b82f6" opacity="0.8"/>
+  
+  <!-- Open Book -->
+  <!-- Book left page -->
+  <path d="M 200 320 L 200 420 L 256 420 L 256 320 Z" fill="#ffffff" stroke="#d1d5db" stroke-width="2"/>
+  <!-- Book lines on left page -->
+  <line x1="210" y1="340" x2="246" y2="340" stroke="#e5e7eb" stroke-width="1"/>
+  <line x1="210" y1="360" x2="246" y2="360" stroke="#e5e7eb" stroke-width="1"/>
+  <line x1="210" y1="380" x2="246" y2="380" stroke="#e5e7eb" stroke-width="1"/>
+  
+  <!-- Book right page (golden) -->
+  <path d="M 256 320 L 256 420 L 312 420 L 312 320 Z" fill="url(#bookRightGradient)" stroke="#b45309" stroke-width="2"/>
+  <!-- Book lines on right page -->
+  <line x1="266" y1="340" x2="302" y2="340" stroke="#d97706" stroke-width="1" opacity="0.6"/>
+  <line x1="266" y1="360" x2="302" y2="360" stroke="#d97706" stroke-width="1" opacity="0.6"/>
+  <line x1="266" y1="380" x2="302" y2="380" stroke="#d97706" stroke-width="1" opacity="0.6"/>
+  
+  <!-- Book spine -->
+  <line x1="256" y1="320" x2="256" y2="420" stroke="#92400e" stroke-width="3"/>
+  
+  <!-- Quill Pen -->
+  <!-- Pen body (white) -->
+  <path d="M 250 280 L 250 340 L 262 340 L 262 280 Z" fill="#ffffff" stroke="#d1d5db" stroke-width="2"/>
+  <!-- Pen tip (dark) -->
+  <path d="M 250 340 L 256 350 L 262 340 Z" fill="#374151" stroke="#1f2937" stroke-width="1"/>
+  <!-- Pen feather end -->
+  <path d="M 250 280 Q 248 275 250 270 Q 252 275 254 280" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  <path d="M 254 280 Q 256 275 258 270 Q 260 275 262 280" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  
+  <!-- Additional glow around elements -->
+  <circle cx="256" cy="200" r="185" fill="none" stroke="#60a5fa" stroke-width="2" opacity="0.3"/>
+</svg>

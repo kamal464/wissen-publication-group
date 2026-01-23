@@ -373,7 +373,7 @@ export default function AboutPage() {
                           flex: '0 0 calc(25% - 7.5px)',
                           minWidth: 'calc(25% - 7.5px)',
                           width: 'calc(25% - 7.5px)',
-                          backgroundColor: '#fff',
+                          backgroundColor: '#f8f9fa',
                           borderRadius: '8px',
                           overflow: 'hidden',
                           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
@@ -381,8 +381,7 @@ export default function AboutPage() {
                           cursor: 'pointer',
                           display: 'flex',
                           flexDirection: 'column',
-                          padding: '12px',
-                          backgroundColor: '#f8f9fa'
+                          padding: '12px'
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'scale(1.05)';

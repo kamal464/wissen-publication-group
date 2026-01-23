@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#1e3a8a" stroke="#3b82f6" stroke-width="4"/>
+  
+  <!-- Globe with gradient -->
+  <defs>
+    <linearGradient id="globeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e40af;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e3a8a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="landGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e5e7eb;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Globe base -->
+  <circle cx="256" cy="256" r="200" fill="url(#globeGradient)"/>
+  
+  <!-- Continents (simplified representation) -->
+  <path d="M 180 200 Q 200 180 220 200 Q 240 220 260 200 Q 280 180 300 200 Q 320 220 340 200" 
+        fill="url(#landGradient)" stroke="#ffffff" stroke-width="2"/>
+  <path d="M 200 280 Q 220 260 240 280 Q 260 300 280 280 Q 300 260 320 280" 
+        fill="url(#landGradient)" stroke="#ffffff" stroke-width="2"/>
+  <path d="M 150 240 Q 170 220 190 240 Q 210 260 230 240" 
+        fill="url(#landGradient)" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- Orbital rings around globe -->
+  <ellipse cx="256" cy="256" rx="220" ry="60" fill="none" stroke="#60a5fa" stroke-width="3" opacity="0.8" transform="rotate(-20 256 256)"/>
+  <ellipse cx="256" cy="256" rx="220" ry="50" fill="none" stroke="#60a5fa" stroke-width="3" opacity="0.8" transform="rotate(20 256 256)"/>
+  <ellipse cx="256" cy="256" rx="220" ry="70" fill="none" stroke="#60a5fa" stroke-width="3" opacity="0.8"/>
+  
+  <!-- Small nodes on orbits -->
+  <circle cx="350" cy="240" r="8" fill="#1e40af" opacity="0.9"/>
+  <circle cx="162" cy="272" r="8" fill="#1e40af" opacity="0.9"/>
+  <circle cx="256" cy="180" r="8" fill="#1e40af" opacity="0.9"/>
+  
+  <!-- Glow effect -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#60a5fa" stroke-width="2" opacity="0.3"/>
+</svg>

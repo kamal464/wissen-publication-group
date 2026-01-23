@@ -1,3 +1,5 @@
+@use "sass:list";
+
 // ============================================
 // ABOUT PAGE STYLES
 // ============================================
@@ -178,7 +180,8 @@
         @for $i from 1 through 6 {
           &:nth-child(#{$i}) {
             animation-delay: #{$i * 0.1}s;
-            border-top-color: nth(#6366f1 #4f46e5 #8b5cf6 #ec4899 #10b981 #f59e0b, $i);
+            $colors: #6366f1 #4f46e5 #8b5cf6 #ec4899 #10b981 #f59e0b;
+            border-top-color: list.nth($colors, $i);
           }
         }
 

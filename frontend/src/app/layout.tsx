@@ -22,6 +22,18 @@ export const metadata: Metadata = {
   title: "Wissen Publication Group - Scientific Journals & Research",
   description: "Wissen Publication Group - A leading platform for peer-reviewed scientific journals across multiple disciplines. Access cutting-edge research and scholarly articles.",
   keywords: "scientific journals, academic publishing, research papers, peer review, scholarly articles",
+  icons: {
+    icon: [
+      { url: '/logo-favicon.svg', type: 'image/svg+xml' },
+      { url: '/image.png', sizes: '512x512', type: 'image/png' },
+      { url: '/image.png', sizes: '256x256', type: 'image/png' },
+      { url: '/image.png', sizes: '192x192', type: 'image/png' },
+    ],
+    shortcut: '/logo-favicon.svg',
+    apple: [
+      { url: '/image.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -31,6 +43,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Favicon - using logo as SVG (globe, book, quill) */}
+        <link rel="icon" type="image/svg+xml" href="/logo-favicon.svg" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/image.png" />
+        <link rel="icon" type="image/png" sizes="256x256" href="/image.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/image.png" />
+        <link rel="shortcut icon" type="image/svg+xml" href="/logo-favicon.svg" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/image.png" />
         {/* Meta tag for API URL - provides fallback for client-side injection */}
         {apiUrl && (
           <meta name="api-base-url" content={apiUrl} suppressHydrationWarning />
