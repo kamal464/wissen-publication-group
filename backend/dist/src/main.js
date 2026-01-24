@@ -55,6 +55,35 @@ async function bootstrap() {
         const expressApp = app.getHttpAdapter().getInstance();
         expressApp.set('strict routing', false);
         expressApp.set('case sensitive routing', false);
+        expressApp.use((req, res, next) => {
+            if (req.method === 'OPTIONS') {
+                console.log(`[CORS] 🔥 CAUGHT OPTIONS: ${req.method} ${req.url} from ${req.headers.origin || 'no origin'}`);
+                const allowedOrigins = Array.isArray(app_config_1.config.cors.origin)
+                    ? app_config_1.config.cors.origin
+                    : [app_config_1.config.cors.origin];
+                const origin = req.headers.origin;
+                const isAllowed = !origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*');
+                if (isAllowed) {
+                    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+                    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+                    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
+                    res.setHeader('Access-Control-Allow-Credentials', app_config_1.config.cors.credentials ? 'true' : 'false');
+                    res.setHeader('Access-Control-Max-Age', '86400');
+                    console.log(`[CORS] ✅ SENDING 200 for OPTIONS: ${req.url}`);
+                    res.writeHead(200);
+                    res.end();
+                    return;
+                }
+                else {
+                    console.warn(`[CORS] ⚠️ Blocked OPTIONS from: ${origin}`);
+                    res.writeHead(403);
+                    res.end(JSON.stringify({ error: 'Not allowed by CORS' }));
+                    return;
+                }
+            }
+            next();
+        });
+        console.log('✅ [CORS] OPTIONS handler registered - FIRST middleware');
         const uploadsPath = (0, path_1.join)(process.cwd(), 'uploads');
         const uploadsPathDist = (0, path_1.join)(__dirname, '..', 'uploads');
         console.log(`[Main] Uploads path (cwd): ${uploadsPath}`);

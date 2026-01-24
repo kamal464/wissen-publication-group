@@ -30,6 +30,42 @@ async function bootstrap() {
   expressApp.set('strict routing', false);
   expressApp.set('case sensitive routing', false);
   
+  // CRITICAL: Handle OPTIONS at the VERY FIRST Express middleware
+  // This MUST run before ANY other middleware, including static files
+  // This prevents "Redirect is not allowed for a preflight request" errors
+  expressApp.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+    // Intercept OPTIONS requests immediately
+    if (req.method === 'OPTIONS') {
+      console.log(`[CORS] 🔥 CAUGHT OPTIONS: ${req.method} ${req.url} from ${req.headers.origin || 'no origin'}`);
+      
+      const allowedOrigins = Array.isArray(config.cors.origin) 
+        ? config.cors.origin 
+        : [config.cors.origin];
+      
+      const origin = req.headers.origin as string | undefined;
+      const isAllowed = !origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*');
+      
+      if (isAllowed) {
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
+        res.setHeader('Access-Control-Allow-Credentials', config.cors.credentials ? 'true' : 'false');
+        res.setHeader('Access-Control-Max-Age', '86400');
+        console.log(`[CORS] ✅ SENDING 200 for OPTIONS: ${req.url}`);
+        res.writeHead(200);
+        res.end();
+        return; // CRITICAL: Stop processing here
+      } else {
+        console.warn(`[CORS] ⚠️ Blocked OPTIONS from: ${origin}`);
+        res.writeHead(403);
+        res.end(JSON.stringify({ error: 'Not allowed by CORS' }));
+        return;
+      }
+    }
+    next();
+  });
+  console.log('✅ [CORS] OPTIONS handler registered - FIRST middleware');
+  
   // IMPORTANT: Serve static files BEFORE setting global prefix
   // This ensures /uploads/ routes work without /api prefix
   const uploadsPath = join(process.cwd(), 'uploads');
@@ -96,7 +132,8 @@ async function bootstrap() {
   }
   
   // Enable CORS BEFORE setting global prefix to ensure it applies to all routes
-  // Enable CORS with proper configuration to handle preflight requests
+  // Note: Our custom OPTIONS handler above will catch OPTIONS requests first
+  // This CORS config handles CORS headers for actual requests (GET, POST, etc.)
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
@@ -119,7 +156,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
     exposedHeaders: ['Content-Type', 'Authorization'],
-    preflightContinue: false, // Don't continue to next handler for OPTIONS
+    preflightContinue: false, // Don't continue to next handler for OPTIONS (but our handler catches it first)
     optionsSuccessStatus: 200, // Return 200 for OPTIONS instead of 204
   });
   
@@ -131,6 +168,7 @@ async function bootstrap() {
   
   // Set global prefix for all API routes (this doesn't affect the /uploads route above)
   // IMPORTANT: Do this AFTER CORS to ensure CORS applies to all routes
+  // Our OPTIONS handler at Express level should catch OPTIONS before this causes redirects
   app.setGlobalPrefix('api', {
     exclude: ['health', 'uploads'], // Exclude health and uploads from /api prefix
   });

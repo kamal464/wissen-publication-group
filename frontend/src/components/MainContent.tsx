@@ -201,14 +201,16 @@ export default function MainContent() {
       </section>
 
       {/* Editorial Excellence Section */}
-      <section className="py-4 bg-gray-50">
+      <section className="py-4 bg-gray-50 editorial-excellence-section">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <i className="pi pi-star text-4xl sm:text-5xl text-yellow-500 mb-4"></i>
+          <div className="max-w-4xl mx-auto text-center editorial-excellence-content">
+            <div className="flex justify-center mb-4">
+              <i className="pi pi-star text-4xl sm:text-5xl text-yellow-500"></i>
+            </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-4 text-center">
               Editorial Excellence
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-8 text-center px-4 sm:px-0">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-8 text-center px-4 sm:px-0 max-w-3xl mx-auto">
               Our distinguished editorial board comprises leading experts from prestigious institutions worldwide, 
               ensuring rigorous peer review and maintaining the highest publication standards.
             </p>
@@ -229,6 +231,36 @@ export default function MainContent() {
       <style jsx>{`
         :global(.contact-us-btn .p-button-icon) {
           margin-right: 0.5rem;
+        }
+        
+        :global(.editorial-excellence-section) {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+        }
+        
+        :global(.editorial-excellence-content) {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          width: 100%;
+        }
+        
+        @media (min-width: 1024px) {
+          :global(.editorial-excellence-section .container) {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+          }
+          
+          :global(.editorial-excellence-content) {
+            max-width: 800px;
+            margin: 0 auto;
+          }
         }
       `}</style>
 

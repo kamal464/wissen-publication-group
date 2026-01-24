@@ -482,17 +482,6 @@ export default function InstructionsPage() {
                   <h3 className="text-xl font-semibold text-900 mb-3">Open Access Licenses</h3>
                   <p className="mb-3 line-height-3">All articles published under Creative Commons licenses:</p>
                   <p className="mb-3 line-height-3">Creative Commons Attribution 4.0 International (CC BY 4.0)</p>
-                  <ul className="list-none p-0 m-0 line-height-3 mb-4">
-                    <li className="mb-2">
-                      <strong>CC BY:</strong> Allows distribution and adaptation with attribution
-                    </li>
-                    <li className="mb-2">
-                      <strong>CC BY-NC:</strong> Non-commercial use only
-                    </li>
-                    <li className="mb-2">
-                      <strong>CC BY-NC-ND:</strong> Non-commercial, no derivatives
-                    </li>
-                  </ul>
 
                   <h3 className="text-xl font-semibold text-900 mb-3">Copyright</h3>
                   <ul className="list-none p-0 m-0 line-height-3">
