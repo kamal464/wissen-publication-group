@@ -31,7 +31,9 @@ export default function SearchPage() {
       setError(null);
       try {
         const response = await searchAPI.globalSearch(query.trim());
-        setSearchResults(response.data);
+        // Type assertion: axios wraps response in .data property
+        const searchData = (response as any).data as SearchResult;
+        setSearchResults(searchData);
       } catch (err: any) {
         console.error('Search error:', err);
         setError(err.message || 'Failed to perform search. Please try again.');
