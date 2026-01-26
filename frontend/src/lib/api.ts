@@ -7,6 +7,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 second timeout to prevent hanging requests
 });
 
 // Override request interceptor to set baseURL dynamically
@@ -89,12 +90,34 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor
+// Response interceptor with better error handling
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
+    // Handle network/connection errors (syscall: 'read' errors)
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      console.error('[API] Request timeout:', error.config?.url);
+      return Promise.reject(new Error('Request timeout - server took too long to respond'));
+    }
+    
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+      console.error('[API] Connection error:', error.message);
+      return Promise.reject(new Error('Cannot connect to server - please check your connection'));
+    }
+    
+    if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+      console.error('[API] Network error:', error.message);
+      return Promise.reject(new Error('Network error - please check your internet connection'));
+    }
+    
+    // Handle read errors (syscall: 'read')
+    if (error.message?.includes('syscall') && error.message?.includes('read')) {
+      console.error('[API] Read error:', error.message);
+      return Promise.reject(new Error('Connection interrupted - please try again'));
+    }
+    
     if (error.response?.status === 401) {
       // Handle unauthorized access
       if (typeof window !== 'undefined') {

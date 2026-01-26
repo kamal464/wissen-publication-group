@@ -29,6 +29,41 @@ async function bootstrap() {
   // Disable strict routing and trailing slash redirects that cause 308 errors
   expressApp.set('strict routing', false);
   expressApp.set('case sensitive routing', false);
+
+  // Configure body-parser limits to prevent crashes from large requests
+  // This prevents "request entity too large" and body-parser errors
+  expressApp.use(express.json({ 
+    limit: '10mb',
+    strict: true,
+    type: 'application/json'
+  }));
+  
+  expressApp.use(express.urlencoded({ 
+    limit: '10mb',
+    extended: true,
+    parameterLimit: 1000,
+    type: 'application/x-www-form-urlencoded'
+  }));
+
+  // Add error handler for body-parser errors
+  expressApp.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err instanceof SyntaxError && 'body' in err) {
+      console.error('[Body-Parser] Error parsing request body:', err.message);
+      return res.status(400).json({ 
+        error: 'Invalid request body', 
+        message: 'Request body is too large or malformed',
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined
+      });
+    }
+    if (err.type === 'entity.too.large') {
+      console.error('[Body-Parser] Request entity too large');
+      return res.status(413).json({ 
+        error: 'Request entity too large', 
+        message: 'Request body exceeds 10MB limit' 
+      });
+    }
+    next(err);
+  });
   
   // CRITICAL: Handle OPTIONS at the VERY FIRST Express middleware
   // This MUST run before ANY other middleware, including static files

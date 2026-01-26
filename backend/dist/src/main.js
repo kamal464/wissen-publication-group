@@ -55,6 +55,35 @@ async function bootstrap() {
         const expressApp = app.getHttpAdapter().getInstance();
         expressApp.set('strict routing', false);
         expressApp.set('case sensitive routing', false);
+        expressApp.use(express.json({
+            limit: '10mb',
+            strict: true,
+            type: 'application/json'
+        }));
+        expressApp.use(express.urlencoded({
+            limit: '10mb',
+            extended: true,
+            parameterLimit: 1000,
+            type: 'application/x-www-form-urlencoded'
+        }));
+        expressApp.use((err, req, res, next) => {
+            if (err instanceof SyntaxError && 'body' in err) {
+                console.error('[Body-Parser] Error parsing request body:', err.message);
+                return res.status(400).json({
+                    error: 'Invalid request body',
+                    message: 'Request body is too large or malformed',
+                    details: process.env.NODE_ENV === 'development' ? err.message : undefined
+                });
+            }
+            if (err.type === 'entity.too.large') {
+                console.error('[Body-Parser] Request entity too large');
+                return res.status(413).json({
+                    error: 'Request entity too large',
+                    message: 'Request body exceeds 10MB limit'
+                });
+            }
+            next(err);
+        });
         expressApp.use((req, res, next) => {
             if (req.method === 'OPTIONS') {
                 console.log(`[CORS] 🔥 CAUGHT OPTIONS: ${req.method} ${req.url} from ${req.headers.origin || 'no origin'}`);
