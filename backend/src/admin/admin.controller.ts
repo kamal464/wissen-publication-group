@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, Query, UseInterceptors, UploadedFile, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminService } from './admin.service';
 import { S3Service } from '../aws/s3.service';
@@ -78,7 +78,12 @@ export class AdminController {
     try {
       return await this.adminService.createUser(userData);
     } catch (error: any) {
-      throw new Error(error.message || 'Failed to create user');
+      // Re-throw NestJS exceptions as-is
+      if (error.status && error.message) {
+        throw error;
+      }
+      // Convert other errors to BadRequestException
+      throw new BadRequestException(error.message || 'Failed to create user');
     }
   }
 
@@ -87,7 +92,12 @@ export class AdminController {
     try {
       return await this.adminService.updateUser(id, userData);
     } catch (error: any) {
-      throw new Error(error.message || 'Failed to update user');
+      // Re-throw NestJS exceptions as-is
+      if (error.status && error.message) {
+        throw error;
+      }
+      // Convert other errors to BadRequestException
+      throw new BadRequestException(error.message || 'Failed to update user');
     }
   }
 
@@ -169,7 +179,7 @@ export class AdminController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     if (!file) {
-      throw new Error('No file uploaded');
+      throw new BadRequestException('No file uploaded');
     }
 
     // Upload to S3
@@ -184,7 +194,7 @@ export class AdminController {
     else if (field === 'googleIndexingImage') updateData.googleIndexingImage = fileUrl;
     else if (field === 'editorImage') updateData.editorImage = fileUrl;
     else {
-      throw new Error(`Invalid field: ${field}`);
+      throw new BadRequestException(`Invalid field: ${field}. Allowed fields: bannerImage, flyerImage, flyerPdf, googleIndexingImage, editorImage`);
     }
 
     const updated = await this.adminService.updateJournal(id, updateData);
@@ -211,7 +221,7 @@ export class AdminController {
   @Post('board-members')
   createBoardMember(@Body() memberData: any) {
     if (!memberData.journalId) {
-      throw new Error('Journal ID is required');
+      throw new BadRequestException('Journal ID is required');
     }
     return this.adminService.createBoardMember(memberData.journalId, memberData);
   }
@@ -234,7 +244,7 @@ export class AdminController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     if (!file) {
-      throw new Error('No file uploaded');
+      throw new BadRequestException('No file uploaded');
     }
 
     // Upload to S3 (consistent with journal image uploads)

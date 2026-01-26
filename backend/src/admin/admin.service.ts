@@ -978,7 +978,7 @@ export class AdminService {
       where: { shortcode }
     });
     if (existing) {
-      throw new Error('Shortcode already exists');
+      throw new ConflictException('Shortcode already exists');
     }
 
     // Check if shortcode already exists in Journal table (to prevent duplicate shortcodes)

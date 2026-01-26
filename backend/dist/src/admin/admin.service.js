@@ -884,7 +884,7 @@ let AdminService = class AdminService {
             where: { shortcode }
         });
         if (existing) {
-            throw new Error('Shortcode already exists');
+            throw new common_1.ConflictException('Shortcode already exists');
         }
         const existingJournalByShortcode = await this.prisma.journal.findUnique({
             where: { shortcode }

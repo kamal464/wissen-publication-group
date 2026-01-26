@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   UploadedFile,
   UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ArticlesService } from './articles.service';
@@ -132,7 +133,7 @@ export class ArticlesController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) {
-      throw new Error('No file uploaded');
+      throw new BadRequestException('No file uploaded');
     }
     // Upload to S3
     const uploadResult = await this.s3Service.uploadFile(file, 'articles');
@@ -146,7 +147,7 @@ export class ArticlesController {
     @UploadedFiles() files: Express.Multer.File[],
   ) {
     if (!files || files.length === 0) {
-      throw new Error('No files uploaded');
+      throw new BadRequestException('No files uploaded');
     }
     // Upload to S3
     const uploadPromises = files.map(file => this.s3Service.uploadFile(file, 'articles/images'));

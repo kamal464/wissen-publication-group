@@ -74,14 +74,14 @@ let ArticlesController = class ArticlesController {
     }
     async uploadPdf(id, file) {
         if (!file) {
-            throw new Error('No file uploaded');
+            throw new common_1.BadRequestException('No file uploaded');
         }
         const uploadResult = await this.s3Service.uploadFile(file, 'articles');
         return this.articlesService.update(id, { pdfUrl: uploadResult.url });
     }
     async uploadImages(id, files) {
         if (!files || files.length === 0) {
-            throw new Error('No files uploaded');
+            throw new common_1.BadRequestException('No files uploaded');
         }
         const uploadPromises = files.map(file => this.s3Service.uploadFile(file, 'articles/images'));
         const uploadResults = await Promise.all(uploadPromises);
