@@ -144,6 +144,7 @@
   position: relative;
   z-index: map.get($z-index, sticky);
   overflow: visible;
+  padding-bottom: 10px;
   
   &__container {
     max-width: 1400px;

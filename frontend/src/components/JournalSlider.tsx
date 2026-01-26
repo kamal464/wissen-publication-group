@@ -63,7 +63,7 @@ export default function JournalSlider() {
 
     const updateSliderWidth = () => {
       const viewportWidth = window.innerWidth;
-      const calculatedHeight = Math.min((viewportWidth * 400) / 1520, 400);
+      const calculatedHeight = Math.min((viewportWidth * 430) / 1520, 430);
       
       const elements = {
         slider: document.querySelector('.journal-slider') as HTMLElement,
@@ -313,8 +313,8 @@ export default function JournalSlider() {
           overflow: visible;
           width: 100vw !important;
           max-width: 100vw !important;
-          height: calc(100vw * 400 / 1520);
-          max-height: 450px;
+          height: calc(100vw * 430 / 1520);
+          max-height: 430px;
           background: #f3f4f6;
           margin: 0 !important;
           padding: 0 !important;
