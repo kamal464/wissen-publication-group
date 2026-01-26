@@ -20,7 +20,7 @@ export default function InstructionsPage() {
     },
     {
       status: 'Step 2',
-      title: 'Create Account & Submit',
+      title: 'Submit Manuscript',
       icon: 'pi pi-upload',
       color: '#8b5cf6'
     },
@@ -57,22 +57,80 @@ export default function InstructionsPage() {
       @media (max-width: 768px) {
         .submission-process-section .p-timeline {
           padding-left: 0 !important;
+          position: relative !important;
+        }
+        
+        .submission-process-section .p-timeline::before {
+          display: none !important;
+        }
+        
+        .submission-process-section .p-timeline-event:last-child .p-timeline-event-connector {
+          display: none !important;
+          height: 0 !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+        }
+        
+        .submission-process-section .p-timeline-event:last-child {
+          margin-bottom: 0 !important;
+        }
+        
+        .submission-process-section .p-timeline-event:not(:last-child) .p-timeline-event-connector {
+          height: calc(100% + 1rem) !important;
         }
         
         .submission-process-section .p-timeline-event {
           padding-left: 0 !important;
           padding-right: 0 !important;
           margin-bottom: 1rem !important;
+          position: relative !important;
+          display: flex !important;
+          flex-direction: row !important;
+          align-items: flex-start !important;
+        }
+        
+        .submission-process-section .p-timeline-event-opposite {
+          display: none !important;
         }
         
         .submission-process-section .p-timeline-event-connector {
           left: 1.5rem !important;
+          width: 2px !important;
+          background-color: #e5e7eb !important;
+          margin-left: 0 !important;
+          transform: none !important;
+          position: absolute !important;
+          top: 1rem !important;
+          bottom: auto !important;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+        
+        .submission-process-section .p-timeline-event-marker-container {
+          position: relative !important;
+          left: 0 !important;
+          margin-right: 0 !important;
         }
         
         .submission-process-section .p-timeline-event-marker {
-          left: 0.5rem !important;
-          width: 1rem !important;
-          height: 1rem !important;
+          left: 1.5rem !important;
+          width: 0.75rem !important;
+          height: 0.75rem !important;
+          transform: translateX(-50%) !important;
+          position: absolute !important;
+          z-index: 2 !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          top: 0.5rem !important;
+        }
+        
+        .submission-process-section .p-timeline-event-content {
+          margin-left: 2.75rem !important;
+          width: calc(100% - 2.75rem) !important;
+          padding-left: 0 !important;
+          margin-right: 0 !important;
+          flex: 1 !important;
         }
         
         .submission-step-content {
@@ -80,6 +138,8 @@ export default function InstructionsPage() {
           align-items: flex-start !important;
           gap: 12px !important;
           padding: 12px !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
         }
         
         .submission-step-icon {
@@ -105,6 +165,46 @@ export default function InstructionsPage() {
       }
       
       @media (max-width: 640px) {
+        .submission-process-section .p-timeline::before {
+          display: none !important;
+        }
+        
+        .submission-process-section .p-timeline-event-connector {
+          left: 1.25rem !important;
+          width: 2px !important;
+          background-color: #e5e7eb !important;
+          transform: none !important;
+          position: absolute !important;
+          top: 1rem !important;
+          bottom: auto !important;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+        
+        .submission-process-section .p-timeline-event:last-child .p-timeline-event-connector {
+          display: none !important;
+          height: 0 !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+        }
+        
+        .submission-process-section .p-timeline-event:not(:last-child) .p-timeline-event-connector {
+          height: calc(100% + 1rem) !important;
+        }
+        
+        .submission-process-section .p-timeline-event-marker {
+          left: 1.25rem !important;
+          width: 0.625rem !important;
+          height: 0.625rem !important;
+          transform: translateX(-50%) translateY(0) !important;
+        }
+        
+        .submission-process-section .p-timeline-event-content {
+          margin-left: 2.5rem !important;
+          width: calc(100% - 2.5rem) !important;
+        }
+        
         .submission-step-title {
           font-size: 0.85rem !important;
         }
