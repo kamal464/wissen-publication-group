@@ -59,35 +59,36 @@ export default function InstructionsPage() {
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
-      /* Desktop: Side by side layout */
-      @media (min-width: 1024px) {
-        .submission-process-container {
-          flex-direction: row !important;
-          align-items: flex-start !important;
-        }
-        
-        .submission-tips-sidebar {
-          width: 35% !important;
-          max-width: 400px !important;
-          flex-shrink: 0 !important;
-          order: 1 !important;
-        }
-        
-        .submission-timeline-wrapper {
-          width: 65% !important;
-          flex: 1 !important;
-          order: 2 !important;
-        }
+      /* Default: Desktop side by side layout */
+      .submission-process-container {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 2rem !important;
+      }
+      
+      .submission-tips-sidebar {
+        flex: 0 0 auto !important;
+        min-width: 0 !important;
+        order: 1 !important;
+      }
+      
+      .submission-timeline-wrapper {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        order: 2 !important;
       }
       
       /* Tablet: Vertical layout */
-      @media (min-width: 769px) and (max-width: 1023px) {
+      @media (max-width: 1023px) {
         .submission-process-container {
           flex-direction: column !important;
+          gap: 1.5rem !important;
         }
         
         .submission-tips-sidebar {
           width: 100% !important;
+          max-width: 100% !important;
           order: 1 !important;
         }
         
@@ -339,11 +340,7 @@ export default function InstructionsPage() {
             <h2 className="text-2xl md:text-3xl font-bold text-900 mb-4 md:mb-5 text-center md:text-left">
               Submission Process
             </h2>
-            <div className="submission-process-container" style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1.5rem'
-            }}>
+            <div className="submission-process-container">
               {/* Tips Sidebar - Left on desktop, top on mobile/tablet */}
               <aside className="submission-tips-sidebar" style={{
                 order: 1
