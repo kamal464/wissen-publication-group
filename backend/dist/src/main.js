@@ -68,7 +68,7 @@ async function bootstrap() {
         }));
         expressApp.use((err, req, res, next) => {
             if (err instanceof SyntaxError && 'body' in err) {
-                console.error('[Body-Parser] Error parsing request body:', err.message);
+                console.warn('[Body-Parser] Invalid request body:', req.url, err.message);
                 return res.status(400).json({
                     error: 'Invalid request body',
                     message: 'Request body is too large or malformed',
@@ -76,7 +76,7 @@ async function bootstrap() {
                 });
             }
             if (err.type === 'entity.too.large') {
-                console.error('[Body-Parser] Request entity too large');
+                console.warn('[Body-Parser] Request entity too large:', req.url);
                 return res.status(413).json({
                     error: 'Request entity too large',
                     message: 'Request body exceeds 10MB limit'

@@ -48,7 +48,8 @@ async function bootstrap() {
   // Add error handler for body-parser errors
   expressApp.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (err instanceof SyntaxError && 'body' in err) {
-      console.error('[Body-Parser] Error parsing request body:', err.message);
+      // Log as warn (expected error for malformed requests)
+      console.warn('[Body-Parser] Invalid request body:', req.url, err.message);
       return res.status(400).json({ 
         error: 'Invalid request body', 
         message: 'Request body is too large or malformed',
@@ -56,7 +57,8 @@ async function bootstrap() {
       });
     }
     if (err.type === 'entity.too.large') {
-      console.error('[Body-Parser] Request entity too large');
+      // Log as warn (expected error for large requests)
+      console.warn('[Body-Parser] Request entity too large:', req.url);
       return res.status(413).json({ 
         error: 'Request entity too large', 
         message: 'Request body exceeds 10MB limit' 
