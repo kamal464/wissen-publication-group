@@ -42,9 +42,10 @@ echo "✅ Backend built successfully!"
 cd /var/www/wissen-publication-group/frontend && \
 echo "=== Installing frontend dependencies ===" && \
 npm install --no-audit --no-fund --loglevel=error && \
+echo "✅ Dependencies installed" && \
 echo "" && \
-echo "=== Building frontend ===" && \
-npm run build && \
+echo "=== Building frontend (this may take 1-2 minutes) ===" && \
+NODE_ENV=production npm run build && \
 echo "✅ Frontend built successfully!"
 ```
 
@@ -52,12 +53,27 @@ echo "✅ Frontend built successfully!"
 
 ## 🔄 **STEP 4: Restart Services**
 
+**IMPORTANT: Use `pm2 restart` instead of `pm2 delete` to preserve process state**
+
 ```bash
 cd /var/www/wissen-publication-group && \
 echo "=== Restarting PM2 services ===" && \
-pm2 restart all || (pm2 start /var/www/wissen-publication-group/backend/dist/src/main.js --name wissen-backend --update-env && cd /var/www/wissen-publication-group/frontend && pm2 start npm --name wissen-frontend -- start --update-env) && \
+pm2 restart all 2>/dev/null || \
+(pm2 delete all 2>/dev/null || true && \
+sleep 2 && \
+cd backend && \
+pm2 start dist/src/main.js --name wissen-backend \
+  --max-memory-restart 400M \
+  --update-env && \
+cd ../frontend && \
+pm2 start npm --name wissen-frontend \
+  --max-memory-restart 400M \
+  --update-env \
+  -- start && \
+cd ..) && \
 sleep 5 && \
 pm2 save && \
+pm2 startup && \
 echo "" && \
 echo "=== Reloading Nginx ===" && \
 sudo systemctl reload nginx && \
@@ -94,9 +110,22 @@ npm run build && \
 echo "" && \
 echo "=== STEP 4: Restart Services ===" && \
 cd /var/www/wissen-publication-group && \
-pm2 restart all || (pm2 start /var/www/wissen-publication-group/backend/dist/src/main.js --name wissen-backend --update-env && cd /var/www/wissen-publication-group/frontend && pm2 start npm --name wissen-frontend -- start --update-env) && \
+pm2 restart all 2>/dev/null || \
+(pm2 delete all 2>/dev/null || true && \
+sleep 2 && \
+cd backend && \
+pm2 start dist/src/main.js --name wissen-backend \
+  --max-memory-restart 400M \
+  --update-env && \
+cd ../frontend && \
+pm2 start npm --name wissen-frontend \
+  --max-memory-restart 400M \
+  --update-env \
+  -- start && \
+cd ..) && \
 sleep 5 && \
 pm2 save && \
+pm2 startup && \
 sudo systemctl reload nginx && \
 echo "" && \
 echo "=== STEP 5: Verify ===" && \
@@ -152,11 +181,27 @@ npm install --no-audit --no-fund --loglevel=error
 ### PM2 Process Not Found?
 ```bash
 cd /var/www/wissen-publication-group && \
-pm2 start /var/www/wissen-publication-group/backend/dist/src/main.js --name wissen-backend --update-env && \
-cd /var/www/wissen-publication-group/frontend && \
-pm2 start npm --name wissen-frontend -- start --update-env && \
-cd /var/www/wissen-publication-group && \
-pm2 save
+cd backend && \
+pm2 start dist/src/main.js --name wissen-backend \
+  --max-memory-restart 400M \
+  --update-env && \
+cd ../frontend && \
+pm2 start npm --name wissen-frontend \
+  --max-memory-restart 400M \
+  --update-env \
+  -- start && \
+cd .. && \
+pm2 save && \
+pm2 startup
+```
+
+### Site Down Frequently? Check DIAGNOSE_DOWNTIME.md
+```bash
+# Run comprehensive diagnostic
+cat DIAGNOSE_DOWNTIME.md
+# Or check PM2 restart counts
+pm2 list
+# Look for high numbers in "↺" column = frequent crashes
 ```
 
 ---

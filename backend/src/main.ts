@@ -6,6 +6,33 @@ import { config } from './config/app.config';
 import { AllExceptionsFilter } from './filters/http-exception.filter';
 import * as express from 'express';
 
+// CRITICAL: Register error handlers FIRST before anything else runs
+// This ensures the server NEVER stops unexpectedly
+process.on('uncaughtException', (error: Error) => {
+  console.error('❌ UNCAUGHT EXCEPTION - Logging but NOT exiting:', error.message);
+  console.error('Stack:', error.stack);
+  // Don't exit - let PM2 handle restart if needed
+  // This prevents the server from stopping on unexpected errors
+});
+
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  console.error('❌ UNHANDLED REJECTION - Logging but NOT exiting:', reason);
+  if (reason instanceof Error) {
+    console.error('Stack:', reason.stack);
+  }
+  // Don't exit - let PM2 handle restart if needed
+  // This prevents the server from stopping on unhandled promise rejections
+});
+
+// Handle graceful shutdown signals
+process.on('SIGTERM', () => {
+  console.log('⚠️ SIGTERM received - PM2 will handle graceful shutdown');
+});
+
+process.on('SIGINT', () => {
+  console.log('⚠️ SIGINT received - PM2 will handle graceful shutdown');
+});
+
 async function bootstrap() {
   try {
     console.log('🚀 Starting Wissen Publication Group API...');
@@ -29,6 +56,43 @@ async function bootstrap() {
   // Disable strict routing and trailing slash redirects that cause 308 errors
   expressApp.set('strict routing', false);
   expressApp.set('case sensitive routing', false);
+
+  // Configure body-parser limits to prevent crashes from large requests
+  // This prevents "request entity too large" and body-parser errors
+  expressApp.use(express.json({ 
+    limit: '10mb',
+    strict: true,
+    type: 'application/json'
+  }));
+  
+  expressApp.use(express.urlencoded({ 
+    limit: '10mb',
+    extended: true,
+    parameterLimit: 1000,
+    type: 'application/x-www-form-urlencoded'
+  }));
+
+  // Add error handler for body-parser errors
+  expressApp.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err instanceof SyntaxError && 'body' in err) {
+      // Log as warn (expected error for malformed requests)
+      console.warn('[Body-Parser] Invalid request body:', req.url, err.message);
+      return res.status(400).json({ 
+        error: 'Invalid request body', 
+        message: 'Request body is too large or malformed',
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined
+      });
+    }
+    if (err.type === 'entity.too.large') {
+      // Log as warn (expected error for large requests)
+      console.warn('[Body-Parser] Request entity too large:', req.url);
+      return res.status(413).json({ 
+        error: 'Request entity too large', 
+        message: 'Request body exceeds 10MB limit' 
+      });
+    }
+    next(err);
+  });
   
   // CRITICAL: Handle OPTIONS at the VERY FIRST Express middleware
   // This MUST run before ANY other middleware, including static files
@@ -176,22 +240,40 @@ async function bootstrap() {
     // Use port from config (3001 for local dev, 8080 for Cloud Run)
     const port = Number(process.env.PORT || config.app.port);
     console.log(`🔌 Starting server on port ${port}...`);
-    await app.listen(port, '0.0.0.0'); // Listen on all interfaces for Cloud Run
+    
+    // Add request timeout to prevent hanging requests
+    const server = await app.listen(port, '0.0.0.0'); // Listen on all interfaces for Cloud Run
+    
+    // Set server timeout to prevent hanging connections (30 seconds)
+    server.timeout = 30000;
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
+    
     console.log(`✅ Wissen Publication Group API running on http://0.0.0.0:${port}/api`);
     console.log(`📁 Files available at http://0.0.0.0:${port}/uploads/`);
     console.log(`🌐 Server is ready and listening on port ${port}`);
     console.log(`💚 Health check available at http://0.0.0.0:${port}/health`);
+    console.log(`🛡️ Server timeout: 30s, Keep-alive: 65s (prevents hanging connections)`);
   } catch (error) {
     console.error('❌ Failed to start application:', error);
     if (error instanceof Error) {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
     }
-    process.exit(1);
+    // Don't exit immediately - let PM2 handle restart
+    // Wait a bit to allow PM2 to detect the failure
+    setTimeout(() => {
+      process.exit(1);
+    }, 10000);
   }
 }
 
+
 bootstrap().catch((error) => {
   console.error('❌ Unhandled error during bootstrap:', error);
-  process.exit(1);
+  // Don't exit immediately - let PM2 restart
+  // Wait a bit then exit to allow PM2 to detect and restart
+  setTimeout(() => {
+    process.exit(1);
+  }, 5000);
 });

@@ -16,6 +16,7 @@ const articles_module_1 = require("./articles/articles.module");
 const admin_module_1 = require("./admin/admin.module");
 const files_module_1 = require("./files/files.module");
 const news_module_1 = require("./news/news.module");
+const messages_module_1 = require("./messages/messages.module");
 const aws_module_1 = require("./aws/aws.module");
 let AppModule = class AppModule {
 };
@@ -30,6 +31,7 @@ exports.AppModule = AppModule = __decorate([
             admin_module_1.AdminModule,
             files_module_1.FilesModule,
             news_module_1.NewsModule,
+            messages_module_1.MessagesModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

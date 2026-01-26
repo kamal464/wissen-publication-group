@@ -48,11 +48,27 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
     }
 
-    // Log the full error for debugging
-    this.logger.error(
-      `Exception caught: ${request.method} ${request.url}`,
-      exception instanceof Error ? exception.stack : String(exception),
-    );
+    // Log errors appropriately based on status code
+    // 404 (Not Found) and 401 (Unauthorized) are expected, log as warn
+    // 400 (Bad Request) from body-parser is expected, log as warn
+    // 500+ are real errors, log as error
+    if (status === 404 || status === 401) {
+      // Expected errors - log as warn to reduce noise
+      this.logger.warn(
+        `${request.method} ${request.url} - ${status} ${typeof message === 'string' ? message : (message as any).message || 'Not found'}`,
+      );
+    } else if (status === 400 && request.url.includes('/api/')) {
+      // Bad requests (malformed JSON, etc.) - log as warn
+      this.logger.warn(
+        `${request.method} ${request.url} - ${status} Bad Request`,
+      );
+    } else {
+      // Real errors - log as error with full stack
+      this.logger.error(
+        `Exception caught: ${request.method} ${request.url} - ${status}`,
+        exception instanceof Error ? exception.stack : String(exception),
+      );
+    }
 
     // Return a user-friendly error response with more details
     response.status(status).json({

@@ -223,7 +223,7 @@ let ArticlesService = class ArticlesService {
             }
             catch (error) {
                 console.error('❌ Error uploading file to S3:', error);
-                throw new Error('Failed to upload file to S3');
+                throw new common_1.InternalServerErrorException('Failed to upload file to S3');
             }
         }
         const firstAuthor = authors && authors.length > 0 ? authors[0] : null;

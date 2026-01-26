@@ -62,7 +62,10 @@ let AdminController = class AdminController {
             return await this.adminService.createUser(userData);
         }
         catch (error) {
-            throw new Error(error.message || 'Failed to create user');
+            if (error.status && error.message) {
+                throw error;
+            }
+            throw new common_1.BadRequestException(error.message || 'Failed to create user');
         }
     }
     async updateUser(id, userData) {
@@ -70,7 +73,10 @@ let AdminController = class AdminController {
             return await this.adminService.updateUser(id, userData);
         }
         catch (error) {
-            throw new Error(error.message || 'Failed to update user');
+            if (error.status && error.message) {
+                throw error;
+            }
+            throw new common_1.BadRequestException(error.message || 'Failed to update user');
         }
     }
     deleteUser(id) {
@@ -112,7 +118,7 @@ let AdminController = class AdminController {
     }
     async uploadJournalImage(id, field, file) {
         if (!file) {
-            throw new Error('No file uploaded');
+            throw new common_1.BadRequestException('No file uploaded');
         }
         const uploadResult = await this.s3Service.uploadFile(file, 'journals');
         const fileUrl = uploadResult.url;
@@ -128,7 +134,7 @@ let AdminController = class AdminController {
         else if (field === 'editorImage')
             updateData.editorImage = fileUrl;
         else {
-            throw new Error(`Invalid field: ${field}`);
+            throw new common_1.BadRequestException(`Invalid field: ${field}. Allowed fields: bannerImage, flyerImage, flyerPdf, googleIndexingImage, editorImage`);
         }
         const updated = await this.adminService.updateJournal(id, updateData);
         return {
@@ -147,7 +153,7 @@ let AdminController = class AdminController {
     }
     createBoardMember(memberData) {
         if (!memberData.journalId) {
-            throw new Error('Journal ID is required');
+            throw new common_1.BadRequestException('Journal ID is required');
         }
         return this.adminService.createBoardMember(memberData.journalId, memberData);
     }
@@ -159,7 +165,7 @@ let AdminController = class AdminController {
     }
     async uploadBoardMemberPhoto(id, file) {
         if (!file) {
-            throw new Error('No file uploaded');
+            throw new common_1.BadRequestException('No file uploaded');
         }
         const uploadResult = await this.s3Service.uploadFile(file, 'board-members');
         const fileUrl = uploadResult.url;

@@ -39,6 +39,22 @@ const app_module_1 = require("./app.module");
 const app_config_1 = require("./config/app.config");
 const http_exception_filter_1 = require("./filters/http-exception.filter");
 const express = __importStar(require("express"));
+process.on('uncaughtException', (error) => {
+    console.error('❌ UNCAUGHT EXCEPTION - Logging but NOT exiting:', error.message);
+    console.error('Stack:', error.stack);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ UNHANDLED REJECTION - Logging but NOT exiting:', reason);
+    if (reason instanceof Error) {
+        console.error('Stack:', reason.stack);
+    }
+});
+process.on('SIGTERM', () => {
+    console.log('⚠️ SIGTERM received - PM2 will handle graceful shutdown');
+});
+process.on('SIGINT', () => {
+    console.log('⚠️ SIGINT received - PM2 will handle graceful shutdown');
+});
 async function bootstrap() {
     try {
         console.log('🚀 Starting Wissen Publication Group API...');
@@ -55,6 +71,35 @@ async function bootstrap() {
         const expressApp = app.getHttpAdapter().getInstance();
         expressApp.set('strict routing', false);
         expressApp.set('case sensitive routing', false);
+        expressApp.use(express.json({
+            limit: '10mb',
+            strict: true,
+            type: 'application/json'
+        }));
+        expressApp.use(express.urlencoded({
+            limit: '10mb',
+            extended: true,
+            parameterLimit: 1000,
+            type: 'application/x-www-form-urlencoded'
+        }));
+        expressApp.use((err, req, res, next) => {
+            if (err instanceof SyntaxError && 'body' in err) {
+                console.warn('[Body-Parser] Invalid request body:', req.url, err.message);
+                return res.status(400).json({
+                    error: 'Invalid request body',
+                    message: 'Request body is too large or malformed',
+                    details: process.env.NODE_ENV === 'development' ? err.message : undefined
+                });
+            }
+            if (err.type === 'entity.too.large') {
+                console.warn('[Body-Parser] Request entity too large:', req.url);
+                return res.status(413).json({
+                    error: 'Request entity too large',
+                    message: 'Request body exceeds 10MB limit'
+                });
+            }
+            next(err);
+        });
         expressApp.use((req, res, next) => {
             if (req.method === 'OPTIONS') {
                 console.log(`[CORS] 🔥 CAUGHT OPTIONS: ${req.method} ${req.url} from ${req.headers.origin || 'no origin'}`);
@@ -168,11 +213,15 @@ async function bootstrap() {
         });
         const port = Number(process.env.PORT || app_config_1.config.app.port);
         console.log(`🔌 Starting server on port ${port}...`);
-        await app.listen(port, '0.0.0.0');
+        const server = await app.listen(port, '0.0.0.0');
+        server.timeout = 30000;
+        server.keepAliveTimeout = 65000;
+        server.headersTimeout = 66000;
         console.log(`✅ Wissen Publication Group API running on http://0.0.0.0:${port}/api`);
         console.log(`📁 Files available at http://0.0.0.0:${port}/uploads/`);
         console.log(`🌐 Server is ready and listening on port ${port}`);
         console.log(`💚 Health check available at http://0.0.0.0:${port}/health`);
+        console.log(`🛡️ Server timeout: 30s, Keep-alive: 65s (prevents hanging connections)`);
     }
     catch (error) {
         console.error('❌ Failed to start application:', error);
@@ -180,11 +229,15 @@ async function bootstrap() {
             console.error('Error message:', error.message);
             console.error('Error stack:', error.stack);
         }
-        process.exit(1);
+        setTimeout(() => {
+            process.exit(1);
+        }, 10000);
     }
 }
 bootstrap().catch((error) => {
     console.error('❌ Unhandled error during bootstrap:', error);
-    process.exit(1);
+    setTimeout(() => {
+        process.exit(1);
+    }, 5000);
 });
 //# sourceMappingURL=main.js.map

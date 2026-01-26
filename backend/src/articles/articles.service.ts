@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../aws/s3.service';
 import { CreateArticleDto } from './dto/create-article.dto';
@@ -260,7 +260,7 @@ export class ArticlesService {
         console.log('✅ File uploaded to S3:', pdfUrl);
       } catch (error) {
         console.error('❌ Error uploading file to S3:', error);
-        throw new Error('Failed to upload file to S3');
+        throw new InternalServerErrorException('Failed to upload file to S3');
       }
     }
 
