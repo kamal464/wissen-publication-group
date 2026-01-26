@@ -60,13 +60,6 @@ export default function InstructionsPage() {
     style.id = styleId;
     style.textContent = `
       /* Default: Desktop side by side layout */
-      .submission-process-container {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: flex-start !important;
-        gap: 2rem !important;
-      }
-      
       .submission-tips-sidebar {
         flex: 0 0 auto !important;
         min-width: 0 !important;
