@@ -92,6 +92,9 @@ let ArticlesController = class ArticlesController {
     remove(id) {
         return this.articlesService.remove(id);
     }
+    async globalSearch(query) {
+        return this.articlesService.globalSearch(query);
+    }
 };
 exports.ArticlesController = ArticlesController;
 __decorate([
@@ -178,6 +181,13 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], ArticlesController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Get)('search/global'),
+    __param(0, (0, common_1.Query)('query')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ArticlesController.prototype, "globalSearch", null);
 exports.ArticlesController = ArticlesController = __decorate([
     (0, common_1.Controller)('articles'),
     __metadata("design:paramtypes", [articles_service_1.ArticlesService,

@@ -261,6 +261,11 @@ export const adminAPI = {
   deleteNews: (id: number) => api.delete(`/news/${id}`),
 };
 
+// Public Search API (no authentication required)
+export const searchAPI = {
+  globalSearch: (query: string) => api.get('/articles/search/global', { params: { query } }),
+};
+
 // Journal Management API
 export const journalAPI = {
   // Meta Information

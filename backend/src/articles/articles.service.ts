@@ -317,4 +317,88 @@ export class ArticlesService {
       manuscriptId: article.id,
     };
   }
+
+  async globalSearch(query: string) {
+    if (!query || query.trim().length === 0) {
+      return {
+        articles: [],
+        journals: [],
+        total: 0,
+      };
+    }
+
+    const searchTerm = query.trim();
+
+    // Search articles (only published ones for public search)
+    const articles = await this.prisma.article.findMany({
+      where: {
+        status: 'PUBLISHED',
+        OR: [
+          { title: { contains: searchTerm, mode: 'insensitive' } },
+          { abstract: { contains: searchTerm, mode: 'insensitive' } },
+          { keywords: { contains: searchTerm, mode: 'insensitive' } },
+          {
+            authors: {
+              some: {
+                name: { contains: searchTerm, mode: 'insensitive' },
+              },
+            },
+          },
+        ],
+      },
+      include: {
+        authors: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            affiliation: true,
+          },
+        },
+        journal: {
+          select: {
+            id: true,
+            title: true,
+            issn: true,
+            shortcode: true,
+          },
+        },
+      },
+      orderBy: {
+        publishedAt: 'desc',
+      },
+      take: 20, // Limit results for performance
+    });
+
+    // Search journals
+    const journals = await this.prisma.journal.findMany({
+      where: {
+        OR: [
+          { title: { contains: searchTerm, mode: 'insensitive' } },
+          { description: { contains: searchTerm, mode: 'insensitive' } },
+          { issn: { contains: searchTerm, mode: 'insensitive' } },
+          { shortcode: { contains: searchTerm, mode: 'insensitive' } },
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        issn: true,
+        shortcode: true,
+        publisher: true,
+        bannerImage: true,
+      },
+      orderBy: {
+        title: 'asc',
+      },
+      take: 10, // Limit results for performance
+    });
+
+    return {
+      articles,
+      journals,
+      total: articles.length + journals.length,
+    };
+  }
 }

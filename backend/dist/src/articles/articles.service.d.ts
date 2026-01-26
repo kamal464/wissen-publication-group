@@ -484,4 +484,70 @@ export declare class ArticlesService {
         };
         manuscriptId: number;
     }>;
+    globalSearch(query: string): Promise<{
+        articles: ({
+            journal: {
+                id: number;
+                title: string;
+                issn: string | null;
+                shortcode: string | null;
+            };
+            authors: {
+                id: number;
+                name: string;
+                email: string;
+                affiliation: string | null;
+            }[];
+        } & {
+            id: number;
+            title: string;
+            publishedAt: Date | null;
+            doi: string | null;
+            abstract: string;
+            journalId: number;
+            status: string;
+            pdfUrl: string | null;
+            keywords: string | null;
+            wordUrl: string | null;
+            articleType: string | null;
+            submittedAt: Date;
+            submitterName: string | null;
+            submitterEmail: string | null;
+            submitterAddress: string | null;
+            submitterCountry: string | null;
+            volumeNo: string | null;
+            issueNo: string | null;
+            issueMonth: string | null;
+            year: string | null;
+            specialIssue: string | null;
+            firstPageNumber: string | null;
+            lastPageNumber: string | null;
+            correspondingAuthorDetails: string | null;
+            citeAs: string | null;
+            country: string | null;
+            receivedAt: Date | null;
+            acceptedAt: Date | null;
+            fulltextImages: string | null;
+            heading1Title: string | null;
+            heading1Content: string | null;
+            heading2Title: string | null;
+            heading2Content: string | null;
+            heading3Title: string | null;
+            heading3Content: string | null;
+            heading4Title: string | null;
+            heading4Content: string | null;
+            heading5Title: string | null;
+            heading5Content: string | null;
+        })[];
+        journals: {
+            id: number;
+            title: string;
+            issn: string | null;
+            shortcode: string | null;
+            description: string;
+            publisher: string | null;
+            bannerImage: string | null;
+        }[];
+        total: number;
+    }>;
 }

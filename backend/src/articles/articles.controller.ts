@@ -161,4 +161,9 @@ export class ArticlesController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.articlesService.remove(id);
   }
+
+  @Get('search/global')
+  async globalSearch(@Query('query') query: string) {
+    return this.articlesService.globalSearch(query);
+  }
 }

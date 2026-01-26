@@ -393,6 +393,130 @@
       font-size: 1rem;
     }
   }
+
+  &__search-spinner {
+    color: $primary-blue;
+    font-size: 1.1rem;
+    animation: spin 1s linear infinite;
+  }
+
+  &__search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: neutral(white);
+    border-radius: map.get($border-radius, lg);
+    box-shadow: get-shadow(lg);
+    margin-top: get-spacing(2);
+    max-height: 500px;
+    overflow-y: auto;
+    z-index: map.get($z-index, dropdown);
+  }
+
+  &__search-suggestions-section {
+    padding: get-spacing(2) 0;
+    border-bottom: 1px solid neutral(gray-200);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__search-suggestions-header {
+    display: flex;
+    align-items: center;
+    gap: get-spacing(2);
+    padding: get-spacing(2) get-spacing(4);
+    font-size: get-font-size(sm);
+    font-weight: map.get($font-weight, semibold);
+    color: neutral(gray-600);
+    background: neutral(gray-50);
+
+    i {
+      color: $primary-blue;
+    }
+  }
+
+  &__search-suggestion-item {
+    display: flex;
+    align-items: flex-start;
+    gap: get-spacing(3);
+    padding: get-spacing(3) get-spacing(4);
+    text-decoration: none;
+    color: neutral(gray-700);
+    transition: background map.get($transitions, fast);
+    border-bottom: 1px solid neutral(gray-100);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background: neutral(gray-50);
+      color: $primary-blue;
+    }
+
+    &--empty {
+      justify-content: center;
+      color: neutral(gray-500);
+      padding: get-spacing(4);
+      text-align: center;
+
+      i {
+        font-size: 1.5rem;
+        margin-bottom: get-spacing(2);
+      }
+    }
+
+    i {
+      color: $primary-blue;
+      font-size: 1.1rem;
+      margin-top: get-spacing(1);
+      flex-shrink: 0;
+    }
+  }
+
+  &__search-suggestion-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__search-suggestion-title {
+    font-size: get-font-size(base);
+    font-weight: map.get($font-weight, semibold);
+    color: neutral(gray-900);
+    margin: 0 0 get-spacing(1) 0;
+    line-height: 1.4;
+  }
+
+  &__search-suggestion-desc {
+    font-size: get-font-size(sm);
+    color: neutral(gray-600);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  &__search-suggestions-footer {
+    padding: get-spacing(3) get-spacing(4);
+    border-top: 2px solid neutral(gray-200);
+    background: neutral(gray-50);
+  }
+
+  &__search-view-all {
+    @include button-primary;
+    width: 100%;
+    padding: get-spacing(2.5) get-spacing(4);
+    font-size: get-font-size(sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: get-spacing(2);
+
+    i {
+      font-size: 0.875rem;
+    }
+  }
   
   // Mobile menu button
   &__mobile-btn {
