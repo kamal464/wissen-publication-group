@@ -62,6 +62,7 @@ export declare class AdminController {
                 name: string;
                 email: string;
                 affiliation: string | null;
+                affiliationNumber: number | null;
             }[];
         } & {
             id: number;
@@ -85,6 +86,10 @@ export declare class AdminController {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
+            issueId: number | null;
+            showInInpressCards: boolean;
+            inPressMonth: string | null;
+            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -103,6 +108,7 @@ export declare class AdminController {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
     }>;
     getSearchAnalytics(): Promise<{
@@ -176,6 +182,7 @@ export declare class AdminController {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -199,6 +206,10 @@ export declare class AdminController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -217,6 +228,7 @@ export declare class AdminController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     createJournal(journalData: any): Promise<{
         id: number;
@@ -404,6 +416,7 @@ export declare class AdminController {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -427,6 +440,10 @@ export declare class AdminController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -445,6 +462,7 @@ export declare class AdminController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     })[]>;
     getSubmission(id: number): Promise<({
         journal: {
@@ -507,6 +525,7 @@ export declare class AdminController {
             name: string;
             email: string;
             affiliation: string | null;
+            affiliationNumber: number | null;
         }[];
     } & {
         id: number;
@@ -530,6 +549,10 @@ export declare class AdminController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -548,6 +571,7 @@ export declare class AdminController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }) | null>;
     getJournalShortcodes(): Promise<{
         id: number;
@@ -648,6 +672,10 @@ export declare class AdminController {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
+            issueId: number | null;
+            showInInpressCards: boolean;
+            inPressMonth: string | null;
+            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -666,6 +694,7 @@ export declare class AdminController {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
         journals: {
             id: number;

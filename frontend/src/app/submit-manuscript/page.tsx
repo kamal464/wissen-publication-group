@@ -595,7 +595,7 @@ export default function SubmitManuscriptPage() {
                   <i className="pi pi-check-circle"></i>
                   <div style={{ marginLeft: '1.5rem' }}>
                     <strong>Manuscript Format</strong>
-                    <p>Submit your manuscript in PDF format, properly formatted with clear headings and references.</p>
+                    <p>submit your manuscript in PDF or Word format, properly formatted with clear headings and references.</p>
                   </div>
                 </div>
                 
