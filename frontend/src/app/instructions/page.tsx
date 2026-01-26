@@ -268,6 +268,27 @@ export default function InstructionsPage() {
           height: 2rem !important;
           min-width: 2rem !important;
         }
+        
+        .submission-step-title-text {
+          font-size: 1rem !important;
+        }
+        
+        .submission-step-tip-text {
+          font-size: 0.875rem !important;
+          line-height: 1.4 !important;
+        }
+      }
+      
+      /* Tablet responsive styles */
+      @media (max-width: 1023px) and (min-width: 641px) {
+        .submission-step-title-text {
+          font-size: 1.125rem !important;
+        }
+        
+        .submission-step-tip-text {
+          font-size: 0.9375rem !important;
+          line-height: 1.5 !important;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -378,7 +399,7 @@ export default function InstructionsPage() {
                               }}>
                                 {step.status}
                               </div>
-                              <div className="text-base font-semibold text-900 mb-2" style={{
+                              <div className="text-base font-semibold text-900 mb-2 submission-step-title-text" style={{
                                 fontSize: '1.25rem',
                                 fontWeight: '600',
                                 marginBottom: '0.5rem',
@@ -386,10 +407,10 @@ export default function InstructionsPage() {
                               }}>
                                 {step.title}
                               </div>
-                              <div className="text-sm text-600 line-height-3" style={{
+                              <div className="text-sm text-600 line-height-3 submission-step-tip-text" style={{
                                 fontSize: '1rem',
                                 color: '#6b7280',
-                                lineHeight: '0.5'
+                                lineHeight: '0.75'
                               }}>
                                 {step.tip}
                               </div>
