@@ -74,16 +74,10 @@ sleep 2 && \
 cd backend && \
 pm2 start dist/src/main.js --name wissen-backend \
   --max-memory-restart 400M \
-  --min-uptime 10000 \
-  --max-restarts 10 \
-  --exp-backoff-restart-delay=100 \
   --update-env && \
 cd ../frontend && \
 pm2 start npm --name wissen-frontend \
   --max-memory-restart 400M \
-  --min-uptime 10000 \
-  --max-restarts 10 \
-  --exp-backoff-restart-delay=100 \
   --update-env \
   -- start && \
 cd ..) && \

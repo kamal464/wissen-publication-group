@@ -78,14 +78,12 @@ pm2 delete all
 cd /var/www/wissen-publication-group/backend && \
 pm2 start dist/src/main.js --name wissen-backend \
   --max-memory-restart 500M \
-  --exp-backoff-restart-delay=100 \
   --update-env \
   --instances 1
 
 cd /var/www/wissen-publication-group/frontend && \
 pm2 start npm --name wissen-frontend \
   --max-memory-restart 500M \
-  --exp-backoff-restart-delay=100 \
   --update-env \
   -- start
 
@@ -339,17 +337,11 @@ pm2 delete all
 cd /var/www/wissen-publication-group/backend && \
 pm2 start dist/src/main.js --name wissen-backend \
   --max-memory-restart 400M \
-  --min-uptime 10000 \
-  --max-restarts 10 \
-  --exp-backoff-restart-delay=100 \
   --update-env
 
 cd /var/www/wissen-publication-group/frontend && \
 pm2 start npm --name wissen-frontend \
   --max-memory-restart 400M \
-  --min-uptime 10000 \
-  --max-restarts 10 \
-  --exp-backoff-restart-delay=100 \
   --update-env \
   -- start
 
