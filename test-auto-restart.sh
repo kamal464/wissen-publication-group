@@ -17,8 +17,13 @@ echo "1.1 PM2 Status:"
 pm2 list
 echo ""
 
-BACKEND_PID=$(pm2 list | grep wissen-backend | awk '{print $6}')
+BACKEND_PID=$(pm2 list | grep wissen-backend | grep -v "name\|──" | awk '{print $6}' | head -1)
 echo "1.2 Backend PID: $BACKEND_PID"
+if [ -z "$BACKEND_PID" ] || [ "$BACKEND_PID" = "default" ] || [ "$BACKEND_PID" = "pid" ]; then
+  # Try alternative method using pm2 jlist
+  BACKEND_PID=$(pm2 jlist | grep -o '"pid":[0-9]*' | head -1 | cut -d: -f2)
+  echo "   (Using alternative method: $BACKEND_PID)"
+fi
 echo ""
 
 echo "1.3 Backend Health:"
@@ -47,7 +52,10 @@ echo "2.3 Checking if backend restarted:"
 pm2 list | grep wissen-backend
 echo ""
 
-NEW_PID=$(pm2 list | grep wissen-backend | awk '{print $6}')
+NEW_PID=$(pm2 list | grep wissen-backend | grep -v "name\|──" | awk '{print $6}' | head -1)
+if [ -z "$NEW_PID" ] || [ "$NEW_PID" = "default" ] || [ "$NEW_PID" = "pid" ]; then
+  NEW_PID=$(pm2 jlist | grep -o '"pid":[0-9]*' | head -1 | cut -d: -f2)
+fi
 echo "2.4 New Backend PID: $NEW_PID"
 if [ "$NEW_PID" != "$BACKEND_PID" ] && [ "$NEW_PID" != "0" ]; then
   echo "✅ Backend restarted with new PID"
@@ -69,7 +77,7 @@ fi
 echo ""
 
 echo "2.6 Restart count:"
-pm2 list | grep wissen-backend | awk '{print "Restarts: " $8}'
+pm2 list | grep wissen-backend | grep -v "name\|──" | awk '{print "Restarts: " $8}' | head -1
 echo ""
 
 # Test 2: Stress test (multiple kills)
@@ -77,23 +85,30 @@ echo "==========================================="
 echo "3. TEST: Stress Test (Multiple Restarts)"
 echo "==========================================="
 echo ""
-INITIAL_RESTARTS=$(pm2 list | grep wissen-backend | awk '{print $8}')
+INITIAL_RESTARTS=$(pm2 list | grep wissen-backend | grep -v "name\|──" | awk '{print $8}' | head -1)
 echo "3.1 Initial restart count: $INITIAL_RESTARTS"
 echo ""
 
 echo "3.2 Killing backend 3 times (PM2 should restart each time):"
 for i in {1..3}; do
   echo "  Kill attempt $i..."
-  CURRENT_PID=$(pm2 list | grep wissen-backend | awk '{print $6}')
-  kill -9 $CURRENT_PID 2>/dev/null
-  sleep 3
-  STATUS=$(pm2 list | grep wissen-backend | awk '{print $9}')
-  RESTARTS=$(pm2 list | grep wissen-backend | awk '{print $8}')
-  echo "  Status: $STATUS, Restarts: $RESTARTS"
+  CURRENT_PID=$(pm2 list | grep wissen-backend | grep -v "name\|──" | awk '{print $6}' | head -1)
+  if [ -z "$CURRENT_PID" ] || [ "$CURRENT_PID" = "default" ] || [ "$CURRENT_PID" = "pid" ]; then
+    CURRENT_PID=$(pm2 jlist | grep -o '"pid":[0-9]*' | head -1 | cut -d: -f2)
+  fi
+  if [ -n "$CURRENT_PID" ] && [ "$CURRENT_PID" != "0" ]; then
+    kill -9 $CURRENT_PID 2>/dev/null
+    sleep 3
+    STATUS=$(pm2 list | grep wissen-backend | grep -v "name\|──" | awk '{print $9}' | head -1)
+    RESTARTS=$(pm2 list | grep wissen-backend | grep -v "name\|──" | awk '{print $8}' | head -1)
+    echo "  Status: $STATUS, Restarts: $RESTARTS"
+  else
+    echo "  ⚠️ Could not get PID, skipping kill"
+  fi
 done
 echo ""
 
-FINAL_RESTARTS=$(pm2 list | grep wissen-backend | awk '{print $8}')
+FINAL_RESTARTS=$(pm2 list | grep wissen-backend | grep -v "name\|──" | awk '{print $8}' | head -1)
 echo "3.3 Final restart count: $FINAL_RESTARTS"
 RESTART_INCREASE=$((FINAL_RESTARTS - INITIAL_RESTARTS))
 if [ "$RESTART_INCREASE" -ge 3 ]; then
@@ -116,7 +131,7 @@ echo ""
 
 echo "4.2 Backend should still be online:"
 sleep 2
-pm2 list | grep wissen-backend | awk '{print "Status: " $9}'
+pm2 list | grep wissen-backend | grep -v "name\|──" | awk '{print "Status: " $9}' | head -1
 curl -s http://localhost:3001/health && echo ""
 echo ""
 
