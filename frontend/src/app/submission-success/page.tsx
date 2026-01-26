@@ -12,7 +12,7 @@ function SubmissionSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [manuscriptData, setManuscriptData] = useState<any>(null);
-  const [countdown, setCountdown] = useState(250);
+  const [countdown, setCountdown] = useState(10);
 
   useEffect(() => {
     // Get manuscript data from URL params
@@ -35,6 +35,8 @@ function SubmissionSuccessContent() {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
+          // Redirect to homepage when countdown reaches 0
+          router.push('/');
           return 0;
         }
         return prev - 1;
@@ -47,7 +49,7 @@ function SubmissionSuccessContent() {
     return () => {
       clearInterval(timer);
     };
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const createConfetti = () => {
     const duration = 3000;
