@@ -542,6 +542,14 @@
     max-width: 100% !important;
     flex: 1 1 auto !important;
     
+    // Desktop: ensure proper padding to prevent button overlap
+    @media (min-width: 1025px) {
+      padding: 1.25rem 1.5rem !important;
+      padding-right: 1.5rem !important;
+      box-sizing: border-box !important;
+      overflow-x: hidden !important;
+    }
+    
     // Tablet: adjust padding
     @media (min-width: 769px) and (max-width: 1024px) {
       padding: 1rem 1.2rem;
@@ -561,6 +569,11 @@
     // Grid view - more compact padding
     .journal-card--grid & {
       padding: 1rem 1rem;
+      
+      @media (min-width: 1025px) {
+        padding: 1rem 1.2rem;
+        padding-right: 1rem;
+      }
       
       @media (min-width: 769px) and (max-width: 1024px) {
         padding: 0.875rem 1rem;
@@ -913,36 +926,48 @@
   &__actions {
     display: flex !important;
     gap: 0.875rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     width: 100%;
     max-width: 100%;
     justify-content: flex-start;
-    align-items: center;
+    align-items: stretch;
     visibility: visible !important;
     opacity: 1 !important;
     box-sizing: border-box;
     overflow: hidden;
     padding: 0;
     margin: 0;
+    flex-direction: row !important;
 
     // Grid view - more compact spacing
     .journal-card--grid & {
       gap: 0.625rem;
     }
     
-    // Tablet: make buttons flexible, allow wrapping
+    // Desktop: ensure buttons don't overflow
+    @media (min-width: 1025px) {
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      gap: 0.875rem !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow: hidden !important;
+    }
+    
+    // Tablet: buttons stacked vertically
     @media (min-width: 769px) and (max-width: 1024px) {
-      flex-wrap: wrap !important;
+      flex-direction: column !important;
+      flex-wrap: nowrap !important;
       gap: 0.75rem !important;
       width: 100% !important;
       max-width: 100% !important;
       align-items: stretch !important;
     }
     
-    // Mobile: stack buttons vertically, full width
+    // Mobile: buttons stacked vertically, smaller
     @media (max-width: 768px) {
       flex-direction: column !important;
-      gap: 0.75rem !important;
+      gap: 0.5rem !important;
       width: 100% !important;
       max-width: 100% !important;
       align-items: stretch !important;
@@ -967,7 +992,7 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: none;
     cursor: pointer;
-    white-space: normal !important;
+    white-space: nowrap;
     min-width: 90px;
     max-width: 100%;
     box-sizing: border-box;
@@ -980,28 +1005,42 @@
     overflow-wrap: break-word !important;
     text-align: center;
 
-    // Tablet: make buttons flexible
+    // Desktop: buttons side by side, prevent overlap
+    @media (min-width: 1025px) {
+      flex: 0 1 auto !important;
+      min-width: 0 !important;
+      max-width: calc(50% - 0.4375rem) !important;
+      white-space: nowrap;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
+    }
+
+    // Tablet: buttons stacked vertically, full width
     @media (min-width: 769px) and (max-width: 1024px) {
-      flex: 1 1 auto !important;
+      flex: 1 1 100% !important;
       min-width: 0 !important;
       max-width: 100% !important;
+      width: 100% !important;
       white-space: normal !important;
       word-wrap: break-word !important;
       overflow-wrap: break-word !important;
-      padding: 0.7rem 0.85rem !important;
-      font-size: 0.85rem !important;
+      padding: 0.6rem 0.8rem !important;
+      font-size: 0.8rem !important;
+      gap: 0.4rem;
     }
 
-    // Mobile: full width buttons, touch-friendly
+    // Mobile: buttons stacked vertically, small with reduced padding
     @media (max-width: 768px) {
-      width: 100% !important;
+      flex: 1 1 100% !important;
       min-width: 0 !important;
       max-width: 100% !important;
-      flex: 1 1 100% !important;
-      padding: 0.875rem 0.75rem !important;
-      font-size: 0.875rem !important;
-      gap: 0.5rem;
-      min-height: 44px !important;
+      width: 100% !important;
+      padding: 0.5rem 0.6rem !important;
+      font-size: 0.75rem !important;
+      gap: 0.35rem;
+      min-height: 36px !important;
       white-space: normal !important;
       word-wrap: break-word !important;
       overflow-wrap: break-word !important;
@@ -1015,26 +1054,42 @@
       font-size: 0.8rem;
       min-width: 80px;
       gap: 0.375rem;
-      white-space: normal !important;
+      white-space: nowrap;
       
-      @media (min-width: 769px) and (max-width: 1024px) {
-        flex: 1 1 auto !important;
+      // Desktop: prevent overlap
+      @media (min-width: 1025px) {
+        flex: 0 1 auto !important;
         min-width: 0 !important;
-        max-width: 100% !important;
-        padding: 0.65rem 0.75rem !important;
-        font-size: 0.8rem !important;
+        max-width: calc(50% - 0.3125rem) !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        box-sizing: border-box !important;
       }
       
-      @media (max-width: 768px) {
-        width: 100% !important;
+      // Tablet: stacked vertically
+      @media (min-width: 769px) and (max-width: 1024px) {
+        flex: 1 1 100% !important;
         min-width: 0 !important;
         max-width: 100% !important;
+        width: 100% !important;
+        padding: 0.55rem 0.7rem !important;
+        font-size: 0.75rem !important;
+        white-space: normal !important;
+      }
+      
+      // Mobile: stacked vertically, small
+      @media (max-width: 768px) {
         flex: 1 1 100% !important;
-        padding: 0.875rem 0.75rem !important;
-        font-size: 0.875rem !important;
-        min-height: 44px !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0.45rem 0.55rem !important;
+        font-size: 0.7rem !important;
+        min-height: 34px !important;
         overflow: hidden !important;
         margin: 0 !important;
+        white-space: normal !important;
       }
     }
     
@@ -1046,6 +1101,7 @@
       text-align: center;
       flex: 0 1 auto;
       max-width: 100%;
+      overflow: hidden !important;
     }
     
     &--submit {
@@ -1291,7 +1347,43 @@
   }
 }
 
-// Global tablet and mobile fix for journal card buttons to prevent overflow
+// Global desktop fix - prevent button overlap
+@media (min-width: 1025px) {
+  .journal-card {
+    &__content {
+      padding-right: 1.5rem !important;
+      box-sizing: border-box !important;
+      overflow-x: hidden !important;
+    }
+    
+    &__actions {
+      padding-right: 0 !important;
+      margin-right: 0 !important;
+      box-sizing: border-box !important;
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    
+    &__action-btn {
+      box-sizing: border-box !important;
+      max-width: calc(50% - 0.4375rem) !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      
+      .journal-card--grid & {
+        max-width: calc(50% - 0.3125rem) !important;
+      }
+      
+      span {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+      }
+    }
+  }
+}
+
+// Global tablet fix - buttons stacked vertically
 @media (min-width: 769px) and (max-width: 1024px) {
   .journal-card {
     &__footer {
@@ -1306,11 +1398,13 @@
       max-width: 100% !important;
       min-width: 0 !important;
       overflow: hidden !important;
-      flex-wrap: wrap !important;
+      flex-direction: column !important;
+      flex-wrap: nowrap !important;
     }
     
     &__action-btn {
-      flex: 1 1 auto !important;
+      flex: 1 1 100% !important;
+      width: 100% !important;
       min-width: 0 !important;
       max-width: 100% !important;
       white-space: normal !important;
@@ -1341,7 +1435,7 @@
   }
 }
 
-// Global mobile fix for journal card buttons to prevent overflow
+// Global mobile fix - buttons stacked vertically, small with reduced padding
 @media (max-width: 768px) {
   .journal-card {
     &__footer {
@@ -1364,18 +1458,21 @@
       margin: 0 !important;
       flex-direction: column !important;
       gap: 0.75rem !important;
+      flex-wrap: nowrap !important;
     }
     
     &__action-btn {
-      width: 100% !important;
-      max-width: 100% !important;
-      min-width: 0 !important;
       flex: 1 1 100% !important;
-      padding: 0.875rem 0.75rem !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      padding: 0.5rem 0.6rem !important;
+      font-size: 0.75rem !important;
       box-sizing: border-box !important;
       overflow: hidden !important;
       margin: 0 !important;
       white-space: normal !important;
+      min-height: 36px !important;
       
       span {
         max-width: 100% !important;
@@ -1383,6 +1480,7 @@
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
         white-space: normal !important;
+        font-size: inherit !important;
       }
     }
     
