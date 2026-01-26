@@ -6,6 +6,33 @@ import { config } from './config/app.config';
 import { AllExceptionsFilter } from './filters/http-exception.filter';
 import * as express from 'express';
 
+// CRITICAL: Register error handlers FIRST before anything else runs
+// This ensures the server NEVER stops unexpectedly
+process.on('uncaughtException', (error: Error) => {
+  console.error('❌ UNCAUGHT EXCEPTION - Logging but NOT exiting:', error.message);
+  console.error('Stack:', error.stack);
+  // Don't exit - let PM2 handle restart if needed
+  // This prevents the server from stopping on unexpected errors
+});
+
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  console.error('❌ UNHANDLED REJECTION - Logging but NOT exiting:', reason);
+  if (reason instanceof Error) {
+    console.error('Stack:', reason.stack);
+  }
+  // Don't exit - let PM2 handle restart if needed
+  // This prevents the server from stopping on unhandled promise rejections
+});
+
+// Handle graceful shutdown signals
+process.on('SIGTERM', () => {
+  console.log('⚠️ SIGTERM received - PM2 will handle graceful shutdown');
+});
+
+process.on('SIGINT', () => {
+  console.log('⚠️ SIGINT received - PM2 will handle graceful shutdown');
+});
+
 async function bootstrap() {
   try {
     console.log('🚀 Starting Wissen Publication Group API...');
@@ -213,22 +240,40 @@ async function bootstrap() {
     // Use port from config (3001 for local dev, 8080 for Cloud Run)
     const port = Number(process.env.PORT || config.app.port);
     console.log(`🔌 Starting server on port ${port}...`);
-    await app.listen(port, '0.0.0.0'); // Listen on all interfaces for Cloud Run
+    
+    // Add request timeout to prevent hanging requests
+    const server = await app.listen(port, '0.0.0.0'); // Listen on all interfaces for Cloud Run
+    
+    // Set server timeout to prevent hanging connections (30 seconds)
+    server.timeout = 30000;
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
+    
     console.log(`✅ Wissen Publication Group API running on http://0.0.0.0:${port}/api`);
     console.log(`📁 Files available at http://0.0.0.0:${port}/uploads/`);
     console.log(`🌐 Server is ready and listening on port ${port}`);
     console.log(`💚 Health check available at http://0.0.0.0:${port}/health`);
+    console.log(`🛡️ Server timeout: 30s, Keep-alive: 65s (prevents hanging connections)`);
   } catch (error) {
     console.error('❌ Failed to start application:', error);
     if (error instanceof Error) {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
     }
-    process.exit(1);
+    // Don't exit immediately - let PM2 handle restart
+    // Wait a bit to allow PM2 to detect the failure
+    setTimeout(() => {
+      process.exit(1);
+    }, 10000);
   }
 }
 
+
 bootstrap().catch((error) => {
   console.error('❌ Unhandled error during bootstrap:', error);
-  process.exit(1);
+  // Don't exit immediately - let PM2 restart
+  // Wait a bit then exit to allow PM2 to detect and restart
+  setTimeout(() => {
+    process.exit(1);
+  }, 5000);
 });
