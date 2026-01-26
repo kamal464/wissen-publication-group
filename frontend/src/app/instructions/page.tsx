@@ -17,11 +17,11 @@ export default function InstructionsPage() {
       title: 'Prepare Your Manuscript',
       icon: 'pi pi-file-edit',
       color: '#6366f1',
-      tip: 'Follow journal formatting strictly; use Word/LaTeX template'
+      tip: 'Follow journal formatting strictly; use Word/PDF template'
     },
     {
       status: 'Step 2',
-      title: 'Create Account & Submit',
+      title: 'Submit Manuscript',
       icon: 'pi pi-upload',
       color: '#8b5cf6',
       tip: 'Keep all documents ready; have ORCID ID, researcher ID (e.g., Scopus or ResearcherID), and any required institutional IDs'
@@ -379,7 +379,7 @@ export default function InstructionsPage() {
                                 {step.status}
                               </div>
                               <div className="text-base font-semibold text-900 mb-2" style={{
-                                fontSize: '0.95rem',
+                                fontSize: '1.25rem',
                                 fontWeight: '600',
                                 marginBottom: '0.5rem',
                                 color: '#1f2937'
@@ -387,9 +387,9 @@ export default function InstructionsPage() {
                                 {step.title}
                               </div>
                               <div className="text-sm text-600 line-height-3" style={{
-                                fontSize: '0.875rem',
+                                fontSize: '1rem',
                                 color: '#6b7280',
-                                lineHeight: '1.5'
+                                lineHeight: '0.5'
                               }}>
                                 {step.tip}
                               </div>
