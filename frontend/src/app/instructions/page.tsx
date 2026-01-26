@@ -16,31 +16,36 @@ export default function InstructionsPage() {
       status: 'Step 1',
       title: 'Prepare Your Manuscript',
       icon: 'pi pi-file-edit',
-      color: '#6366f1'
+      color: '#6366f1',
+      tip: 'Follow journal formatting strictly; use Word/LaTeX template'
     },
     {
       status: 'Step 2',
-      title: 'Submit Manuscript',
+      title: 'Create Account & Submit',
       icon: 'pi pi-upload',
-      color: '#8b5cf6'
+      color: '#8b5cf6',
+      tip: 'Keep all documents ready; have ORCID ID, researcher ID (e.g., Scopus or ResearcherID), and any required institutional IDs'
     },
     {
       status: 'Step 3',
       title: 'Peer Review Process',
       icon: 'pi pi-users',
-      color: '#ec4899'
+      color: '#ec4899',
+      tip: 'Reviewers may request changes; check emails regularly'
     },
     {
       status: 'Step 4',
       title: 'Revision & Resubmission',
       icon: 'pi pi-refresh',
-      color: '#f59e0b'
+      color: '#f59e0b',
+      tip: 'Address all reviewer comments carefully; track changes and highlight revisions clearly; cross-check references and figures'
     },
     {
       status: 'Step 5',
       title: 'Final Decision & Publication',
       icon: 'pi pi-check-circle',
-      color: '#10b981'
+      color: '#10b981',
+      tip: 'Check journal website for final PDF; celebrate your publication'
     }
   ];
 
@@ -54,7 +59,62 @@ export default function InstructionsPage() {
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
+      /* Desktop: Side by side layout */
+      @media (min-width: 1024px) {
+        .submission-process-container {
+          flex-direction: row !important;
+          align-items: flex-start !important;
+        }
+        
+        .submission-tips-sidebar {
+          width: 35% !important;
+          max-width: 400px !important;
+          flex-shrink: 0 !important;
+          order: 1 !important;
+        }
+        
+        .submission-timeline-wrapper {
+          width: 65% !important;
+          flex: 1 !important;
+          order: 2 !important;
+        }
+      }
+      
+      /* Tablet: Vertical layout */
+      @media (min-width: 769px) and (max-width: 1023px) {
+        .submission-process-container {
+          flex-direction: column !important;
+        }
+        
+        .submission-tips-sidebar {
+          width: 100% !important;
+          order: 1 !important;
+        }
+        
+        .submission-timeline-wrapper {
+          width: 100% !important;
+          order: 2 !important;
+        }
+      }
+      
       @media (max-width: 768px) {
+        .submission-process-container {
+          flex-direction: column !important;
+        }
+        
+        .submission-tips-sidebar {
+          width: 100% !important;
+          order: 1 !important;
+        }
+        
+        .submission-timeline-wrapper {
+          width: 100% !important;
+          order: 2 !important;
+        }
+        
+        .submission-tip-item {
+          padding: 0.875rem !important;
+        }
         .submission-process-section .p-timeline {
           padding-left: 0 !important;
           position: relative !important;
@@ -279,54 +339,134 @@ export default function InstructionsPage() {
             <h2 className="text-2xl md:text-3xl font-bold text-900 mb-4 md:mb-5 text-center md:text-left">
               Submission Process
             </h2>
-            <div className="p-3 md:p-4">
-              <Timeline 
-                value={submissionSteps} 
-                className="submission-timeline"
-                content={(item) => (
-                  <Card className="mb-3 shadow-2 border-round-lg submission-step-card">
-                    <div className="submission-step-content" style={{ 
-                      display: 'flex', 
-                      alignItems: 'flex-start', 
-                      gap: '12px', 
-                      padding: '12px',
-                      width: '100%',
-                      boxSizing: 'border-box'
-                    }}>
-                      <div 
-                        className="submission-step-icon"
-                        style={{ 
-                          backgroundColor: item.color,
-                          width: '3rem',
-                          height: '3rem',
-                          minWidth: '3rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          borderRadius: '50%',
-                          color: 'white'
-                        }}
-                      >
-                        <i className={item.icon} style={{ fontSize: '1.25rem' }}></i>
-                      </div>
-                      <h3 className="submission-step-title" style={{ 
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        color: '#1f2937',
-                        margin: 0,
-                        flex: 1,
-                        textAlign: 'left',
-                        wordWrap: 'break-word',
-                        overflowWrap: 'break-word',
-                        lineHeight: '1.5'
-                      }}>
-                        {item.title}
-                      </h3>
+            <div className="submission-process-container" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.5rem'
+            }}>
+              {/* Tips Sidebar - Left on desktop, top on mobile/tablet */}
+              <aside className="submission-tips-sidebar" style={{
+                order: 1
+              }}>
+                <Card className="shadow-2 border-round-lg" style={{ background: '#f8fafc' }}>
+                  <div className="p-3 md:p-4">
+                    <div className="flex align-items-center gap-2 mb-3" style={{ marginBottom: '1rem' }}>
+                      <i className="pi pi-lightbulb" style={{ fontSize: '1.5rem', color: '#f59e0b' }}></i>
+                      <h3 className="text-xl font-bold text-900 m-0">Tips & Tools</h3>
                     </div>
-                  </Card>
-                )}
-              />
+                    <div className="submission-tips-list" style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '1rem'
+                    }}>
+                      {submissionSteps.map((step, index) => (
+                        <div 
+                          key={index}
+                          className="submission-tip-item"
+                          style={{
+                            padding: '1rem',
+                            background: 'white',
+                            borderRadius: '8px',
+                            border: `2px solid ${step.color}20`,
+                            borderLeft: `4px solid ${step.color}`
+                          }}
+                        >
+                          <div className="flex align-items-start gap-2">
+                            <i className="pi pi-info-circle" style={{ 
+                              color: step.color, 
+                              fontSize: '1.25rem',
+                              marginTop: '0.25rem',
+                              flexShrink: 0
+                            }}></i>
+                            <div style={{ flex: 1 }}>
+                              <div className="text-sm font-semibold text-600 mb-1" style={{
+                                fontSize: '0.75rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px',
+                                marginBottom: '0.5rem',
+                                color: step.color
+                              }}>
+                                {step.status}
+                              </div>
+                              <div className="text-base font-semibold text-900 mb-2" style={{
+                                fontSize: '0.95rem',
+                                fontWeight: '600',
+                                marginBottom: '0.5rem',
+                                color: '#1f2937'
+                              }}>
+                                {step.title}
+                              </div>
+                              <div className="text-sm text-600 line-height-3" style={{
+                                fontSize: '0.875rem',
+                                color: '#6b7280',
+                                lineHeight: '1.5'
+                              }}>
+                                {step.tip}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              </aside>
+
+              {/* Timeline - Right on desktop, bottom on mobile/tablet */}
+              {/* <div className="submission-timeline-wrapper" style={{
+                order: 2,
+                flex: 1
+              }}>
+                <div className="p-3 md:p-4">
+                  <Timeline 
+                    value={submissionSteps} 
+                    className="submission-timeline"
+                    content={(item) => (
+                      <Card className="mb-3 shadow-2 border-round-lg submission-step-card">
+                        <div className="submission-step-content" style={{ 
+                          display: 'flex', 
+                          alignItems: 'flex-start', 
+                          gap: '12px', 
+                          padding: '12px',
+                          width: '100%',
+                          boxSizing: 'border-box'
+                        }}>
+                          <div 
+                            className="submission-step-icon"
+                            style={{ 
+                              backgroundColor: item.color,
+                              width: '3rem',
+                              height: '3rem',
+                              minWidth: '3rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              borderRadius: '50%',
+                              color: 'white'
+                            }}
+                          >
+                            <i className={item.icon} style={{ fontSize: '1.25rem' }}></i>
+                          </div>
+                          <h3 className="submission-step-title" style={{ 
+                            fontSize: '1rem',
+                            fontWeight: '600',
+                            color: '#1f2937',
+                            margin: 0,
+                            flex: 1,
+                            textAlign: 'left',
+                            wordWrap: 'break-word',
+                            overflowWrap: 'break-word',
+                            lineHeight: '1.5'
+                          }}>
+                            {item.title}
+                          </h3>
+                        </div>
+                      </Card>
+                    )}
+                  />
+                </div>
+              </div> */}
             </div>
           </section>
 
