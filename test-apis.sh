@@ -46,7 +46,15 @@ echo "==========================================="
 echo "1. HEALTH & BASIC ENDPOINTS"
 echo "==========================================="
 test_endpoint "GET" "" "" "200 404" "Root endpoint"
-test_endpoint "GET" "/health" "" "200" "Health check"
+# Health endpoint is at /health (not /api/health) - excluded from global prefix
+HEALTH_RESPONSE=$(curl -s -w "\nHTTP:%{http_code}" "http://localhost:3001/health")
+HEALTH_CODE=$(echo "$HEALTH_RESPONSE" | grep "HTTP:" | cut -d: -f2)
+if [ "$HEALTH_CODE" = "200" ]; then
+    echo "✅ Health check: $HEALTH_CODE"
+else
+    echo "❌ Health check: $HEALTH_CODE (expected: 200)"
+    ((ERRORS++))
+fi
 
 echo ""
 echo "==========================================="

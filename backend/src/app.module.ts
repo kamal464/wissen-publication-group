@@ -7,6 +7,7 @@ import { ArticlesModule } from './articles/articles.module';
 import { AdminModule } from './admin/admin.module';
 import { FilesModule } from './files/files.module';
 import { NewsModule } from './news/news.module';
+import { MessagesModule } from './messages/messages.module';
 import { AwsModule } from './aws/aws.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { AwsModule } from './aws/aws.module';
     AdminModule,
     FilesModule,
     NewsModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
