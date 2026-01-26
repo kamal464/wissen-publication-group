@@ -296,6 +296,7 @@
       &:hover {
         text-decoration: none;
         background: #104477;
+        color: neutral(white);
       }
     }
 
@@ -581,6 +582,11 @@
   &--cta {
     @include button-primary;
     display: flex;
+    color: neutral(white);
+    
+    &:hover {
+      color: neutral(white);
+    }
   }
 
   &--outline {
