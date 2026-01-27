@@ -95,9 +95,7 @@ pm2 start dist/src/main.js \
     --restart-delay 3000 \
     --max-restarts 10 \
     --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
-    --merge-logs \
-    --err /var/log/pm2/wissen-backend-error.log \
-    --out /var/log/pm2/wissen-backend-out.log
+    --merge-logs
 cd ..
 sleep 5
 echo -e "${GREEN}✅ Backend started${NC}"
@@ -113,9 +111,7 @@ pm2 start npm \
     --restart-delay 3000 \
     --max-restarts 10 \
     --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
-    --merge-logs \
-    --err /var/log/pm2/wissen-frontend-error.log \
-    --out /var/log/pm2/wissen-frontend-out.log
+    --merge-logs
 cd ..
 sleep 15
 echo -e "${GREEN}✅ Frontend started${NC}"

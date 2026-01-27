@@ -137,9 +137,7 @@ pm2 start dist/src/main.js \
     --restart-delay 3000 \
     --max-restarts 10 \
     --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
-    --merge-logs \
-    --err /var/log/pm2/wissen-backend-error.log \
-    --out /var/log/pm2/wissen-backend-out.log
+    --merge-logs
 
 sleep 5
 log "${GREEN}✅ Backend started${NC}"
@@ -155,9 +153,7 @@ pm2 start npm \
     --restart-delay 3000 \
     --max-restarts 10 \
     --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
-    --merge-logs \
-    --err /var/log/pm2/wissen-frontend-error.log \
-    --out /var/log/pm2/wissen-frontend-out.log
+    --merge-logs
 
 sleep 15
 log "${GREEN}✅ Frontend started${NC}"
@@ -567,9 +563,7 @@ pm2 start dist/src/main.js \
     --restart-delay 3000 \
     --max-restarts 10 \
     --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
-    --merge-logs \
-    --err /var/log/pm2/wissen-backend-error.log \
-    --out /var/log/pm2/wissen-backend-out.log
+    --merge-logs
 
 cd ../frontend
 pm2 start npm \
@@ -579,9 +573,7 @@ pm2 start npm \
     --restart-delay 3000 \
     --max-restarts 10 \
     --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
-    --merge-logs \
-    --err /var/log/pm2/wissen-frontend-error.log \
-    --out /var/log/pm2/wissen-frontend-out.log
+    --merge-logs
 
 # 9. Save PM2 configuration
 echo "💾 Saving PM2 configuration..."
