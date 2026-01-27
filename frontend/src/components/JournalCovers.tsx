@@ -241,17 +241,29 @@ export default function JournalCovers() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style jsx global>{`
         .journal-cover-card {
           text-decoration: none;
           color: inherit;
           display: block;
+          background: transparent !important;
+          background-color: transparent !important;
+        }
+
+        /* Override global card white background for journal-cover-card */
+        .journal-cover-card,
+        .journal-cover-card.card,
+        .journal-cover-card[class*="card"],
+        .journal-cover-card.p-card {
+          background: transparent !important;
+          background-color: transparent !important;
         }
 
         .journal-cover-card__container {
           position: relative;
           width: 100%;
           transition: transform 0.3s ease, box-shadow 0.3s ease;
+          background: transparent !important;
         }
 
         .journal-cover-card:hover .journal-cover-card__container {
@@ -265,12 +277,13 @@ export default function JournalCovers() {
           aspect-ratio: 2 / 3;
           border-radius: 0.75rem;
           overflow: hidden;
-          background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+          background: transparent !important;
           box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
         }
 
         .journal-cover-card__image-wrapper--no-image {
           background: transparent !important;
+          box-shadow: none !important;
         }
 
         .journal-cover-card__image {
@@ -290,7 +303,7 @@ export default function JournalCovers() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+          background: transparent;
         }
 
         .journal-cover-card__title-bar {
@@ -300,9 +313,21 @@ export default function JournalCovers() {
           right: 0;
           background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.85) 100%);
           padding: 0.875rem 0.625rem;
-          display: none;
+          display: flex !important;
           flex-direction: column;
           gap: 0.3rem;
+        }
+
+        .journal-cover-card__image-wrapper--no-image .journal-cover-card__title-bar {
+          position: relative;
+          background: transparent !important;
+          padding: 1rem;
+          display: flex !important;
+        }
+
+        .journal-cover-card__image-wrapper--no-image .journal-cover-card__title-text {
+          color: #374151 !important;
+          font-weight: 600;
         }
 
         .journal-cover-card__title-text {
@@ -316,6 +341,12 @@ export default function JournalCovers() {
           -webkit-box-orient: vertical;
           overflow: hidden;
           text-overflow: ellipsis;
+        }
+
+        .journal-cover-card__image-wrapper--no-image .journal-cover-card__title-text {
+          color: #374151 !important;
+          font-weight: 600;
+          -webkit-line-clamp: 3;
         }
 
         @media (min-width: 768px) {
