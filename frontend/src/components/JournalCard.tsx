@@ -25,11 +25,9 @@ const JournalCard = memo(function JournalCard({
     return getFileUrl(imagePath);
   };
 
-  // For list/grid view: use flyerImage or coverImage (not bannerImage - that's for detail page hero)
-  // Priority: flyerImage > coverImage > placeholder
-  const imageUrl = viewMode === 'grid' 
-    ? (getImageUrl(journal.flyerImage) || getImageUrl(journal.coverImage) || getImageUrl(journal.bannerImage))
-    : (getImageUrl(journal.flyerImage) || getImageUrl(journal.coverImage));
+  // For list/grid view: use ONLY flyerImage (not bannerImage or coverImage - banner is for detail page hero)
+  // If no flyerImage, don't display any image
+  const imageUrl = journal.flyerImage ? getImageUrl(journal.flyerImage) : null;
 
   const hasContent = !!(journal.homePageContent || journal.aimsScope || journal.guidelines);
 
@@ -60,32 +58,18 @@ const JournalCard = memo(function JournalCard({
       <div className="journal-card__wrapper">
         {/* Image Container - Left side in grid view */}
         <div className="journal-card__image-container">
-          {imageUrl ? (
+          {imageUrl && (
             <img
               src={imageUrl}
               alt={`${journal.title} cover`}
               className="journal-card__image"
               loading="lazy"
               onError={(e) => {
-                // Fallback to placeholder on error
+                // Hide image on error - don't show placeholder
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
-                const placeholder = target.parentElement?.querySelector('.journal-card__image--placeholder');
-                if (placeholder) {
-                  (placeholder as HTMLElement).style.display = 'flex';
-                }
               }}
             />
-          ) : null}
-          {!imageUrl && (
-            <div
-              className={`journal-card__image journal-card__image--placeholder ${
-                subjectClass ? `journal-card__image--${subjectClass}` : ''
-              }`.trim()}
-              aria-hidden="true"
-            >
-              {journal.title?.charAt(0).toUpperCase() ?? 'J'}
-            </div>
           )}
         </div>
 

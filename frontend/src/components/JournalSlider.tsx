@@ -167,23 +167,23 @@ export default function JournalSlider() {
   };
 
   const getImageUrl = (journal: Journal) => {
-    if (journal.coverImage?.startsWith('http://') || journal.coverImage?.startsWith('https://')) {
-      return journal.coverImage;
+    // Use ONLY flyerImage - if no flyerImage, return null (no image displayed)
+    if (!journal.flyerImage) {
+      return null;
     }
-    if (journal.coverImage?.startsWith('/')) {
-      // For paths starting with /, encode each path segment separately
-      // This preserves / characters while encoding spaces and special chars
-      const pathParts = journal.coverImage.split('/').filter(part => part.length > 0);
+    // If it's already a full URL, return as is
+    if (journal.flyerImage?.startsWith('http://') || journal.flyerImage?.startsWith('https://')) {
+      return journal.flyerImage;
+    }
+    // If it starts with /, encode path segments
+    if (journal.flyerImage?.startsWith('/')) {
+      const pathParts = journal.flyerImage.split('/').filter(part => part.length > 0);
       const encodedParts = pathParts.map(part => encodeURIComponent(part));
       const encodedPath = '/' + encodedParts.join('/');
       return encodedPath;
     }
-    // Priority: flyerImage > coverImage > bannerImage (banner is for detail page hero)
-    const imagePath = journal.flyerImage || journal.coverImage || journal.bannerImage;
-    if (imagePath) {
-      return getFileUrl(imagePath);
-    }
-    return generatePlaceholderImage(journal.title || 'Journal', 0);
+    // Otherwise, get file URL from API
+    return getFileUrl(journal.flyerImage);
   };
 
   const ImageWithRetry = ({ src, alt, journal }: { src: string; alt: string; journal: Journal }) => {
@@ -272,15 +272,8 @@ export default function JournalSlider() {
       <div className="journal-slide">
         <Link href={journalUrl} className="journal-slide__link">
           <div className="journal-slide__image-container">
-            {imageUrl ? (
+            {imageUrl && (
               <ImageWithRetry src={imageUrl} alt={journal.title} journal={journal} />
-            ) : (
-              <div className="journal-slide__placeholder">
-                <div className="journal-slide__placeholder-content">
-                  <i className="pi pi-image text-6xl text-gray-400 mb-4"></i>
-                  <p className="text-gray-600">{journal.title}</p>
-                </div>
-              </div>
             )}
           </div>
         </Link>

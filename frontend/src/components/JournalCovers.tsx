@@ -136,18 +136,16 @@ export default function JournalCovers() {
   };
 
   const getImageUrl = (journal: Journal) => {
-    // If it's already a full URL (placeholder or external), return as is
-    if (journal.coverImage?.startsWith('http://') || journal.coverImage?.startsWith('https://') || journal.coverImage?.startsWith('data:')) {
-      return journal.coverImage;
+    // Use ONLY flyerImage - if no flyerImage, return null (no image displayed)
+    if (!journal.flyerImage) {
+      return null;
     }
-    // Otherwise, try to get file URL from API
-    // Priority: flyerImage > coverImage > bannerImage (banner is for detail page hero)
-    const imagePath = journal.flyerImage || journal.coverImage || journal.bannerImage;
-    if (imagePath) {
-      return getFileUrl(imagePath);
+    // If it's already a full URL, return as is
+    if (journal.flyerImage?.startsWith('http://') || journal.flyerImage?.startsWith('https://') || journal.flyerImage?.startsWith('data:')) {
+      return journal.flyerImage;
     }
-    // Fallback: generate placeholder
-    return generatePlaceholderImage(journal.title || 'Journal', 0);
+    // Otherwise, get file URL from API
+    return getFileUrl(journal.flyerImage);
   };
 
   if (loading) {
@@ -214,7 +212,7 @@ export default function JournalCovers() {
               >
                 <div className="journal-cover-card__container">
                   <div className="journal-cover-card__image-wrapper">
-                    {imageUrl ? (
+                    {imageUrl && (
                       <img
                         src={imageUrl}
                         alt={journal.title}
@@ -222,13 +220,9 @@ export default function JournalCovers() {
                         loading="lazy"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = generatePlaceholderImage(journal.title, journal.id);
+                          target.style.display = 'none';
                         }}
                       />
-                    ) : (
-                      <div className="journal-cover-card__placeholder">
-                        <i className="pi pi-book text-4xl text-gray-400"></i>
-                      </div>
                     )}
                     <div className="journal-cover-card__title-bar">
                       <div className="journal-cover-card__title-text">
