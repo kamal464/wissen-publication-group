@@ -200,13 +200,9 @@ export default function JournalCovers() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 md:gap-7 lg:gap-8">
-          {journals
-            .filter((journal) => journal.flyerImage) // Only show journals with flyerImage
-            .map((journal) => {
+          {journals.map((journal) => {
             const imageUrl = getImageUrl(journal);
             const journalUrl = journal.shortcode ? `/journals/${journal.shortcode}` : '#';
-
-            if (!imageUrl) return null; // Don't render if no image URL
 
             return (
               <Link
@@ -215,17 +211,23 @@ export default function JournalCovers() {
                 className="group journal-cover-card"
               >
                 <div className="journal-cover-card__container">
-                  <div className="journal-cover-card__image-wrapper">
-                    <img
-                      src={imageUrl}
-                      alt={journal.title}
-                      className="journal-cover-card__image"
-                      loading="lazy"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
-                    />
+                  <div className={`journal-cover-card__image-wrapper ${!imageUrl ? 'journal-cover-card__image-wrapper--no-image' : ''}`}>
+                    {imageUrl && (
+                      <img
+                        src={imageUrl}
+                        alt={journal.title}
+                        className="journal-cover-card__image"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const wrapper = target.closest('.journal-cover-card__image-wrapper');
+                          if (wrapper) {
+                            wrapper.classList.add('journal-cover-card__image-wrapper--no-image');
+                          }
+                        }}
+                      />
+                    )}
                     <div className="journal-cover-card__title-bar">
                       <div className="journal-cover-card__title-text">
                         {journal.title}
@@ -265,6 +267,10 @@ export default function JournalCovers() {
           overflow: hidden;
           background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
           box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        .journal-cover-card__image-wrapper--no-image {
+          background: transparent !important;
         }
 
         .journal-cover-card__image {
