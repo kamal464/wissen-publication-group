@@ -96,8 +96,8 @@ pm2 start dist/src/main.js \
     --max-restarts 10 \
     --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
     --merge-logs \
-    --error-log /var/log/pm2/wissen-backend-error.log \
-    --out-log /var/log/pm2/wissen-backend-out.log
+    --err /var/log/pm2/wissen-backend-error.log \
+    --out /var/log/pm2/wissen-backend-out.log
 cd ..
 sleep 5
 echo -e "${GREEN}✅ Backend started${NC}"
@@ -114,8 +114,8 @@ pm2 start npm \
     --max-restarts 10 \
     --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
     --merge-logs \
-    --error-log /var/log/pm2/wissen-frontend-error.log \
-    --out-log /var/log/pm2/wissen-frontend-out.log
+    --err /var/log/pm2/wissen-frontend-error.log \
+    --out /var/log/pm2/wissen-frontend-out.log
 cd ..
 sleep 15
 echo -e "${GREEN}✅ Frontend started${NC}"
