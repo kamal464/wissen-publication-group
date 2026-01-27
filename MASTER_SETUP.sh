@@ -77,8 +77,13 @@ cd backend
 npm install --no-audit --no-fund
 # Verify nest CLI is installed
 if [ ! -f "node_modules/.bin/nest" ]; then
-    echo -e "${RED}❌ nest CLI not found after install. Reinstalling...${NC}"
+    echo -e "${YELLOW}⚠️ nest CLI not found after install. Reinstalling...${NC}"
     npm install @nestjs/cli --save-dev --no-audit --no-fund
+    # Verify again
+    if [ ! -f "node_modules/.bin/nest" ]; then
+        echo -e "${RED}❌ Failed to install nest CLI. Trying alternative...${NC}"
+        npm install @nestjs/cli@latest --save-dev --no-audit --no-fund --force
+    fi
 fi
 cd ../frontend
 npm install --no-audit --no-fund
@@ -89,8 +94,23 @@ echo ""
 # Step 7: Build applications
 echo -e "${YELLOW}🔨 Step 7: Building applications...${NC}"
 cd backend
-# Use npx to ensure nest is found
-npx nest build || npm run build
+# Try multiple methods to build
+if [ -f "node_modules/.bin/nest" ]; then
+    echo "Using direct nest binary..."
+    ./node_modules/.bin/nest build || {
+        echo "Direct binary failed, trying npm run build..."
+        npm run build
+    }
+elif command -v npx > /dev/null 2>&1; then
+    echo "Using npx nest build..."
+    npx --yes nest build || {
+        echo "npx failed, trying npm run build..."
+        npm run build
+    }
+else
+    echo "Using npm run build..."
+    npm run build
+fi
 cd ../frontend
 NODE_OPTIONS="--max-old-space-size=2048" npm run build
 cd ..
