@@ -53,7 +53,22 @@ cd /var/www/wissen-publication-group
 # Step 5: Pull latest code
 echo -e "${YELLOW}📥 Step 5: Pulling latest code...${NC}"
 git fetch origin
-git pull origin main || echo -e "${RED}⚠️ Git pull had issues, continuing...${NC}"
+
+# Handle build artifacts that might cause merge conflicts
+if git diff --quiet HEAD backend/dist frontend/.next 2>/dev/null; then
+    # No local changes to build artifacts
+    git pull origin main || echo -e "${RED}⚠️ Git pull had issues, continuing...${NC}"
+else
+    # Stash or reset build artifacts before pulling
+    echo -e "${YELLOW}📦 Stashing build artifacts...${NC}"
+    git stash push -m "Auto-stash build artifacts before pull" backend/dist frontend/.next backend/dist frontend/dist 2>/dev/null || true
+    git pull origin main || {
+        echo -e "${YELLOW}⚠️ Git pull had conflicts, resetting build artifacts...${NC}"
+        git checkout -- backend/dist frontend/.next backend/dist frontend/dist 2>/dev/null || true
+        git pull origin main || echo -e "${RED}⚠️ Git pull had issues, continuing...${NC}"
+    }
+fi
+
 echo -e "${GREEN}✅ Code updated${NC}"
 echo ""
 
