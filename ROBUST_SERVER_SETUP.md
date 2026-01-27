@@ -148,12 +148,12 @@ log "${YELLOW}🚀 Step 8: Starting frontend...${NC}"
 cd /var/www/wissen-publication-group/frontend
 pm2 start npm \
     --name wissen-frontend \
-    -- start \
     --max-memory-restart 1G \
     --restart-delay 3000 \
     --max-restarts 10 \
     --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
-    --merge-logs
+    --merge-logs \
+    -- start
 
 sleep 15
 log "${GREEN}✅ Frontend started${NC}"
