@@ -70,8 +70,8 @@ NODE_ENV=production
 PORT=3001
 CORS_ORIGIN=http://$INSTANCE_IP,https://$INSTANCE_IP
 AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=AKIAQVYSWBK4GMRMNMXK
-AWS_SECRET_ACCESS_KEY=q1SJ51FywwrVTxg7e7X21nXq4w6X816FbAaPndEE
+AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_ACCESS_KEY
 S3_BUCKET_NAME=wissen-publication-group-files
 CLOUDFRONT_URL=https://d2qm3szai4trao.cloudfront.net
 EOF
@@ -148,8 +148,8 @@ NODE_ENV=production
 PORT=3001
 CORS_ORIGIN=http://$INSTANCE_IP
 AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=AKIAQVYSWBK4GMRMNMXK
-AWS_SECRET_ACCESS_KEY=q1SJ51FywwrVTxg7e7X21nXq4w6X816FbAaPndEE
+AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_ACCESS_KEY
 S3_BUCKET_NAME=wissen-publication-group-files
 CLOUDFRONT_URL=https://d2qm3szai4trao.cloudfront.net" > backend/.env && echo "NEXT_PUBLIC_API_URL=http://$INSTANCE_IP:3001/api" > frontend/.env.production && cd backend && npm install && npx prisma generate && npx prisma db push --accept-data-loss && npm run build && cd ../frontend && npm install && npm run build && cd /var/www/wissen-publication-group && pm2 delete all 2>/dev/null; pm2 start ecosystem.config.js && pm2 save && sudo tee /etc/nginx/sites-available/wissen-publication-group > /dev/null << 'EOF'
 server {

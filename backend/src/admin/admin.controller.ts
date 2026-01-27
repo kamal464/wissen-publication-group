@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, Query, UseInterceptors, UploadedFile, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, Query, UseInterceptors, UploadedFile, BadRequestException, InternalServerErrorException, Req } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminService } from './admin.service';
 import { S3Service } from '../aws/s3.service';
+import type { Request } from 'express';
 
 @Controller('admin')
 export class AdminController {
@@ -175,35 +176,85 @@ export class AdminController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadJournalImage(
     @Param('id', ParseIntPipe) id: number,
-    @Body('field') field: string,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
   ) {
+    console.log('Upload request received:', { 
+      id, 
+      hasFile: !!file, 
+      reqBody: req.body,
+      fileInfo: file ? { name: file.originalname, size: file.size, mimetype: file.mimetype } : null
+    });
+    
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
 
-    // Upload to S3
-    const uploadResult = await this.s3Service.uploadFile(file, 'journals');
-    const fileUrl = uploadResult.url;
+    // Extract field from req.body - with FileInterceptor, form fields are in req.body
+    const field = req.body?.field;
     
-    // Update the specific image field in the journal
-    const updateData: any = {};
-    if (field === 'bannerImage') updateData.bannerImage = fileUrl;
-    else if (field === 'flyerImage') updateData.flyerImage = fileUrl;
-    else if (field === 'flyerPdf') updateData.flyerPdf = fileUrl;
-    else if (field === 'googleIndexingImage') updateData.googleIndexingImage = fileUrl;
-    else if (field === 'editorImage') updateData.editorImage = fileUrl;
-    else {
-      throw new BadRequestException(`Invalid field: ${field}. Allowed fields: bannerImage, flyerImage, flyerPdf, googleIndexingImage, editorImage`);
+    console.log('Extracted field:', field);
+    
+    if (!field) {
+      console.error('Field parameter missing. Req.body:', req.body);
+      throw new BadRequestException('Field parameter is required. Allowed fields: bannerImage, flyerImage, flyerPdf, googleIndexingImage, editorImage');
     }
 
-    const updated = await this.adminService.updateJournal(id, updateData);
-    return {
-      success: true,
-      url: fileUrl,
-      field,
-      journal: updated
-    };
+    try {
+      console.log('Uploading file to S3...', { filename: file.originalname, size: file.size, mimetype: file.mimetype });
+      
+      // Upload to S3
+      const uploadResult = await this.s3Service.uploadFile(file, 'journals');
+      const fileUrl = uploadResult.url;
+      
+      console.log('File uploaded to S3:', fileUrl);
+      
+      // Update the specific image field in the journal
+      const updateData: any = {};
+      if (field === 'bannerImage') updateData.bannerImage = fileUrl;
+      else if (field === 'flyerImage') updateData.flyerImage = fileUrl;
+      else if (field === 'flyerPdf') updateData.flyerPdf = fileUrl;
+      else if (field === 'googleIndexingImage') updateData.googleIndexingImage = fileUrl;
+      else if (field === 'editorImage') updateData.editorImage = fileUrl;
+      else {
+        throw new BadRequestException(`Invalid field: ${field}. Allowed fields: bannerImage, flyerImage, flyerPdf, googleIndexingImage, editorImage`);
+      }
+
+      console.log('Updating journal with field:', field, 'URL:', fileUrl);
+      const updated = await this.adminService.updateJournal(id, updateData);
+      
+      console.log('Journal updated successfully');
+      
+      return {
+        success: true,
+        url: fileUrl,
+        field,
+        journal: updated
+      };
+    } catch (error: any) {
+      console.error('Error uploading journal image:', error);
+      console.error('Error stack:', error.stack);
+      
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      // Check for S3 credential errors
+      if (error.name === 'InvalidAccessKeyId' || 
+          error.name === 'SignatureDoesNotMatch' ||
+          error.message?.includes('Access Key') ||
+          error.message?.includes('authorization header is malformed')) {
+        throw new InternalServerErrorException(
+          'S3 credentials are missing or invalid. Please check your .env file and ensure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are set correctly.'
+        );
+      }
+      
+      if (error.name === 'NoSuchBucket') {
+        throw new InternalServerErrorException(`S3 bucket not found: ${process.env.S3_BUCKET_NAME}`);
+      }
+      
+      throw new InternalServerErrorException(`Failed to upload image: ${error.message || 'Unknown error'}`);
+    }
   }
 
   // Board Members endpoints

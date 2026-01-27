@@ -9,8 +9,9 @@ echo ""
 
 # Update AWS credentials
 sed -i "s|^AWS_REGION=.*|AWS_REGION=us-east-1|" .env
-sed -i "s|^AWS_ACCESS_KEY_ID=.*|AWS_ACCESS_KEY_ID=AKIAQVYSWBK4GMRMNMXK|" .env
-sed -i "s|^AWS_SECRET_ACCESS_KEY=.*|AWS_SECRET_ACCESS_KEY=q1SJ51FywwrVTxg7e7X21nXq4w6X816FbAaPndEE|" .env
+# IMPORTANT: Replace YOUR_AWS_ACCESS_KEY_ID and YOUR_AWS_SECRET_ACCESS_KEY with actual values
+sed -i "s|^AWS_ACCESS_KEY_ID=.*|AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID|" .env
+sed -i "s|^AWS_SECRET_ACCESS_KEY=.*|AWS_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_ACCESS_KEY|" .env
 
 echo "✅ .env file updated"
 echo ""

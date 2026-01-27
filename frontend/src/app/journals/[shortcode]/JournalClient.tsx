@@ -1217,26 +1217,46 @@ export default function JournalDetailPage() {
         </div>
       </nav>
 
-      {/* HERO SECTION - Blue background */}
+      {/* HERO SECTION - Banner Image or Blue background */}
       <div style={{
         backgroundColor: '#1E5DA8',
-        padding: '48px 24px'
+        padding: '48px 24px',
+        backgroundImage: journal.bannerImage ? `url(${getImageUrl(journal.bannerImage)})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        position: 'relative'
       }}>
+        {/* Overlay for better text readability */}
+        {journal.bannerImage && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(30, 93, 168, 0.7)',
+            zIndex: 1
+          }} />
+        )}
         <div style={{
           maxWidth: '1400px',
-          margin: '0 auto'
+          margin: '0 auto',
+          position: 'relative',
+          zIndex: 2
         }}>
           <h1 style={{
             color: '#FFFFFF',
             fontSize: '36px',
             fontWeight: '700',
             marginBottom: '0',
-            lineHeight: '1.2'
+            lineHeight: '1.2',
+            textShadow: journal.bannerImage ? '2px 2px 4px rgba(0, 0, 0, 0.5)' : 'none'
           }}>
             {journal.title}
           </h1>
-                            </div>
-                          </div>
+        </div>
+      </div>
 
       {/* MAIN CONTENT - Two Column Layout */}
       <div className="journal-main-content" style={{
@@ -1247,10 +1267,23 @@ export default function JournalDetailPage() {
         <div className="journal-content-grid" style={{
           display: 'grid',
           gridTemplateColumns: '70% 30%',
-          gap: '32px'
+          gap: '32px',
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
+          overflow: 'hidden'
         }}>
           {/* LEFT COLUMN - 70% */}
-          <div className="journal-left-column" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div className="journal-left-column" style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '24px',
+            width: '100%',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
+            overflow: 'hidden',
+            minWidth: 0
+          }}>
             {/* Error Message */}
             {error && activeSection !== 'home' && (
               <div style={{
@@ -1361,10 +1394,10 @@ export default function JournalDetailPage() {
                 borderRadius: '8px',
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
                 padding: '32px',
-                marginLeft: '98px',
                 width: '100%',
                 maxWidth: '100%',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                overflow: 'hidden'
               }}>
                 <h2 style={{
                   fontSize: '24px',
@@ -1389,9 +1422,13 @@ export default function JournalDetailPage() {
                     className="editors-grid"
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-                      gap: '2rem',
-                      marginTop: '1rem'
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                      gap: '1.5rem',
+                      marginTop: '1rem',
+                      width: '100%',
+                      maxWidth: '100%',
+                      boxSizing: 'border-box',
+                      overflow: 'hidden'
                     }}
                   >
                     {boardMembers.map((member) => {
@@ -1406,7 +1443,12 @@ export default function JournalDetailPage() {
                           key={member.id} 
                           className="editor-card"
                           style={{
-                            marginBottom: '1.5rem'
+                            marginBottom: '1.5rem',
+                            width: '100%',
+                            maxWidth: '100%',
+                            minWidth: 0,
+                            boxSizing: 'border-box',
+                            overflow: 'hidden'
                           }}
                         >
                           <div
@@ -1415,7 +1457,10 @@ export default function JournalDetailPage() {
                               display: 'flex',
                               gap: '1.5rem',
                               alignItems: 'flex-start',
-                              width: '100%'
+                              width: '100%',
+                              maxWidth: '100%',
+                              boxSizing: 'border-box',
+                              overflow: 'hidden'
                             }}
                           >
                             <div
@@ -1515,10 +1560,22 @@ export default function JournalDetailPage() {
                               className="editor-info"
                               style={{
                                 flex: 1,
-                                minWidth: 0
+                                minWidth: 0,
+                                maxWidth: '100%',
+                                overflow: 'hidden',
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word'
                               }}
                             >
-                              <h3>{member.name}</h3>
+                              <h3 style={{
+                                margin: 0,
+                                marginBottom: '8px',
+                                fontSize: '18px',
+                                fontWeight: '600',
+                                color: '#111827',
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word'
+                              }}>{member.name}</h3>
 
                               <div className="editor-role">
                                 <i className="pi pi-briefcase" style={{ marginRight: '8px' }} />
@@ -2183,8 +2240,12 @@ export default function JournalDetailPage() {
               boxShadow: 'rgba(0, 0, 0, 0.08) 0px 2px 8px',
               padding: '16px',
               maxWidth: '260px',
-              width: '100%',
-              marginLeft: '50px'
+              width: '90%',
+              marginLeft: '50px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0',
+              boxSizing: 'border-box'
             }}>
               {journal.flyerImage && (
                 <img 
@@ -2204,44 +2265,57 @@ export default function JournalDetailPage() {
                       />
               )}
               
-              {/* Join Editorial Board Button */}
-              <button style={{
-                width: '80%',
-                backgroundColor: 'rgb(30, 93, 168)',
-                color: 'rgb(255, 255, 255)',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                border: 'none',
-                fontSize: '15px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                marginBottom: '12px',
-                transition: '0.2s',
-                display: 'block',
-                marginLeft: 'auto',
-                marginRight: 'auto'
+              {/* Buttons Container */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                width: '100%',
+                marginBottom: '20px',
+                boxSizing: 'border-box'
               }}>
-                Join Editorial Board
-              </button>
+                {/* Join Editorial Board Button */}
+                <button style={{
+                  width: '80%',
+                  backgroundColor: 'rgb(30, 93, 168)',
+                  color: 'rgb(255, 255, 255)',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  margin: '0 auto',
+                  transition: '0.2s',
+                  display: 'block',
+                  boxSizing: 'border-box',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  Join Editorial Board
+                </button>
 
-              {/* Join Reviewer Team Button */}
-              <button style={{
-                width: '80%',
-                backgroundColor: 'rgb(255, 255, 255)',
-                color: 'rgb(30, 93, 168)',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                border: '2px solid rgb(30, 93, 168)',
-                fontSize: '15px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: '0.2s',
-                display: 'block',
-                marginLeft: 'auto',
-                marginRight: 'auto'
-              }}>
-                Join Reviewer Team
-            </button>
+                {/* Join Reviewer Team Button */}
+                <button style={{
+                  width: '80%',
+                  backgroundColor: 'rgb(255, 255, 255)',
+                  color: 'rgb(30, 93, 168)',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  border: '2px solid rgb(30, 93, 168)',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  margin: '0 auto',
+                  transition: '0.2s',
+                  display: 'block',
+                  boxSizing: 'border-box',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  Join Reviewer Team
+                </button>
+              </div>
           </div>
 
             {/* Useful Links Card */}

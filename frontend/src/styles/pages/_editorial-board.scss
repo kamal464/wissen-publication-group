@@ -241,11 +241,22 @@
 
     .editors-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.5rem;
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
+      overflow: hidden;
+
+      @media (max-width: 1200px) {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.25rem;
+      }
+
+      @media (max-width: 1024px) {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.25rem;
+      }
 
       @media (max-width: 768px) {
         grid-template-columns: 1fr;
@@ -266,8 +277,9 @@
       animation: fadeInUp 0.5s ease both;
       width: 100%;
       max-width: 100%;
+      min-width: 0;
       box-sizing: border-box;
-      overflow-x: hidden;
+      overflow: hidden;
       
       @media (min-width: 640px) {
         padding: 1.5rem;
@@ -299,7 +311,9 @@
         align-items: start;
         width: 100%;
         max-width: 100%;
+        min-width: 0;
         box-sizing: border-box;
+        overflow: hidden;
         
         @media (min-width: 640px) {
           gap: 1.5rem;
@@ -321,9 +335,11 @@
         flex: 1;
         width: 100%;
         max-width: 100%;
+        min-width: 0;
         box-sizing: border-box;
         word-wrap: break-word;
         overflow-wrap: break-word;
+        overflow: hidden;
 
         h3 {
           font-size: 1.125rem;

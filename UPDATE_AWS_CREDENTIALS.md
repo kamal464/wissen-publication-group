@@ -1,8 +1,8 @@
 # 🔐 Update AWS Credentials - Security Fix
 
 ## ⚠️ **CRITICAL: Use ONLY the NEW key**
-- ✅ **NEW KEY (Use this)**: `AKIAQVYSWBK4GMRMNMXK`
-- ❌ **OLD KEY (Compromised - DELETE)**: `AKIAQVYSWBK4CZQBICFX`
+- ⚠️ **IMPORTANT**: Replace `YOUR_AWS_ACCESS_KEY_ID` with your actual AWS Access Key ID
+- ⚠️ **IMPORTANT**: Replace `YOUR_AWS_SECRET_ACCESS_KEY` with your actual AWS Secret Access Key
 
 ---
 
@@ -23,7 +23,7 @@ if [ -f .env ]; then
   echo "✅ Backup created" && \
   echo "" && \
   echo "3. Updating AWS_ACCESS_KEY_ID:" && \
-  sed -i 's/^AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=AKIAQVYSWBK4GMRMNMXK/' .env && \
+  sed -i 's/^AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID/' .env && \
   echo "✅ Access Key updated" && \
   echo "" && \
   echo "4. You need to manually update AWS_SECRET_ACCESS_KEY:" && \

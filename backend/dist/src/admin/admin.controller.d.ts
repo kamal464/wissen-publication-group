@@ -1,5 +1,6 @@
 import { AdminService } from './admin.service';
 import { S3Service } from '../aws/s3.service';
+import type { Request } from 'express';
 export declare class AdminController {
     private readonly adminService;
     private readonly s3Service;
@@ -735,10 +736,10 @@ export declare class AdminController {
             pageDescription: string | null;
         }[];
     }>;
-    uploadJournalImage(id: number, field: string, file?: Express.Multer.File): Promise<{
+    uploadJournalImage(id: number, file: Express.Multer.File, req: Request): Promise<{
         success: boolean;
         url: string;
-        field: string;
+        field: any;
         journal: any;
     }>;
     getBoardMembers(journalId?: string): Promise<{

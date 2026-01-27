@@ -1501,3 +1501,80 @@
     }
   }
 }
+
+// Editorial Board Card - Prevent Overlapping
+.journal-editorial-board-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  
+  @media (max-width: 1024px) {
+    padding: 24px !important;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 20px !important;
+  }
+  
+  @media (max-width: 640px) {
+    padding: 16px !important;
+  }
+}
+
+// Journal Content Grid - Prevent Overflow
+.journal-content-grid {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+}
+
+.journal-left-column {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  min-width: 0 !important;
+}
+
+// Journal Cover Card - Fix Button Overlapping
+.journal-cover-card {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  width: 90% !important;
+  
+  // Button container
+  > div {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    width: 90% !important;
+    margin-bottom: 20px !important;
+    box-sizing: border-box !important;
+  }
+  
+  button {
+    margin: 0 auto !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    z-index: 1 !important;
+    display: block !important;
+  }
+  
+  img {
+    margin-bottom: 20px !important;
+  }
+}

@@ -116,33 +116,68 @@ let AdminController = class AdminController {
     globalSearch(query) {
         return this.adminService.globalSearch(query);
     }
-    async uploadJournalImage(id, field, file) {
+    async uploadJournalImage(id, file, req) {
+        console.log('Upload request received:', {
+            id,
+            hasFile: !!file,
+            reqBody: req.body,
+            fileInfo: file ? { name: file.originalname, size: file.size, mimetype: file.mimetype } : null
+        });
         if (!file) {
             throw new common_1.BadRequestException('No file uploaded');
         }
-        const uploadResult = await this.s3Service.uploadFile(file, 'journals');
-        const fileUrl = uploadResult.url;
-        const updateData = {};
-        if (field === 'bannerImage')
-            updateData.bannerImage = fileUrl;
-        else if (field === 'flyerImage')
-            updateData.flyerImage = fileUrl;
-        else if (field === 'flyerPdf')
-            updateData.flyerPdf = fileUrl;
-        else if (field === 'googleIndexingImage')
-            updateData.googleIndexingImage = fileUrl;
-        else if (field === 'editorImage')
-            updateData.editorImage = fileUrl;
-        else {
-            throw new common_1.BadRequestException(`Invalid field: ${field}. Allowed fields: bannerImage, flyerImage, flyerPdf, googleIndexingImage, editorImage`);
+        const field = req.body?.field;
+        console.log('Extracted field:', field);
+        if (!field) {
+            console.error('Field parameter missing. Req.body:', req.body);
+            throw new common_1.BadRequestException('Field parameter is required. Allowed fields: bannerImage, flyerImage, flyerPdf, googleIndexingImage, editorImage');
         }
-        const updated = await this.adminService.updateJournal(id, updateData);
-        return {
-            success: true,
-            url: fileUrl,
-            field,
-            journal: updated
-        };
+        try {
+            console.log('Uploading file to S3...', { filename: file.originalname, size: file.size, mimetype: file.mimetype });
+            const uploadResult = await this.s3Service.uploadFile(file, 'journals');
+            const fileUrl = uploadResult.url;
+            console.log('File uploaded to S3:', fileUrl);
+            const updateData = {};
+            if (field === 'bannerImage')
+                updateData.bannerImage = fileUrl;
+            else if (field === 'flyerImage')
+                updateData.flyerImage = fileUrl;
+            else if (field === 'flyerPdf')
+                updateData.flyerPdf = fileUrl;
+            else if (field === 'googleIndexingImage')
+                updateData.googleIndexingImage = fileUrl;
+            else if (field === 'editorImage')
+                updateData.editorImage = fileUrl;
+            else {
+                throw new common_1.BadRequestException(`Invalid field: ${field}. Allowed fields: bannerImage, flyerImage, flyerPdf, googleIndexingImage, editorImage`);
+            }
+            console.log('Updating journal with field:', field, 'URL:', fileUrl);
+            const updated = await this.adminService.updateJournal(id, updateData);
+            console.log('Journal updated successfully');
+            return {
+                success: true,
+                url: fileUrl,
+                field,
+                journal: updated
+            };
+        }
+        catch (error) {
+            console.error('Error uploading journal image:', error);
+            console.error('Error stack:', error.stack);
+            if (error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            if (error.name === 'InvalidAccessKeyId' ||
+                error.name === 'SignatureDoesNotMatch' ||
+                error.message?.includes('Access Key') ||
+                error.message?.includes('authorization header is malformed')) {
+                throw new common_1.InternalServerErrorException('S3 credentials are missing or invalid. Please check your .env file and ensure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are set correctly.');
+            }
+            if (error.name === 'NoSuchBucket') {
+                throw new common_1.InternalServerErrorException(`S3 bucket not found: ${process.env.S3_BUCKET_NAME}`);
+            }
+            throw new common_1.InternalServerErrorException(`Failed to upload image: ${error.message || 'Unknown error'}`);
+        }
     }
     getBoardMembers(journalId) {
         const journalIdNum = journalId ? parseInt(journalId) : undefined;
@@ -355,10 +390,10 @@ __decorate([
     (0, common_1.Post)('journals/:id/upload-image'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Body)('field')),
-    __param(2, (0, common_1.UploadedFile)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, String, Object]),
+    __metadata("design:paramtypes", [Number, Object, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "uploadJournalImage", null);
 __decorate([

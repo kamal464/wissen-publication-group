@@ -10,8 +10,8 @@ NODE_ENV=production
 PORT=3001
 CORS_ORIGIN=http://$INSTANCE_IP
 AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=AKIAQVYSWBK4GMRMNMXK
-AWS_SECRET_ACCESS_KEY=q1SJ51FywwrVTxg7e7X21nXq4w6X816FbAaPndEE
+AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_ACCESS_KEY
 S3_BUCKET_NAME=wissen-publication-group-files
 CLOUDFRONT_URL=https://d2qm3szai4trao.cloudfront.net" > backend/.env && echo "NEXT_PUBLIC_API_URL=http://$INSTANCE_IP:3001/api" > frontend/.env.production && echo "✅ Environment files created" && echo "" && echo "📦 Step 9/11: Building backend (3-5 min)..." && cd backend && npm install && echo "  → Dependencies installed" && npx prisma generate && echo "  → Prisma generated" && npx prisma db push --accept-data-loss && echo "  → Database schema synced" && npm run build && echo "✅ Backend built" && echo "" && echo "📦 Step 10/11: Building frontend (3-5 min)..." && cd ../frontend && npm install && echo "  → Dependencies installed" && npm run build && echo "✅ Frontend built" && echo "" && echo "📦 Step 11/11: Starting services..." && cd /var/www/wissen-publication-group && pm2 delete all 2>/dev/null; pm2 start ecosystem.config.js && pm2 save && echo "  → PM2 started" && sudo tee /etc/nginx/sites-available/wissen-publication-group > /dev/null << 'EOF'
 server { listen 80; server_name 54.165.116.208; location /api { proxy_pass http://localhost:3001; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; } location / { proxy_pass http://localhost:3000; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; } }

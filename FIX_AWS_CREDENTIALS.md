@@ -32,8 +32,8 @@ cd /var/www/wissen-publication-group/backend && cat .env | grep -E "AWS_|S3_|CLO
 2. **Verify these lines are correct:**
    ```env
    AWS_REGION=us-east-1
-   AWS_ACCESS_KEY_ID=AKIAQVYSWBK4GMRMNMXK
-   AWS_SECRET_ACCESS_KEY=q1SJ51FywwrVTxg7e7X21nXq4w6X816FbAaPndEE
+   AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID
+   AWS_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_ACCESS_KEY
    S3_BUCKET_NAME=wissen-publication-group-files
    CLOUDFRONT_URL=https://d2qm3szai4trao.cloudfront.net
    ```
@@ -65,8 +65,8 @@ NODE_ENV=production
 PORT=3001
 CORS_ORIGIN=http://54.165.116.208
 AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=AKIAQVYSWBK4GMRMNMXK
-AWS_SECRET_ACCESS_KEY=q1SJ51FywwrVTxg7e7X21nXq4w6X816FbAaPndEE
+AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_ACCESS_KEY
 S3_BUCKET_NAME=wissen-publication-group-files
 CLOUDFRONT_URL=https://d2qm3szai4trao.cloudfront.net
 ENVEOF
@@ -102,10 +102,10 @@ s3.send(new ListObjectsV2Command({ Bucket: process.env.S3_BUCKET_NAME, MaxKeys: 
 ### 1. Credentials Have Extra Spaces
 ```bash
 # ❌ Wrong
-AWS_ACCESS_KEY_ID = AKIAQVYSWBK4GMRMNMXK
+AWS_ACCESS_KEY_ID = YOUR_AWS_ACCESS_KEY_ID
 
 # ✅ Correct
-AWS_ACCESS_KEY_ID=AKIAQVYSWBK4GMRMNMXK
+AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID
 ```
 
 ### 2. Secret Key is Truncated

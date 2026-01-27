@@ -14,15 +14,25 @@ export class S3Service {
     this.bucketName = process.env.S3_BUCKET_NAME || 'wissen-publication-group-files';
     this.cloudfrontUrl = process.env.CLOUDFRONT_URL || '';
 
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID || '';
+    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || '';
+    const region = process.env.AWS_REGION || 'us-east-1';
+
+    // Validate AWS credentials
+    if (!accessKeyId || !secretAccessKey) {
+      this.logger.error('AWS credentials are missing! Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in your .env file');
+      this.logger.error(`Current values - AccessKeyId: ${accessKeyId ? 'SET' : 'MISSING'}, SecretAccessKey: ${secretAccessKey ? 'SET' : 'MISSING'}`);
+    }
+
     this.s3Client = new S3Client({
-      region: process.env.AWS_REGION || 'us-east-1',
+      region,
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+        accessKeyId,
+        secretAccessKey,
       },
     });
 
-    this.logger.log(`S3 Service initialized with bucket: ${this.bucketName}`);
+    this.logger.log(`S3 Service initialized with bucket: ${this.bucketName}, region: ${region}`);
   }
 
   /**

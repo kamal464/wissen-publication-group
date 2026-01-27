@@ -9,9 +9,12 @@
 ```bash
 cd /var/www/wissen-publication-group && \
 echo "=== Pulling latest code ===" && \
-GIT_TERMINAL_PROMPT=0 git fetch origin main && \
+(GIT_TERMINAL_PROMPT=0 timeout 60 git fetch origin main 2>&1 && \
 git reset --hard origin/main && \
-echo "✅ Code pulled successfully!"
+echo "✅ Code pulled successfully!") || \
+(echo "⚠️  Git pull failed (network timeout or connection issue)" && \
+echo "   Continuing with existing code..." && \
+git status)
 ```
 
 ---
@@ -92,9 +95,26 @@ echo "✅ Deployment complete!"
 
 ```bash
 cd /var/www/wissen-publication-group && \
+echo "=== STEP 0: Security Check & Cleanup ===" && \
+echo "Removing suspicious files (if any)..." && \
+rm -rf frontend/xmrig* frontend/scanner_linux frontend/public/ids.php 2>/dev/null && \
+rm -f backend/.env.backup.* backend/.env.save 2>/dev/null && \
+echo "Checking disk space..." && \
+df -h / | head -2 && \
+if [ $(df / | tail -1 | awk '{print $5}' | sed 's/%//') -gt 90 ]; then \
+  echo "⚠️  Disk space > 90%, cleaning up..." && \
+  npm cache clean --force 2>/dev/null || true && \
+  sudo journalctl --vacuum-time=3d 2>/dev/null || true && \
+  pm2 flush 2>/dev/null || true; \
+fi && \
+echo "" && \
 echo "=== STEP 1: Pull Latest Code ===" && \
-GIT_TERMINAL_PROMPT=0 git fetch origin main && \
+(GIT_TERMINAL_PROMPT=0 timeout 60 git fetch origin main 2>&1 && \
 git reset --hard origin/main && \
+echo "✅ Code pulled successfully!") || \
+(echo "⚠️  Git pull failed (network timeout or connection issue)" && \
+echo "   Continuing with existing code..." && \
+git status) && \
 echo "" && \
 echo "=== STEP 2: Deploy Backend ===" && \
 cd backend && \
@@ -162,13 +182,55 @@ pm2 logs wissen-frontend --lines 20
 
 ## ⚠️ **IF YOU GET ERRORS:**
 
+### Git Pull Timeout / Connection Failed?
+```bash
+# Option 1: Retry with shorter timeout and continue on failure
+cd /var/www/wissen-publication-group && \
+GIT_TERMINAL_PROMPT=0 timeout 30 git fetch origin main 2>&1 || \
+echo "⚠️  Git fetch failed, continuing with existing code" && \
+git reset --hard origin/main 2>/dev/null || echo "Using current code"
+
+# Option 2: Check network connectivity
+ping -c 3 github.com || echo "❌ Cannot reach GitHub - check security groups/firewall"
+
+# Option 3: Try using SSH instead of HTTPS (if SSH keys are configured)
+cd /var/www/wissen-publication-group && \
+git remote -v && \
+git remote set-url origin git@github.com:kamal464/wissen-publication-group.git && \
+git fetch origin main
+
+# Option 4: Skip git pull and continue deployment
+echo "⚠️  Skipping git pull, deploying existing code..."
+```
+
 ### Disk Space Full?
 ```bash
+cd /var/www/wissen-publication-group && \
+echo "=== Checking Disk Space ===" && \
 df -h / && \
-npm cache clean --force && \
-sudo journalctl --vacuum-time=3d && \
-pm2 flush
+echo "" && \
+echo "=== Removing Suspicious Files (if any) ===" && \
+rm -rf frontend/xmrig* frontend/scanner_linux frontend/public/ids.php 2>/dev/null && \
+rm -f backend/.env.backup.* backend/.env.save 2>/dev/null && \
+echo "" && \
+echo "=== Cleaning Up ===" && \
+npm cache clean --force 2>/dev/null || true && \
+sudo journalctl --vacuum-time=3d 2>/dev/null || true && \
+sudo find /var/log -type f -name "*.log" -mtime +7 -delete 2>/dev/null || true && \
+pm2 flush 2>/dev/null || true && \
+cd backend && rm -rf node_modules dist 2>/dev/null || true && \
+cd ../frontend && rm -rf node_modules .next 2>/dev/null || true && \
+cd .. && \
+echo "" && \
+echo "=== After Cleanup ===" && \
+df -h / && \
+echo "✅ Cleanup complete!"
 ```
+
+### Suspicious Files Detected? (XMRig, Miners, etc.)
+**⚠️ SECURITY ALERT:** If you see files like `xmrig`, `scanner_linux`, or `ids.php`, your server may be compromised!
+
+**See `SECURITY_ALERT_SUSPICIOUS_FILES.md` for immediate action steps.**
 
 ### NPM Install Fails?
 ```bash
