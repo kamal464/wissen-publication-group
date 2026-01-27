@@ -75,6 +75,11 @@ echo ""
 echo -e "${YELLOW}📦 Step 6: Installing dependencies...${NC}"
 cd backend
 npm install --no-audit --no-fund
+# Verify nest CLI is installed
+if [ ! -f "node_modules/.bin/nest" ]; then
+    echo -e "${RED}❌ nest CLI not found after install. Reinstalling...${NC}"
+    npm install @nestjs/cli --save-dev --no-audit --no-fund
+fi
 cd ../frontend
 npm install --no-audit --no-fund
 cd ..
@@ -84,7 +89,8 @@ echo ""
 # Step 7: Build applications
 echo -e "${YELLOW}🔨 Step 7: Building applications...${NC}"
 cd backend
-npm run build
+# Use npx to ensure nest is found
+npx nest build || npm run build
 cd ../frontend
 NODE_OPTIONS="--max-old-space-size=2048" npm run build
 cd ..
