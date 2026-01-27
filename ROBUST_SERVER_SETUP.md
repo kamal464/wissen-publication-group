@@ -568,12 +568,12 @@ pm2 start dist/src/main.js \
 cd ../frontend
 pm2 start npm \
     --name wissen-frontend \
-    -- start \
     --max-memory-restart 1G \
     --restart-delay 3000 \
     --max-restarts 10 \
     --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
-    --merge-logs
+    --merge-logs \
+    -- start
 
 # 9. Save PM2 configuration
 echo "💾 Saving PM2 configuration..."

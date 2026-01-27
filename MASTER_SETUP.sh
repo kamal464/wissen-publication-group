@@ -106,12 +106,12 @@ echo -e "${YELLOW}🚀 Step 10: Starting frontend...${NC}"
 cd frontend
 pm2 start npm \
     --name wissen-frontend \
-    -- start \
     --max-memory-restart 1G \
     --restart-delay 3000 \
     --max-restarts 10 \
     --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
-    --merge-logs
+    --merge-logs \
+    -- start
 cd ..
 sleep 15
 echo -e "${GREEN}✅ Frontend started${NC}"
