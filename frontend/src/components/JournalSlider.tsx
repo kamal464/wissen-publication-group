@@ -167,23 +167,29 @@ export default function JournalSlider() {
   };
 
   const getImageUrl = (journal: Journal) => {
-    // Use ONLY flyerImage - if no flyerImage, return null (no image displayed)
-    if (!journal.flyerImage) {
+    // For slider: use flyerImage first, but allow coverImage for static slider images
+    // Static slider journals use coverImage, so we need to support that
+    const imagePath = journal.flyerImage || journal.coverImage;
+    
+    if (!imagePath) {
       return null;
     }
+    
     // If it's already a full URL, return as is
-    if (journal.flyerImage?.startsWith('http://') || journal.flyerImage?.startsWith('https://')) {
-      return journal.flyerImage;
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
     }
-    // If it starts with /, encode path segments
-    if (journal.flyerImage?.startsWith('/')) {
-      const pathParts = journal.flyerImage.split('/').filter(part => part.length > 0);
+    
+    // If it starts with /, encode path segments (for static slider images)
+    if (imagePath.startsWith('/')) {
+      const pathParts = imagePath.split('/').filter(part => part.length > 0);
       const encodedParts = pathParts.map(part => encodeURIComponent(part));
       const encodedPath = '/' + encodedParts.join('/');
       return encodedPath;
     }
-    // Otherwise, get file URL from API
-    return getFileUrl(journal.flyerImage);
+    
+    // Otherwise, get file URL from API (for flyerImage from database)
+    return getFileUrl(imagePath);
   };
 
   const ImageWithRetry = ({ src, alt, journal }: { src: string; alt: string; journal: Journal }) => {
