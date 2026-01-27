@@ -1577,4 +1577,27 @@
   img {
     margin-bottom: 20px !important;
   }
+  
+  // Tablet and mobile: remove left margin and make image full width
+  @media (max-width: 1024px) {
+    margin-left: 0 !important;
+    
+    .journal-flyer-image {
+      width: 100% !important;
+    }
+  }
+  
+  // Mobile: adjust width
+  @media (max-width: 768px) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+  }
+}
+
+// Journal flyer image responsive styles
+.journal-flyer-image {
+  @media (max-width: 1024px) {
+    width: 100% !important;
+  }
 }

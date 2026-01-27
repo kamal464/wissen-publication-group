@@ -2251,8 +2251,9 @@ export default function JournalDetailPage() {
                 <img 
                   src={getImageUrl(journal.flyerImage) || ''}
                   alt={`${journal.title} Cover`}
+                  className="journal-flyer-image"
                   style={{
-                    width: '100%',
+                    width: '91%',
                     height: '320px',
                     borderRadius: '8px',
                     marginBottom: '20px',
