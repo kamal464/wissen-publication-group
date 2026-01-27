@@ -160,9 +160,9 @@ export default function JournalSlider() {
   const getStaticJournals = (): Journal[] => {
     return [
       { id: 1, title: 'Slide 1', coverImage: '/images/sliders/slider 1.jpg.jpeg', description: '', shortcode: '' },
+      { id: 4, title: 'Slide 4', coverImage: '/images/sliders/slider 4.jpg.jpeg', description: '', shortcode: '' },
       { id: 2, title: 'Slide 2', coverImage: '/images/sliders/slider 2.jpg.jpeg', description: '', shortcode: '' },
       { id: 3, title: 'Slide 3', coverImage: '/images/sliders/slider 3.jpg.jpeg', description: '', shortcode: '' },
-      { id: 4, title: 'Slide 4', coverImage: '/images/sliders/slider 4.jpg.jpeg', description: '', shortcode: '' },
     ];
   };
 
