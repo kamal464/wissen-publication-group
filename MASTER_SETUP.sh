@@ -54,22 +54,21 @@ cd /var/www/wissen-publication-group
 echo -e "${YELLOW}📥 Step 5: Pulling latest code...${NC}"
 git fetch origin
 
-# Handle build artifacts that might cause merge conflicts
-if git diff --quiet HEAD backend/dist frontend/.next 2>/dev/null; then
-    # No local changes to build artifacts
-    git pull origin main || echo -e "${RED}⚠️ Git pull had issues, continuing...${NC}"
+# Reset build artifacts (they will be rebuilt anyway)
+echo -e "${YELLOW}🧹 Cleaning build artifacts...${NC}"
+git checkout -- backend/dist frontend/.next backend/dist frontend/dist 2>/dev/null || true
+git clean -fd backend/dist frontend/.next 2>/dev/null || true
+
+# Pull latest code
+if git pull origin main; then
+    echo -e "${GREEN}✅ Code updated${NC}"
 else
-    # Stash or reset build artifacts before pulling
-    echo -e "${YELLOW}📦 Stashing build artifacts...${NC}"
-    git stash push -m "Auto-stash build artifacts before pull" backend/dist frontend/.next backend/dist frontend/dist 2>/dev/null || true
-    git pull origin main || {
-        echo -e "${YELLOW}⚠️ Git pull had conflicts, resetting build artifacts...${NC}"
-        git checkout -- backend/dist frontend/.next backend/dist frontend/dist 2>/dev/null || true
-        git pull origin main || echo -e "${RED}⚠️ Git pull had issues, continuing...${NC}"
+    echo -e "${YELLOW}⚠️ Git pull had conflicts, trying to resolve...${NC}"
+    # If there are still conflicts, reset and pull again
+    git reset --hard origin/main 2>/dev/null || {
+        echo -e "${RED}⚠️ Could not reset to origin/main, continuing with current code...${NC}"
     }
 fi
-
-echo -e "${GREEN}✅ Code updated${NC}"
 echo ""
 
 # Step 6: Install dependencies (including dev dependencies for building)
