@@ -19,20 +19,34 @@ set -a
 source .env
 set +a
 
-# Add ALL missing columns at once
+# Add ALL missing columns at once (in a transaction for safety)
 psql "$DATABASE_URL" <<'SQL'
+BEGIN;
+
+-- Volume and Issue Management
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "volumeNo" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "issueNo" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "issueMonth" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "year" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "specialIssue" TEXT;
+ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "issueId" INTEGER;
+
+-- Articles in Press Management
+ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "showInInpressCards" BOOLEAN DEFAULT false;
+ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "inPressMonth" TEXT;
+ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "inPressYear" TEXT;
+
+-- Additional publication details
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "firstPageNumber" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "lastPageNumber" TEXT;
+ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "doi" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "correspondingAuthorDetails" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "citeAs" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "country" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "receivedAt" TIMESTAMP;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "acceptedAt" TIMESTAMP;
+
+-- Fulltext content
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "fulltextImages" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "heading1Title" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "heading1Content" TEXT;
@@ -44,9 +58,11 @@ ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "heading4Title" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "heading4Content" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "heading5Title" TEXT;
 ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "heading5Content" TEXT;
-ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "showInInpressCards" BOOLEAN DEFAULT false;
-ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "inPressMonth" TEXT;
-ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "inPressYear" TEXT;
+
+-- Test column (can be removed later)
+ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "schemaSyncTest" TEXT;
+
+COMMIT;
 SQL
 
 # Regenerate Prisma Client
