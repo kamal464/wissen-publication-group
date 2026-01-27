@@ -19,7 +19,7 @@ git pull origin main
 # Backend
 echo "📦 Backend: Installing dependencies..."
 cd backend
-npm install --production --no-audit --no-fund
+npm install --no-audit --no-fund
 echo "🔨 Backend: Building..."
 npm run build
 cd ..
@@ -27,7 +27,7 @@ cd ..
 # Frontend
 echo "📦 Frontend: Installing dependencies..."
 cd frontend
-npm install --production --no-audit --no-fund
+npm install --no-audit --no-fund
 echo "🔨 Frontend: Building..."
 NODE_OPTIONS="--max-old-space-size=2048" npm run build
 cd ..
