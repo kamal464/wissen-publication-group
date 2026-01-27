@@ -57,3 +57,17 @@ firebase-debug.log
 *.tmp
 *.temp
 
+# Security: Prevent suspicious files from being committed
+# Cryptocurrency miners and malware
+**/xmrig*
+**/miner*
+**/scanner_*
+**/ids.php
+
+# Backup files (may contain sensitive data)
+**/.env.backup.*
+**/.env.save
+**/.env.*.bak
+**/*.backup
+**/*.save
+
