@@ -171,17 +171,96 @@ export default function JournalSlider() {
       return journal.coverImage;
     }
     if (journal.coverImage?.startsWith('/')) {
-      const pathParts = journal.coverImage.split('/');
-      const filename = pathParts[pathParts.length - 1];
-      const encodedFilename = encodeURIComponent(filename);
-      const basePath = pathParts.slice(0, -1).join('/');
-      return `${basePath}/${encodedFilename}`;
+      // For paths starting with /, encode each path segment separately
+      // This preserves / characters while encoding spaces and special chars
+      const pathParts = journal.coverImage.split('/').filter(part => part.length > 0);
+      const encodedParts = pathParts.map(part => encodeURIComponent(part));
+      const encodedPath = '/' + encodedParts.join('/');
+      return encodedPath;
     }
     const imagePath = journal.bannerImage || journal.coverImage || journal.flyerImage;
     if (imagePath) {
       return getFileUrl(imagePath);
     }
     return generatePlaceholderImage(journal.title || 'Journal', 0);
+  };
+
+  const ImageWithRetry = ({ src, alt, journal }: { src: string; alt: string; journal: Journal }) => {
+    const [imageSrc, setImageSrc] = useState(src);
+    const [retryCount, setRetryCount] = useState(0);
+    const [hasError, setHasError] = useState(false);
+    const maxRetries = 3; // Increased retries for ERR_CONTENT_LENGTH_MISMATCH
+
+    const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+      const target = e.target as HTMLImageElement;
+      const imgError = e.nativeEvent as any;
+      
+      // Check if it's a Content-Length mismatch error
+      const isContentLengthError = imgError?.message?.includes('ERR_CONTENT_LENGTH_MISMATCH') ||
+                                   imgError?.message?.includes('Failed to load resource');
+      
+      if (retryCount < maxRetries) {
+        // Retry with cache busting - use base src without previous retry params
+        const baseSrc = src.split('?')[0]; // Remove any existing query params
+        // For Content-Length errors, wait longer and try different strategies
+        const retryDelay = isContentLengthError 
+          ? (retryCount + 1) * 2000  // 2s, 4s, 6s delays for Content-Length errors
+          : (retryCount + 1) * 1000; // 1s, 2s, 3s delays for other errors
+        
+        setTimeout(() => {
+          // Try different cache-busting strategies
+          const cacheBuster = retryCount === 0 
+            ? `?_retry=${retryCount + 1}&_t=${Date.now()}`
+            : retryCount === 1
+            ? `?nocache=${Date.now()}&_retry=${retryCount + 1}`
+            : `?v=${Date.now()}&_r=${retryCount + 1}`;
+          
+          setImageSrc(`${baseSrc}${cacheBuster}`);
+          setRetryCount(prev => prev + 1);
+        }, retryDelay);
+      } else {
+        // Max retries reached, show placeholder
+        setHasError(true);
+        target.style.display = 'none';
+        const placeholder = target.nextElementSibling as HTMLElement;
+        if (placeholder) placeholder.style.display = 'flex';
+      }
+    };
+
+    const handleLoad = () => {
+      setHasError(false);
+    };
+
+    if (hasError) {
+      return (
+        <div className="journal-slide__placeholder">
+          <div className="journal-slide__placeholder-content">
+            <i className="pi pi-image text-6xl text-gray-400 mb-4"></i>
+            <p className="text-gray-600">{journal.title}</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <img
+          src={imageSrc}
+          alt={alt}
+          className="journal-slide__image"
+          loading="eager"
+          onError={handleError}
+          onLoad={handleLoad}
+          crossOrigin="anonymous"
+        />
+        <div className="journal-slide__placeholder" style={{ display: 'none' }}>
+          <div className="journal-slide__placeholder-content">
+            <i className="pi pi-image text-6xl text-gray-400 mb-4"></i>
+            <p className="text-gray-600">{journal.title}</p>
+          </div>
+        </div>
+      </>
+    );
   };
 
   const journalTemplate = (journal: Journal) => {
@@ -193,26 +272,7 @@ export default function JournalSlider() {
         <Link href={journalUrl} className="journal-slide__link">
           <div className="journal-slide__image-container">
             {imageUrl ? (
-              <>
-                <img
-                  src={imageUrl}
-                  alt={journal.title}
-                  className="journal-slide__image"
-                  loading="eager"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const placeholder = target.nextElementSibling as HTMLElement;
-                    if (placeholder) placeholder.style.display = 'flex';
-                  }}
-                />
-                <div className="journal-slide__placeholder" style={{ display: 'none' }}>
-                  <div className="journal-slide__placeholder-content">
-                    <i className="pi pi-image text-6xl text-gray-400 mb-4"></i>
-                    <p className="text-gray-600">{journal.title}</p>
-                  </div>
-                </div>
-              </>
+              <ImageWithRetry src={imageUrl} alt={journal.title} journal={journal} />
             ) : (
               <div className="journal-slide__placeholder">
                 <div className="journal-slide__placeholder-content">
