@@ -200,9 +200,13 @@ export default function JournalCovers() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 md:gap-7 lg:gap-8">
-          {journals.map((journal) => {
+          {journals
+            .filter((journal) => journal.flyerImage) // Only show journals with flyerImage
+            .map((journal) => {
             const imageUrl = getImageUrl(journal);
             const journalUrl = journal.shortcode ? `/journals/${journal.shortcode}` : '#';
+
+            if (!imageUrl) return null; // Don't render if no image URL
 
             return (
               <Link
@@ -212,18 +216,16 @@ export default function JournalCovers() {
               >
                 <div className="journal-cover-card__container">
                   <div className="journal-cover-card__image-wrapper">
-                    {imageUrl && (
-                      <img
-                        src={imageUrl}
-                        alt={journal.title}
-                        className="journal-cover-card__image"
-                        loading="lazy"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                        }}
-                      />
-                    )}
+                    <img
+                      src={imageUrl}
+                      alt={journal.title}
+                      className="journal-cover-card__image"
+                      loading="lazy"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                    />
                     <div className="journal-cover-card__title-bar">
                       <div className="journal-cover-card__title-text">
                         {journal.title}
