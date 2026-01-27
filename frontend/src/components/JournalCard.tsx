@@ -25,11 +25,11 @@ const JournalCard = memo(function JournalCard({
     return getFileUrl(imagePath);
   };
 
-  // For list/grid view: use coverImage or flyerImage (not bannerImage - that's for detail page hero)
-  // Priority: coverImage > flyerImage > placeholder
+  // For list/grid view: use flyerImage or coverImage (not bannerImage - that's for detail page hero)
+  // Priority: flyerImage > coverImage > placeholder
   const imageUrl = viewMode === 'grid' 
-    ? (getImageUrl(journal.bannerImage) || getImageUrl(journal.coverImage) || getImageUrl(journal.flyerImage))
-    : (getImageUrl(journal.coverImage) || getImageUrl(journal.flyerImage));
+    ? (getImageUrl(journal.flyerImage) || getImageUrl(journal.coverImage) || getImageUrl(journal.bannerImage))
+    : (getImageUrl(journal.flyerImage) || getImageUrl(journal.coverImage));
 
   const hasContent = !!(journal.homePageContent || journal.aimsScope || journal.guidelines);
 

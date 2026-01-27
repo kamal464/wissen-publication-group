@@ -141,7 +141,8 @@ export default function JournalCovers() {
       return journal.coverImage;
     }
     // Otherwise, try to get file URL from API
-    const imagePath = journal.bannerImage || journal.coverImage || journal.flyerImage;
+    // Priority: flyerImage > coverImage > bannerImage (banner is for detail page hero)
+    const imagePath = journal.flyerImage || journal.coverImage || journal.bannerImage;
     if (imagePath) {
       return getFileUrl(imagePath);
     }
