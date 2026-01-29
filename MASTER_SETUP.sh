@@ -112,7 +112,8 @@ else
     npm run build
 fi
 cd ../frontend
-NODE_OPTIONS="--max-old-space-size=2048" npm run build
+echo "Frontend build (memory-only cache to save disk); may take 5–15 min..."
+BUILD_LOW_DISK=1 NODE_OPTIONS="--max-old-space-size=2560" npm run build
 cd ..
 echo -e "${GREEN}✅ Applications built${NC}"
 echo ""

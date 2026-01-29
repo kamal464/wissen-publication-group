@@ -23,6 +23,14 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['primereact', 'primeicons'],
   },
+  // When BUILD_LOW_DISK=1 (e.g. on EC2 with small root volume), use memory-only
+  // webpack cache to avoid "ENOSPC: no space left on device" during build
+  webpack: (config, { dev, isServer }) => {
+    if (process.env.BUILD_LOW_DISK === '1') {
+      config.cache = { type: 'memory' };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
