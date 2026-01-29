@@ -1,6 +1,13 @@
+import { config as dotenvConfig } from 'dotenv';
+import { join } from 'path';
+
+// Load .env so DATABASE_URL is set on server (PM2 may run from backend/ or project root)
+dotenvConfig({ path: join(process.cwd(), '.env') });
+dotenvConfig({ path: join(process.cwd(), '..', '.env') });
+dotenvConfig({ path: join(process.cwd(), 'backend', '.env') });
+
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
 import { AppModule } from './app.module';
 import { config } from './config/app.config';
 import { AllExceptionsFilter } from './filters/http-exception.filter';

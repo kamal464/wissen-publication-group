@@ -24,6 +24,32 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+# Step 0: Fix DNS and hostname (required for EC2; avoids "unable to resolve host" and git pull)
+echo -e "${YELLOW}🌐 Step 0: Checking DNS and hostname...${NC}"
+CUR_HOST=$(hostname -s 2>/dev/null || cat /etc/hostname 2>/dev/null || echo "")
+if [ -n "$CUR_HOST" ] && ! grep -q "[[:space:]]${CUR_HOST}[[:space:]]*$" /etc/hosts 2>/dev/null && ! grep -q "^127[.]0[.]0[.]1[[:space:]]*${CUR_HOST}" /etc/hosts 2>/dev/null; then
+    echo "Adding hostname to /etc/hosts so sudo and DNS work..."
+    echo "127.0.0.1 $CUR_HOST" | sudo tee -a /etc/hosts
+fi
+if ! getent hosts github.com >/dev/null 2>&1 && ! ping -c1 -W2 github.com >/dev/null 2>&1; then
+    echo "DNS not working. Setting nameservers in /etc/resolv.conf..."
+    if [ ! -s /etc/resolv.conf ] || ! grep -q "nameserver" /etc/resolv.conf; then
+        echo -e "nameserver 8.8.8.8\nnameserver 8.8.4.4" | sudo tee /etc/resolv.conf
+    else
+        (grep -v "nameserver" /etc/resolv.conf; echo -e "nameserver 8.8.8.8\nnameserver 8.8.4.4") | sudo tee /etc/resolv.conf
+    fi
+    sleep 1
+    if ! getent hosts github.com >/dev/null 2>&1; then
+        echo -e "${RED}❌ Still cannot resolve github.com. Fix network/DNS on this instance:${NC}"
+        echo "  1. Ensure instance is in a subnet with internet (public subnet + public IP, or private + NAT)."
+        echo "  2. Run: echo 'nameserver 8.8.8.8' | sudo tee /etc/resolv.conf"
+        echo "  3. Run: echo '127.0.0.1 $(hostname)' | sudo tee -a /etc/hosts"
+        exit 1
+    fi
+fi
+echo -e "${GREEN}✅ DNS and hostname OK${NC}"
+echo ""
+
 # Step 1: Install PM2
 echo -e "${YELLOW}📦 Step 1: Installing PM2...${NC}"
 if ! command -v pm2 &> /dev/null; then
@@ -49,6 +75,26 @@ echo ""
 
 # Step 4: Navigate to project
 cd /var/www/wissen-publication-group
+
+# Step 4a: Free disk space before pull/build (avoids "No space left on device")
+echo -e "${YELLOW}💾 Step 4a: Freeing disk space...${NC}"
+sudo swapoff /swapfile 2>/dev/null || true
+sudo rm -f /swapfile 2>/dev/null || true
+rm -rf frontend/.next backend/dist 2>/dev/null || true
+git checkout -- backend/dist frontend/.next 2>/dev/null || true
+git clean -fd backend/dist frontend/.next 2>/dev/null || true
+npm cache clean --force 2>/dev/null || true
+sudo journalctl --vacuum-size=50M 2>/dev/null || true
+FREE_MB=$(df -m . 2>/dev/null | awk 'NR==2 {print $4}')
+[ -z "$FREE_MB" ] && FREE_MB=0
+echo "Free space after cleanup: ${FREE_MB}MB"
+if [ "$FREE_MB" -lt 500 ]; then
+    echo -e "${RED}❌ Very low disk space (${FREE_MB}MB). Free more space or expand EBS volume, then re-run.${NC}"
+    echo "  Suggestions: sudo apt clean; remove old logs in /var/log; expand volume in AWS console."
+    exit 1
+fi
+echo -e "${GREEN}✅ Disk space OK${NC}"
+echo ""
 
 # Step 5: Pull latest code
 echo -e "${YELLOW}📥 Step 5: Pulling latest code...${NC}"
@@ -112,7 +158,7 @@ else
     npm run build
 fi
 cd ../frontend
-echo "Frontend build (memory-only cache to save disk); may take 5–15 min..."
+echo "Frontend build (memory-only cache to save disk); may take 15–25 min on first run..."
 BUILD_LOW_DISK=1 NODE_OPTIONS="--max-old-space-size=2560" npm run build
 cd ..
 echo -e "${GREEN}✅ Applications built${NC}"
