@@ -2254,7 +2254,6 @@ export default function JournalDetailPage() {
                   className="journal-flyer-image"
                   style={{
                     width: '91%',
-                    height: '320px',
                     borderRadius: '8px',
                     marginBottom: '20px',
                     display: 'block',

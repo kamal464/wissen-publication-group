@@ -97,8 +97,8 @@ export default function JournalCovers() {
       const response = await adminAPI.getJournals();
       const allJournals = (response.data as any[]) || [];
       
-      // Take first 5 journals and ensure they have images
-      const journalsWithImages = allJournals.slice(0, 5).map((j: any, index: number) => {
+      // Take first 4 journals for home page (rest on View All Journals)
+      const journalsWithImages = allJournals.slice(0, 4).map((j: any, index: number) => {
         const existingImage = j.coverImage || j.bannerImage || j.flyerImage;
         const coverImage = (existingImage && (existingImage.startsWith('http://') || existingImage.startsWith('https://'))) 
           ? existingImage 
@@ -110,14 +110,14 @@ export default function JournalCovers() {
         };
       });
       
-      // Ensure we have at least 5 journals
-      if (journalsWithImages.length < 5) {
+      // Ensure we have at least 4 journals
+      if (journalsWithImages.length < 4) {
         const staticJournals = getStaticJournals();
-        const needed = 5 - journalsWithImages.length;
+        const needed = 4 - journalsWithImages.length;
         journalsWithImages.push(...staticJournals.slice(0, needed));
       }
       
-      setJournals(journalsWithImages.slice(0, 5));
+      setJournals(journalsWithImages.slice(0, 4));
     } catch (error: any) {
       // Only log non-network errors (backend offline is expected in development)
       const isNetworkError = error.code === 'ERR_NETWORK' || 
@@ -128,8 +128,8 @@ export default function JournalCovers() {
       if (!isNetworkError) {
         console.error('Error loading journals:', error);
       }
-      // Use static journals if API fails
-      setJournals(getStaticJournals());
+      // Use static journals if API fails (show 4 on home, rest on View Journals)
+      setJournals(getStaticJournals().slice(0, 4));
     } finally {
       setLoading(false);
     }
@@ -194,12 +194,12 @@ export default function JournalCovers() {
             onMouseEnter={(e) => e.currentTarget.style.color = '#104477'}
             onMouseLeave={(e) => e.currentTarget.style.color = '#1558a7'}
           >
-            View All Journals
+            View Journals
             <i className="pi pi-arrow-right ml-2"></i>
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 md:gap-7 lg:gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8 journal-covers-grid">
           {journals.map((journal) => {
             const imageUrl = getImageUrl(journal);
             const journalUrl = journal.shortcode ? `/journals/${journal.shortcode}` : '#';
@@ -212,7 +212,7 @@ export default function JournalCovers() {
               >
                 <div className="journal-cover-card__container">
                   <div className={`journal-cover-card__image-wrapper ${!imageUrl ? 'journal-cover-card__image-wrapper--no-image' : ''}`}>
-                    {imageUrl && (
+                    {imageUrl ? (
                       <img
                         src={imageUrl}
                         alt={journal.title}
@@ -227,12 +227,11 @@ export default function JournalCovers() {
                           }
                         }}
                       />
-                    )}
-                    <div className="journal-cover-card__title-bar">
-                      <div className="journal-cover-card__title-text">
+                    ) : (
+                      <div className="journal-cover-card__title-text journal-cover-card__title-below">
                         {journal.title}
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </Link>
@@ -242,6 +241,11 @@ export default function JournalCovers() {
       </div>
 
       <style jsx global>{`
+        .journal-covers-grid .journal-cover-card {
+          width: 100%;
+          min-width: 0;
+        }
+
         .journal-cover-card {
           text-decoration: none;
           color: inherit;
@@ -250,10 +254,8 @@ export default function JournalCovers() {
           background-color: transparent !important;
         }
 
-        /* Override global card white background for journal-cover-card */
         .journal-cover-card,
         .journal-cover-card.card,
-        .journal-cover-card[class*="card"],
         .journal-cover-card.p-card {
           background: transparent !important;
           background-color: transparent !important;
@@ -262,80 +264,63 @@ export default function JournalCovers() {
         .journal-cover-card__container {
           position: relative;
           width: 100%;
+          display: flex;
+          flex-direction: column;
           transition: transform 0.3s ease, box-shadow 0.3s ease;
           background: transparent !important;
         }
 
         .journal-cover-card:hover .journal-cover-card__container {
-          transform: translateY(-10px);
-          box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
+          transform: translateY(-6px);
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
         }
 
         .journal-cover-card__image-wrapper {
           position: relative;
           width: 100%;
-          aspect-ratio: 2 / 3;
+          height: 0;
+          padding-bottom: 140%;
           border-radius: 0.75rem;
           overflow: hidden;
-          background: transparent !important;
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+          background: #f1f5f9 !important;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
         }
 
         .journal-cover-card__image-wrapper--no-image {
-          background: transparent !important;
-          box-shadow: none !important;
+          background: #f1f5f9 !important;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding-bottom: 0;
+          height: auto;
+          min-height: 200px;
+        }
+
+        .journal-cover-card__image-wrapper--no-image .journal-cover-card__title-below {
+          padding: 1rem;
+          text-align: center;
         }
 
         .journal-cover-card__image {
+          position: absolute;
+          top: 0;
+          left: 0;
           width: 100%;
           height: 100%;
           object-fit: cover;
+          object-position: center;
           transition: transform 0.3s ease;
         }
 
         .journal-cover-card:hover .journal-cover-card__image {
-          transform: scale(1.05);
-        }
-
-        .journal-cover-card__placeholder {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: transparent;
-        }
-
-        .journal-cover-card__title-bar {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.85) 100%);
-          padding: 0.875rem 0.625rem;
-          display: flex !important;
-          flex-direction: column;
-          gap: 0.3rem;
-        }
-
-        .journal-cover-card__image-wrapper--no-image .journal-cover-card__title-bar {
-          position: relative;
-          background: transparent !important;
-          padding: 1rem;
-          display: flex !important;
-        }
-
-        .journal-cover-card__image-wrapper--no-image .journal-cover-card__title-text {
-          color: #374151 !important;
-          font-weight: 600;
+          transform: scale(1.03);
         }
 
         .journal-cover-card__title-text {
-          font-size: 0.75rem;
+          font-size: 0.8rem;
           font-weight: 600;
-          color: #ffffff;
-          line-height: 1.3;
-          text-align: center;
+          color: #1e293b;
+          line-height: 1.35;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
@@ -343,33 +328,15 @@ export default function JournalCovers() {
           text-overflow: ellipsis;
         }
 
-        .journal-cover-card__image-wrapper--no-image .journal-cover-card__title-text {
-          color: #374151 !important;
-          font-weight: 600;
-          -webkit-line-clamp: 3;
-        }
-
         @media (min-width: 768px) {
           .journal-cover-card__title-text {
-            font-size: 0.85rem;
-          }
-
-          .journal-cover-card__title-bar {
-            padding: 1rem 0.75rem;
+            font-size: 0.875rem;
           }
         }
 
         @media (min-width: 1024px) {
           .journal-cover-card__title-text {
             font-size: 0.9rem;
-          }
-
-          .journal-cover-card__logo-text {
-            font-size: 0.75rem;
-          }
-
-          .journal-cover-card__title-bar {
-            padding: 1.125rem 0.875rem;
           }
         }
       `}</style>
