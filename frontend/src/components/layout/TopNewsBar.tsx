@@ -74,7 +74,7 @@ export default function TopNewsBar() {
           </div>
         </div>
         <div className="top-bar__actions">
-          <div className="top-bar__language">
+          {/* <div className="top-bar__language">
             <button type="button" className="top-bar__language-btn" suppressHydrationWarning>
               ENG
             </button>
@@ -82,7 +82,7 @@ export default function TopNewsBar() {
             <button type="button" className="top-bar__language-btn" suppressHydrationWarning>
               中文
             </button>
-          </div>
+          </div> */}
           <div className="top-bar__social" aria-label="Social media links">
             <Link href="https://www.facebook.com" aria-label="Facebook" target="_blank" rel="noreferrer">
               <i className="pi pi-facebook" />

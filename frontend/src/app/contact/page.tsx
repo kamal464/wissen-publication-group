@@ -323,7 +323,6 @@ export default function ContactPage() {
                   <div className="info-content">
                     <h4>Phone</h4>
                     <p>+1 (555) 123-4567</p>
-                    <p className="info-note">Mon-Fri, 9:00 AM - 5:00 PM EST</p>
                   </div>
                 </div>
 

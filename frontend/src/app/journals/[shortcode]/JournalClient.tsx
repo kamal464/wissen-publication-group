@@ -1,6 +1,6 @@
 'use client';
 // Fixed author display for in-press articles
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { journalService } from '@/services/api';
@@ -17,31 +17,34 @@ export default function JournalDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [articles, setArticles] = useState<any[]>([]);
-  const [activeSection, setActiveSection] = useState('home');
+  const activeSection = searchParams.get('section') || 'home';
   const [sectionContent, setSectionContent] = useState<string>('');
   const [boardMembers, setBoardMembers] = useState<any[]>([]);
   const [archiveIssues, setArchiveIssues] = useState<Map<number, any[]>>(new Map());
   const [contentLoading, setContentLoading] = useState(false);
   const [expandedAbstracts, setExpandedAbstracts] = useState<Set<number>>(new Set());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const journalRef = useRef<any | null>(null);
 
-  // Fetch journal data
+  // Keep ref in sync so tab switch always reads latest journal (avoids stale closure)
+  useEffect(() => {
+    journalRef.current = journal;
+  }, [journal]);
+
+  // Fetch journal data (single API call to avoid duplicate and missing fields like aimsScope/guidelines)
   useEffect(() => {
     const fetchJournal = async () => {
       if (!shortcode) return;
 
       try {
         setLoading(true);
-          const shortcodeResponse = await (journalService as any).getByShortcode(shortcode);
+        const shortcodeResponse = await (journalService as any).getByShortcode(shortcode);
         const journalData = (shortcodeResponse?.data || shortcodeResponse) as any;
-        
+
         if (journalData && journalData.id) {
-          // Fetch full details
-          const fullResponse = await adminAPI.getJournal(journalData.id) as any;
-          const fullJournal = fullResponse?.data || fullResponse;
-          setJournal({ ...journalData, ...fullJournal, shortcode });
+          setJournal({ ...journalData, shortcode });
         }
-          } catch (err) {
+      } catch (err) {
         setError('Failed to load journal');
       } finally {
         setLoading(false);
@@ -51,15 +54,10 @@ export default function JournalDetailPage() {
     fetchJournal();
   }, [shortcode]);
 
-  // Handle section changes from URL
-  useEffect(() => {
-    const section = searchParams.get('section') || 'home';
-    setActiveSection(section);
-  }, [searchParams]);
-
   // Load section content
   const loadSectionContent = useCallback(async (section: string) => {
-    if (!journal || journal.id <= 0) return;
+    const j = journalRef.current || journal;
+    if (!j || j.id <= 0) return;
 
     try {
       setContentLoading(true);
@@ -67,19 +65,18 @@ export default function JournalDetailPage() {
       
       switch (section) {
         case 'home':
-          // Home section - no articles needed
           setArticles([]);
-          setSectionContent(journal.homePageContent || journal.journalDescription || journal.description || '');
+          setSectionContent(j.homePageContent || j.journalDescription || j.description || '');
           break;
 
         case 'aims-scope':
-          setSectionContent(journal.aimsScope || 'Aims and Scope content will be available soon.');
+          setSectionContent(j.aimsScope ?? 'Aims and Scope content will be available soon.');
           setArticles([]);
           break;
 
         case 'editorial-board':
           try {
-            const membersResponse = await adminAPI.getBoardMembers(journal.id);
+            const membersResponse = await adminAPI.getBoardMembers(j.id);
             const members = (membersResponse.data as any[]) || [];
             console.log('Board members loaded:', members);
             // Log each member's image fields for debugging
@@ -94,7 +91,7 @@ export default function JournalDetailPage() {
               });
             });
             setBoardMembers(members);
-            setSectionContent(journal.editorialBoard || '');
+            setSectionContent(j.editorialBoard || '');
           } catch (err) {
             console.error('Error loading board members:', err);
             setBoardMembers([]);
@@ -105,12 +102,12 @@ export default function JournalDetailPage() {
         case 'in-press':
           try {
             const articlesResponse = await adminAPI.getArticles({ 
-              journalId: journal.id, 
+              journalId: j.id, 
               status: 'INPRESS',
               showInInpressCards: 'true'
             });
             setArticles((articlesResponse.data as any[]) || []);
-            setSectionContent(journal.articlesInPress || '');
+            setSectionContent(j.articlesInPress || '');
           } catch (err) {
             console.error('Error loading in-press articles:', err);
             setArticles([]);
@@ -120,11 +117,11 @@ export default function JournalDetailPage() {
         case 'current-issue':
           try {
             const articlesResponse = await adminAPI.getArticles({ 
-              journalId: journal.id, 
+              journalId: j.id, 
               status: 'CURRENT_ISSUE' 
             });
             setArticles((articlesResponse.data as any[]) || []);
-            setSectionContent(journal.currentIssueContent || '');
+            setSectionContent(j.currentIssueContent || '');
           } catch (err) {
             console.error('Error loading current issue:', err);
             setArticles([]);
@@ -139,7 +136,7 @@ export default function JournalDetailPage() {
             const yearParam = searchParams?.get('year');
 
             const articlesResponse = await adminAPI.getArticles({ 
-              journalId: journal.id,
+              journalId: j.id,
               limit: 1000
             });
             const allArticles = (articlesResponse.data as any[]) || [];
@@ -203,7 +200,7 @@ export default function JournalDetailPage() {
               setArticles([]); // Clear articles when showing archive structure
             }
 
-            setSectionContent(journal.archiveContent || '');
+            setSectionContent(j.archiveContent || '');
           } catch (err) {
             console.error('Error loading archive:', err);
             setArticles([]);
@@ -211,7 +208,7 @@ export default function JournalDetailPage() {
           break;
 
         case 'guidelines':
-          setSectionContent(journal.guidelines || 'Journal Guidelines will be available soon.');
+          setSectionContent(j.guidelines ?? 'Journal Guidelines will be available soon.');
           setArticles([]);
           break;
 
@@ -328,7 +325,6 @@ export default function JournalDetailPage() {
         .journal-left-column {
           width: 100% !important;
           max-width: 100% !important;
-          overflow-x: hidden !important;
         }
         
         .journal-introduction-card {
@@ -344,7 +340,6 @@ export default function JournalDetailPage() {
           width: 100% !important;
           max-width: 100% !important;
           box-sizing: border-box !important;
-          overflow-x: hidden !important;
           padding: 24px 16px !important;
         }
         
@@ -383,7 +378,7 @@ export default function JournalDetailPage() {
         }
         
         .journal-editorial-board-card {
-          margin-left: 98px !important;
+          margin-left: 0 !important;
         }
         
         .journal-right-column {
@@ -1266,12 +1261,13 @@ export default function JournalDetailPage() {
       }}>
         <div className="journal-content-grid" style={{
           display: 'grid',
-          gridTemplateColumns: '70% 30%',
+          gridTemplateColumns: 'minmax(0, 7fr) minmax(0, 3fr)',
           gap: '32px',
           width: '100%',
           maxWidth: '100%',
           boxSizing: 'border-box',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          alignItems: 'start'
         }}>
           {/* LEFT COLUMN - 70% */}
           <div className="journal-left-column" style={{ 
@@ -1280,9 +1276,9 @@ export default function JournalDetailPage() {
             gap: '24px',
             width: '100%',
             maxWidth: '100%',
+            minWidth: 0,
             boxSizing: 'border-box',
-            overflow: 'hidden',
-            minWidth: 0
+            overflow: 'hidden'
           }}>
             {/* Error Message */}
             {error && activeSection !== 'home' && (
@@ -1363,11 +1359,14 @@ export default function JournalDetailPage() {
 
             {/* Aims and Scope */}
             {!contentLoading && activeSection === 'aims-scope' && (
-              <div style={{
+              <div className="journal-content-card" style={{
                 backgroundColor: '#FFFFFF',
                 borderRadius: '8px',
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                padding: '32px'
+                padding: '32px',
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box'
               }}>
                 <h2 style={{
                   fontSize: '24px',
@@ -1379,13 +1378,17 @@ export default function JournalDetailPage() {
                 }}>
                   Aims and Scope
                 </h2>
-                <div style={{
+                <div className="journal-content-card__body" style={{
                   color: '#374151',
                   fontSize: '15px',
-                  lineHeight: '1.8'
+                  lineHeight: '1.8',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  maxWidth: '100%'
                 }} dangerouslySetInnerHTML={{ __html: sectionContent }} />
-                        </div>
-                      )}
+              </div>
+            )}
 
             {/* Editorial Board */}
             {!contentLoading && activeSection === 'editorial-board' && (
@@ -1396,8 +1399,7 @@ export default function JournalDetailPage() {
                 padding: '32px',
                 width: '100%',
                 maxWidth: '100%',
-                boxSizing: 'border-box',
-                overflow: 'hidden'
+                boxSizing: 'border-box'
               }}>
                 <h2 style={{
                   fontSize: '24px',
@@ -1427,8 +1429,7 @@ export default function JournalDetailPage() {
                       marginTop: '1rem',
                       width: '100%',
                       maxWidth: '100%',
-                      boxSizing: 'border-box',
-                      overflow: 'hidden'
+                      boxSizing: 'border-box'
                     }}
                   >
                     {boardMembers.map((member) => {
@@ -1447,8 +1448,7 @@ export default function JournalDetailPage() {
                             width: '100%',
                             maxWidth: '100%',
                             minWidth: 0,
-                            boxSizing: 'border-box',
-                            overflow: 'hidden'
+                            boxSizing: 'border-box'
                           }}
                         >
                           <div
@@ -1459,8 +1459,7 @@ export default function JournalDetailPage() {
                               alignItems: 'flex-start',
                               width: '100%',
                               maxWidth: '100%',
-                              boxSizing: 'border-box',
-                              overflow: 'hidden'
+                              boxSizing: 'border-box'
                             }}
                           >
                             <div
@@ -1562,9 +1561,10 @@ export default function JournalDetailPage() {
                                 flex: 1,
                                 minWidth: 0,
                                 maxWidth: '100%',
-                                overflow: 'hidden',
-                                wordWrap: 'break-word',
-                                overflowWrap: 'break-word'
+                                display: 'flex',
+                                flexDirection: 'column',
+                                overflow: 'visible',
+                                overflowX: 'hidden'
                               }}
                             >
                               <h3 style={{
@@ -1574,29 +1574,99 @@ export default function JournalDetailPage() {
                                 fontWeight: '600',
                                 color: '#111827',
                                 wordWrap: 'break-word',
-                                overflowWrap: 'break-word'
+                                overflowWrap: 'break-word',
+                                flexShrink: 0
                               }}>{member.name}</h3>
 
-                              <div className="editor-role">
+                              <div className="editor-role" style={{ flexShrink: 0 }}>
                                 <i className="pi pi-briefcase" style={{ marginRight: '8px' }} />
                                 <span>{role}</span>
                               </div>
 
-                              {(member as any).affiliation && (
-                                <div className="editor-affiliation">
-                                  <i className="pi pi-building" style={{ marginRight: '8px' }} />
-                                  <span>{(member as any).affiliation}</span>
-                                </div>
-                              )}
-                              {(member as any).tags && (
-                                <div className="editor-tags" style={{
-                                  marginTop: '8px',
-                                  fontSize: '14px',
-                                  color: '#6B7280'
-                                }}>
-                                  <span>{(member as any).tags}</span>
-                                </div>
-                              )}
+                              {/* Affiliation - always visible, word-wrap for long text */}
+                              {(() => {
+                                const aff = (member as any).affiliation ?? (member as any).institution ?? (member as any).organization;
+                                const hasAff = aff != null && String(aff).trim() !== '';
+                                if (!hasAff) return null;
+                                return (
+                                  <div
+                                    className="editor-affiliation"
+                                    style={{
+                                      display: 'block',
+                                      visibility: 'visible',
+                                      flexShrink: 0,
+                                      marginTop: '6px',
+                                      marginBottom: '4px',
+                                      width: '100%',
+                                      maxWidth: '100%',
+                                      wordWrap: 'break-word',
+                                      overflowWrap: 'break-word',
+                                      wordBreak: 'break-word',
+                                      fontSize: '14px',
+                                      color: '#374151',
+                                      lineHeight: '1.5'
+                                    }}
+                                  >
+                                    <i className="pi pi-building" style={{ marginRight: '8px' }} />
+                                    <span style={{ wordWrap: 'break-word', overflowWrap: 'break-word', wordBreak: 'break-word' }}>{String(aff).trim()}</span>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* Scrollable bio/description area - contained, no horizontal overflow */}
+                              <div className="editor-bio-scroll" style={{
+                                marginTop: '8px',
+                                maxHeight: '160px',
+                                overflowY: 'auto',
+                                overflowX: 'hidden',
+                                wordWrap: 'break-word',
+                                overflowWrap: 'anywhere',
+                                wordBreak: 'break-word',
+                                flex: '1 1 0',
+                                minHeight: 0,
+                                minWidth: 0,
+                                maxWidth: '100%'
+                              }}>
+                                {(member as any).bio && (
+                                  <div className="editor-bio" style={{
+                                    fontSize: '14px',
+                                    color: '#374151',
+                                    lineHeight: '1.6',
+                                    wordWrap: 'break-word',
+                                    overflowWrap: 'anywhere',
+                                    wordBreak: 'break-word',
+                                    maxWidth: '100%'
+                                  }}>
+                                    <span>{(member as any).bio}</span>
+                                  </div>
+                                )}
+                                {!(member as any).bio && ((member as any).description || (member as any).biography) && (
+                                  <div className="editor-bio" style={{
+                                    fontSize: '14px',
+                                    color: '#374151',
+                                    lineHeight: '1.6',
+                                    wordWrap: 'break-word',
+                                    overflowWrap: 'anywhere',
+                                    wordBreak: 'break-word',
+                                    maxWidth: '100%'
+                                  }}>
+                                    <span>{(member as any).description || (member as any).biography}</span>
+                                  </div>
+                                )}
+                                {(member as any).tags && (
+                                  <div className="editor-tags" style={{
+                                    marginTop: '8px',
+                                    fontSize: '14px',
+                                    color: '#6B7280',
+                                    wordWrap: 'break-word',
+                                    overflowWrap: 'anywhere',
+                                    wordBreak: 'break-word',
+                                    maxWidth: '100%'
+                                  }}>
+                                    <span>{(member as any).tags}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1613,11 +1683,14 @@ export default function JournalDetailPage() {
 
             {/* In Press, Current Issue - Show Articles */}
             {!contentLoading && (activeSection === 'in-press' || activeSection === 'current-issue') && (
-              <div style={{
+              <div className="journal-content-card" style={{
                 backgroundColor: '#FFFFFF',
                 borderRadius: '8px',
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                padding: '32px'
+                padding: '32px',
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box'
               }}>
                 <h2 style={{
                   fontSize: '24px',
@@ -1630,11 +1703,15 @@ export default function JournalDetailPage() {
                   {activeSection === 'in-press' ? 'Articles In Press' : 'Current Issue'}
                 </h2>
                 {sectionContent && (
-                  <div style={{
+                  <div className="journal-content-card__body" style={{
                     color: '#374151',
                     fontSize: '15px',
                     lineHeight: '1.8',
-                    marginBottom: '24px'
+                    marginBottom: '24px',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    maxWidth: '100%'
                   }} dangerouslySetInnerHTML={{ __html: sectionContent }} />
                 )}
                 {articles.length > 0 ? (
@@ -2206,11 +2283,14 @@ export default function JournalDetailPage() {
 
             {/* Guidelines */}
             {!contentLoading && activeSection === 'guidelines' && (
-              <div style={{
+              <div className="journal-content-card" style={{
                 backgroundColor: '#FFFFFF',
                 borderRadius: '8px',
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                padding: '32px'
+                padding: '32px',
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box'
               }}>
                 <h2 style={{
                   fontSize: '24px',
@@ -2221,18 +2301,31 @@ export default function JournalDetailPage() {
                   borderBottom: '3px solid #1E5DA8'
                 }}>
                   Journal Guidelines
-                  </h2>
-                <div style={{
+                </h2>
+                <div className="journal-content-card__body" style={{
                   color: '#374151',
                   fontSize: '15px',
-                            lineHeight: '1.8'
+                  lineHeight: '1.8',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  maxWidth: '100%'
                 }} dangerouslySetInnerHTML={{ __html: sectionContent }} />
-                    </div>
-                  )}
+              </div>
+            )}
                 </div>
 
           {/* RIGHT COLUMN - 30% */}
-          <div className="journal-right-column" style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'flex-start' }}>
+          <div className="journal-right-column" style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '24px',
+            alignItems: 'flex-start',
+            minWidth: 0,
+            maxWidth: '100%',
+            overflow: 'hidden',
+            boxSizing: 'border-box'
+          }}>
             {/* Journal Cover Card */}
             <div className="journal-cover-card" style={{
               backgroundColor: 'rgb(255, 255, 255)',
@@ -2240,8 +2333,8 @@ export default function JournalDetailPage() {
               boxShadow: 'rgba(0, 0, 0, 0.08) 0px 2px 8px',
               padding: '16px',
               maxWidth: '260px',
-              width: '90%',
-              marginLeft: '50px',
+              width: '100%',
+              marginLeft: 0,
               display: 'flex',
               flexDirection: 'column',
               gap: '0',
@@ -2274,51 +2367,62 @@ export default function JournalDetailPage() {
                 marginBottom: '20px',
                 boxSizing: 'border-box'
               }}>
-                {/* Join Editorial Board Button */}
-                <button style={{
-                  width: '80%',
-                  backgroundColor: 'rgb(30, 93, 168)',
-                  color: 'rgb(255, 255, 255)',
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  fontSize: '15px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  margin: '0 auto',
-                  transition: '0.2s',
-                  display: 'block',
-                  boxSizing: 'border-box',
-                  position: 'relative',
-                  zIndex: 1
-                }}>
-                  Join Editorial Board
-                </button>
+                {/* Submit Manuscript Button */}
+                <Link
+                  href={shortcode ? `/submit-manuscript?journal=${encodeURIComponent(shortcode)}` : '/submit-manuscript'}
+                  style={{
+                    width: '80%',
+                    backgroundColor: 'rgb(30, 93, 168)',
+                    color: 'rgb(255, 255, 255)',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    margin: '0 auto',
+                    transition: '0.2s',
+                    display: 'block',
+                    boxSizing: 'border-box',
+                    position: 'relative',
+                    zIndex: 1,
+                    textDecoration: 'none',
+                    textAlign: 'center'
+                  }}
+                >
+                  Submit Manuscript
+                </Link>
 
-                {/* Join Reviewer Team Button */}
-                <button style={{
-                  width: '80%',
-                  backgroundColor: 'rgb(255, 255, 255)',
-                  color: 'rgb(30, 93, 168)',
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  border: '2px solid rgb(30, 93, 168)',
-                  fontSize: '15px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  margin: '0 auto',
-                  transition: '0.2s',
-                  display: 'block',
-                  boxSizing: 'border-box',
-                  position: 'relative',
-                  zIndex: 1
-                }}>
-                  Join Reviewer Team
-                </button>
+                {/* View Editorial Board Button */}
+                <Link
+                  href={shortcode ? `/journals/${shortcode}?section=editorial-board` : '#'}
+                  style={{
+                    width: '80%',
+                    backgroundColor: 'rgb(255, 255, 255)',
+                    color: 'rgb(30, 93, 168)',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    border: '2px solid rgb(30, 93, 168)',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    margin: '0 auto',
+                    transition: '0.2s',
+                    display: 'block',
+                    boxSizing: 'border-box',
+                    position: 'relative',
+                    zIndex: 1,
+                    textDecoration: 'none',
+                    textAlign: 'center'
+                  }}
+                >
+                  View Editorial Board
+                </Link>
               </div>
           </div>
 
-            {/* Useful Links Card */}
+            {/* Useful Links Card - hidden on Editorial Board section */}
+            {activeSection !== 'editorial-board' && (
             <div className="journal-useful-links-card" style={{
               backgroundColor: '#FFFFFF',
               borderRadius: '8px',
@@ -2420,7 +2524,8 @@ export default function JournalDetailPage() {
                   </Link>
                 </li>
               </ul>
-                    </div>
+            </div>
+            )}
                       </div>
                       </div>
                   </div>
