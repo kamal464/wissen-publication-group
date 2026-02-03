@@ -332,8 +332,8 @@ export default function ContactPage() {
                   </div>
                   <div className="info-content">
                     <h4>Email</h4>
-                    <p>editorial@universalpublishers.com</p>
-                    <p>support@universalpublishers.com</p>
+                   
+                    <p>Contact@wissenpublications.com</p>
                   </div>
                 </div>
 

@@ -1216,6 +1216,7 @@ export default function JournalDetailPage() {
       <div style={{
         backgroundColor: '#1E5DA8',
         padding: '48px 24px',
+        minHeight: '130px',
         backgroundImage: journal.bannerImage ? `url(${getImageUrl(journal.bannerImage)})` : 'none',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -1240,16 +1241,18 @@ export default function JournalDetailPage() {
           position: 'relative',
           zIndex: 2
         }}>
+          {!journal.bannerImage && (
           <h1 style={{
             color: '#FFFFFF',
             fontSize: '36px',
             fontWeight: '700',
             marginBottom: '0',
             lineHeight: '1.2',
-            textShadow: journal.bannerImage ? '2px 2px 4px rgba(0, 0, 0, 0.5)' : 'none'
+            textShadow: 'none'
           }}>
             {journal.title}
           </h1>
+          )}
         </div>
       </div>
 
@@ -2421,111 +2424,6 @@ export default function JournalDetailPage() {
               </div>
           </div>
 
-            {/* Useful Links Card - hidden on Editorial Board section */}
-            {activeSection !== 'editorial-board' && (
-            <div className="journal-useful-links-card" style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: '8px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-              padding: '24px',
-              maxWidth: '260px',
-              width: '100%',
-              marginLeft: '50px'
-            }}>
-              <h3 style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                color: '#0B3C78',
-                marginBottom: '16px'
-              }}>
-                Useful Links
-              </h3>
-              <ul style={{
-                listStyle: 'none',
-                padding: 0,
-                margin: 0
-              }}>
-                <li style={{ marginBottom: '12px' }}>
-                  <Link href={`/journals/${shortcode}?section=peer-review`} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    color: '#374151',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                    transition: 'color 0.2s'
-                  }} onMouseEnter={(e) => e.currentTarget.style.color = '#1E5DA8'}
-                     onMouseLeave={(e) => e.currentTarget.style.color = '#374151'}>
-                    <span style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      backgroundColor: '#E0F0FF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}>
-                      <i className="pi pi-check" style={{ fontSize: '12px', color: '#1E5DA8' }}></i>
-                      </span>
-                    Peer Review Procedure
-                  </Link>
-                </li>
-                <li style={{ marginBottom: '12px' }}>
-                  <Link href={`/journals/${shortcode}?section=policies`} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    color: '#374151',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                    transition: 'color 0.2s'
-                  }} onMouseEnter={(e) => e.currentTarget.style.color = '#1E5DA8'}
-                     onMouseLeave={(e) => e.currentTarget.style.color = '#374151'}>
-                    <span style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      backgroundColor: '#E0F0FF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}>
-                      <i className="pi pi-check" style={{ fontSize: '12px', color: '#1E5DA8' }}></i>
-                        </span>
-                    Journal Policies
-                  </Link>
-                </li>
-                <li style={{ marginBottom: '12px' }}>
-                  <Link href={`/journals/${shortcode}?section=ethics`} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    color: '#374151',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                    transition: 'color 0.2s'
-                  }} onMouseEnter={(e) => e.currentTarget.style.color = '#1E5DA8'}
-                     onMouseLeave={(e) => e.currentTarget.style.color = '#374151'}>
-                    <span style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      backgroundColor: '#E0F0FF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}>
-                      <i className="pi pi-check" style={{ fontSize: '12px', color: '#1E5DA8' }}></i>
-                      </span>
-                    Publication Ethics
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            )}
                       </div>
                       </div>
                   </div>

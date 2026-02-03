@@ -39,6 +39,7 @@ export default function ManageJournalInformation() {
   const [showDialog, setShowDialog] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [deletingImage, setDeletingImage] = useState<string | null>(null);
   const toast = useRef<Toast>(null);
 
   useEffect(() => {
@@ -134,6 +135,31 @@ export default function ManageJournalInformation() {
       });
     } finally {
       setUploading(null);
+    }
+  };
+
+  const handleDeleteImage = async (field: 'bannerImage' | 'flyerImage' | 'flyerPdf' | 'googleIndexingImage') => {
+    if (!journal || journal.id === 0) return;
+    try {
+      setDeletingImage(field);
+      const journalDataFromShortcode = await loadJournalData();
+      if (!journalDataFromShortcode) {
+        toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Could not find journal.' });
+        return;
+      }
+      const correctJournalId = journalDataFromShortcode.journalId;
+      await adminAPI.updateJournal(correctJournalId, { [field]: '' });
+      setJournal({ ...journal, [field]: '' });
+      toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Image removed successfully' });
+      await loadJournal();
+    } catch (error: any) {
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Error',
+        detail: error.response?.data?.message || 'Failed to remove image',
+      });
+    } finally {
+      setDeletingImage(null);
     }
   };
 
@@ -338,6 +364,14 @@ export default function ManageJournalInformation() {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
                   />
+                  <Button
+                    type="button"
+                    label="Delete"
+                    icon={deletingImage === 'bannerImage' ? 'pi pi-spin pi-spinner' : 'pi pi-trash'}
+                    className="p-button-outlined p-button-danger p-button-sm mt-1"
+                    disabled={!!deletingImage}
+                    onClick={() => handleDeleteImage('bannerImage')}
+                  />
                 </div>
               )}
               {journal.flyerImage && (
@@ -351,6 +385,14 @@ export default function ManageJournalInformation() {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
                   />
+                  <Button
+                    type="button"
+                    label="Delete"
+                    icon={deletingImage === 'flyerImage' ? 'pi pi-spin pi-spinner' : 'pi pi-trash'}
+                    className="p-button-outlined p-button-danger p-button-sm mt-1"
+                    disabled={!!deletingImage}
+                    onClick={() => handleDeleteImage('flyerImage')}
+                  />
                 </div>
               )}
               {journal.googleIndexingImage && (
@@ -363,6 +405,14 @@ export default function ManageJournalInformation() {
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
+                  />
+                  <Button
+                    type="button"
+                    label="Delete"
+                    icon={deletingImage === 'googleIndexingImage' ? 'pi pi-spin pi-spinner' : 'pi pi-trash'}
+                    className="p-button-outlined p-button-danger p-button-sm mt-1"
+                    disabled={!!deletingImage}
+                    onClick={() => handleDeleteImage('googleIndexingImage')}
                   />
                 </div>
               )}
@@ -605,6 +655,14 @@ export default function ManageJournalInformation() {
                         }}
                       />
                       <p className="text-xs text-gray-500 mt-1">Current banner image</p>
+                      <Button
+                        type="button"
+                        label={deletingImage === 'bannerImage' ? 'Removing...' : 'Delete image'}
+                        icon={deletingImage === 'bannerImage' ? 'pi pi-spin pi-spinner' : 'pi pi-trash'}
+                        className="p-button-outlined p-button-danger p-button-sm mt-1"
+                        disabled={!!deletingImage}
+                        onClick={() => handleDeleteImage('bannerImage')}
+                      />
                     </div>
                   )}
                 </div>
@@ -637,6 +695,14 @@ export default function ManageJournalInformation() {
                         }}
                       />
                       <p className="text-xs text-gray-500 mt-1">Current flyer image</p>
+                      <Button
+                        type="button"
+                        label={deletingImage === 'flyerImage' ? 'Removing...' : 'Delete image'}
+                        icon={deletingImage === 'flyerImage' ? 'pi pi-spin pi-spinner' : 'pi pi-trash'}
+                        className="p-button-outlined p-button-danger p-button-sm mt-1"
+                        disabled={!!deletingImage}
+                        onClick={() => handleDeleteImage('flyerImage')}
+                      />
                     </div>
                   )}
                 </div>
@@ -669,6 +735,14 @@ export default function ManageJournalInformation() {
                         <i className="pi pi-file-pdf"></i>
                         View Flyer PDF
                       </a>
+                      <Button
+                        type="button"
+                        label={deletingImage === 'flyerPdf' ? 'Removing...' : 'Delete file'}
+                        icon={deletingImage === 'flyerPdf' ? 'pi pi-spin pi-spinner' : 'pi pi-trash'}
+                        className="p-button-outlined p-button-danger p-button-sm mt-1"
+                        disabled={!!deletingImage}
+                        onClick={() => handleDeleteImage('flyerPdf')}
+                      />
                     </div>
                   )}
                 </div>
@@ -701,6 +775,14 @@ export default function ManageJournalInformation() {
                         }}
                       />
                       <p className="text-xs text-gray-500 mt-1">Current Google indexing image</p>
+                      <Button
+                        type="button"
+                        label={deletingImage === 'googleIndexingImage' ? 'Removing...' : 'Delete image'}
+                        icon={deletingImage === 'googleIndexingImage' ? 'pi pi-spin pi-spinner' : 'pi pi-trash'}
+                        className="p-button-outlined p-button-danger p-button-sm mt-1"
+                        disabled={!!deletingImage}
+                        onClick={() => handleDeleteImage('googleIndexingImage')}
+                      />
                     </div>
                   )}
                 </div>
