@@ -24,7 +24,13 @@ export default function JournalDetailPage() {
   const [contentLoading, setContentLoading] = useState(false);
   const [expandedAbstracts, setExpandedAbstracts] = useState<Set<number>>(new Set());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [bannerLoadFailed, setBannerLoadFailed] = useState(false);
   const journalRef = useRef<any | null>(null);
+
+  // Reset banner load state when journal changes
+  useEffect(() => {
+    setBannerLoadFailed(false);
+  }, [journal?.id, journal?.bannerImage]);
 
   // Keep ref in sync so tab switch always reads latest journal (avoids stale closure)
   useEffect(() => {
@@ -1217,14 +1223,24 @@ export default function JournalDetailPage() {
         backgroundColor: '#1E5DA8',
         padding: '48px 24px',
         minHeight: '130px',
-        backgroundImage: journal.bannerImage ? `url(${getImageUrl(journal.bannerImage)})` : 'none',
+        backgroundImage: journal.bannerImage && !bannerLoadFailed ? `url(${getImageUrl(journal.bannerImage)})` : 'none',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         position: 'relative'
       }}>
-        {/* Overlay for better text readability */}
-        {journal.bannerImage && (
+        {/* Invisible img to detect banner load failure so we can show title fallback */}
+        {journal.bannerImage && getImageUrl(journal.bannerImage) && (
+          <img
+            src={getImageUrl(journal.bannerImage) || ''}
+            alt=""
+            aria-hidden
+            style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+            onError={() => setBannerLoadFailed(true)}
+          />
+        )}
+        {/* Overlay for better text readability when banner is shown */}
+        {journal.bannerImage && !bannerLoadFailed && (
           <div style={{
             position: 'absolute',
             top: 0,
@@ -1241,7 +1257,8 @@ export default function JournalDetailPage() {
           position: 'relative',
           zIndex: 2
         }}>
-          {!journal.bannerImage && (
+          {/* Show title when no banner, or when banner failed to load (prod fix) */}
+          {(!journal.bannerImage || bannerLoadFailed) && (
           <h1 style={{
             color: '#FFFFFF',
             fontSize: '36px',

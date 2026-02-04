@@ -168,10 +168,11 @@ export const getApiUrl = (endpoint: string): string => {
 };
 
 /**
- * Construct full URL for file/image paths
+ * Construct full URL for file/image paths.
+ * If path looks like an S3 key (no leading / or http) and NEXT_PUBLIC_CDN_URL is set, use CDN (CloudFront).
  */
 export const getFileUrl = (path: string): string => {
-  // If path already starts with http, return as is
+  // If path already starts with http, return as is (e.g. full CloudFront URL from API)
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
   }
@@ -179,6 +180,13 @@ export const getFileUrl = (path: string): string => {
   // If path is a data URI, return as is (don't try to fetch from server)
   if (path.startsWith('data:')) {
     return path;
+  }
+
+  // S3/CloudFront key (e.g. "journals/123-banner.jpg") – use CDN if configured (production)
+  const cdnUrl = typeof process.env.NEXT_PUBLIC_CDN_URL === 'string' && process.env.NEXT_PUBLIC_CDN_URL.trim();
+  if (cdnUrl && !path.startsWith('/')) {
+    const base = cdnUrl.replace(/\/$/, '');
+    return `${base}/${path.replace(/^\//, '')}`;
   }
 
   const baseUrl = getFileBaseUrl();

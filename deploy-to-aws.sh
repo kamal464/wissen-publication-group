@@ -45,6 +45,13 @@ echo "Host: $DEPLOY_HOST"
 echo "Path: $REMOTE_PATH"
 echo ""
 
+# Remind: keep backend/prod.env so credentials are pushed every deploy (no re-entering on server)
+if [ ! -f "$(dirname "$0")/backend/prod.env" ]; then
+    echo -e "${YELLOW}💡 Tip: Create backend/prod.env (from prod.env.example) with real DATABASE_URL and AWS keys.${NC}"
+    echo "   Then every deploy will push it to the server and you won't lose .env when syncing from Git Bash."
+    echo ""
+fi
+
 # Step 1: Build backend
 echo -e "${YELLOW}🔨 Building backend...${NC}"
 cd "$(dirname "$0")/backend"
@@ -79,6 +86,9 @@ if command -v rsync &>/dev/null; then
         ./ "$DEPLOY_HOST:$REMOTE_PATH/"
 else
     # Fallback when rsync not installed (e.g. Git Bash on Windows): tar + scp
+    # Preserve server backend/.env: backup before extract, restore after if we're not pushing prod.env
+    PROD_ENV_CHECK="$(dirname "$0")/backend/prod.env"
+    $SSH_CMD "test -f $REMOTE_PATH/backend/.env && cp $REMOTE_PATH/backend/.env /tmp/backend.env.bak.$$ || true"
     # Create archive outside project dir so "tar ." doesn't see file changed as we read it
     # Exclude backend/.env and .env so production DB credentials are never overwritten by local dev .env
     ARCHIVE_NAME="deploy-$$.tar.gz"
@@ -98,10 +108,17 @@ else
     done
     if [ "$SCP_OK" -eq 0 ]; then
         rm -f "$ARCHIVE"
+        $SSH_CMD "rm -f /tmp/backend.env.bak.$$"
         echo -e "${RED}❌ Sync failed after 3 attempts. Try: different network, or install rsync.${NC}"
         exit 1
     fi
     $SSH_CMD "cd $REMOTE_PATH && tar -xzf /tmp/$ARCHIVE_NAME && rm /tmp/$ARCHIVE_NAME"
+    # Restore server .env if we don't have prod.env to push (so we never lose credentials)
+    if [ ! -f "$PROD_ENV_CHECK" ]; then
+        $SSH_CMD "test -f /tmp/backend.env.bak.$$ && cp /tmp/backend.env.bak.$$ $REMOTE_PATH/backend/.env && rm /tmp/backend.env.bak.$$ && echo 'Restored backend/.env from backup' || rm -f /tmp/backend.env.bak.$$"
+    else
+        $SSH_CMD "rm -f /tmp/backend.env.bak.$$"
+    fi
     rm -f "$ARCHIVE"
 fi
 echo -e "${GREEN}✅ Sync done${NC}"

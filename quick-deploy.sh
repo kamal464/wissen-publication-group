@@ -2,6 +2,11 @@
 # ==========================================
 # Quick deploy: set env + build locally + deploy to EC2
 # Run from Git Bash: ./quick-deploy.sh
+#
+# One-time setup so prod .env is never lost when syncing from Git Bash:
+#   cp backend/prod.env.example backend/prod.env
+#   Edit backend/prod.env with real DATABASE_URL and AWS keys (never commit it).
+# Then every run pushes backend/prod.env to server as backend/.env.
 # ==========================================
 
 set -e
