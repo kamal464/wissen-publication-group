@@ -1239,18 +1239,6 @@ export default function JournalDetailPage() {
             onError={() => setBannerLoadFailed(true)}
           />
         )}
-        {/* Overlay for better text readability when banner is shown */}
-        {journal.bannerImage && !bannerLoadFailed && (
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(30, 93, 168, 0.7)',
-            zIndex: 1
-          }} />
-        )}
         <div style={{
           maxWidth: '1400px',
           margin: '0 auto',
