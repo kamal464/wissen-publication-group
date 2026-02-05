@@ -150,10 +150,21 @@ export default function JournalCovers() {
 
   if (loading) {
     return (
-      <section className="py-16 bg-gray-50">
+      <section className="py-8 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center h-64">
-            <i className="pi pi-spin pi-spinner text-4xl text-blue-600"></i>
+          <div className="text-center mb-8 md:mb-10">
+            <div className="home-skeleton home-skeleton-line inline-block w-40 h-6 mx-auto rounded-full" />
+            <div className="home-skeleton home-skeleton-line w-64 h-9 mx-auto mt-4 rounded" style={{ maxWidth: '100%' }} />
+            <div className="home-skeleton home-skeleton-line-sm mx-auto mt-3" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex flex-col">
+                <div className="home-skeleton home-skeleton-card-image" />
+                <div className="home-skeleton home-skeleton-line mt-3 w-full" />
+                <div className="home-skeleton home-skeleton-line-sm mt-2" />
+              </div>
+            ))}
           </div>
         </div>
       </section>

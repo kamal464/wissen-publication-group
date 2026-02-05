@@ -167,11 +167,12 @@ let AdminController = class AdminController {
             if (error instanceof common_1.BadRequestException) {
                 throw error;
             }
-            if (error.name === 'InvalidAccessKeyId' ||
-                error.name === 'SignatureDoesNotMatch' ||
-                error.message?.includes('Access Key') ||
-                error.message?.includes('authorization header is malformed')) {
-                throw new common_1.InternalServerErrorException('S3 credentials are missing or invalid. Please check your .env file and ensure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are set correctly.');
+            const code = error.Code ?? error.name;
+            const isCredentialError = code === 'InvalidAccessKeyId' || code === 'SignatureDoesNotMatch' ||
+                error.message?.includes('Access Key') || error.message?.includes('does not exist in our records') ||
+                error.message?.includes('authorization header is malformed');
+            if (isCredentialError) {
+                throw new common_1.InternalServerErrorException('AWS credentials are invalid (e.g. key deleted or wrong). Create a new IAM user access key in AWS Console, then set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in backend/.env (or backend/prod.env for local dev).');
             }
             if (error.name === 'NoSuchBucket') {
                 throw new common_1.InternalServerErrorException(`S3 bucket not found: ${process.env.S3_BUCKET_NAME}`);

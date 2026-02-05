@@ -16,8 +16,27 @@ const prisma_service_1 = require("../prisma/prisma.service");
 let JournalsService = JournalsService_1 = class JournalsService {
     prisma;
     logger = new common_1.Logger(JournalsService_1.name);
+    cloudfrontUrl = (process.env.CLOUDFRONT_URL || '').replace(/\/$/, '');
+    s3BucketUrl = `https://${process.env.S3_BUCKET_NAME || 'wissen-publication-group-files'}.s3.amazonaws.com`;
     constructor(prisma) {
         this.prisma = prisma;
+    }
+    toCloudFrontUrls(obj) {
+        if (!obj)
+            return obj;
+        if (!this.cloudfrontUrl)
+            return obj;
+        const out = { ...obj };
+        const imageFields = ['bannerImage', 'coverImage', 'flyerImage', 'flyerPdf', 'googleIndexingImage', 'editorImage'];
+        for (const field of imageFields) {
+            const v = out[field];
+            if (typeof v === 'string' && v.startsWith(this.s3BucketUrl)) {
+                const key = v.slice(this.s3BucketUrl.length).replace(/^\//, '');
+                const encodedKey = key.split('/').map((s) => encodeURIComponent(s)).join('/');
+                out[field] = `${this.cloudfrontUrl}/${encodedKey}`;
+            }
+        }
+        return out;
     }
     create(createJournalDto) {
         return this.prisma.journal.create({
@@ -38,7 +57,7 @@ let JournalsService = JournalsService_1 = class JournalsService {
                 ],
             });
             const deduplicated = this.deduplicateJournals(journals);
-            return deduplicated;
+            return deduplicated.map((j) => this.toCloudFrontUrls(j));
         }
         catch (error) {
             this.logger.error('Error fetching journals:', error);
@@ -97,8 +116,8 @@ let JournalsService = JournalsService_1 = class JournalsService {
             score += 2;
         return score;
     }
-    findOne(id) {
-        return this.prisma.journal.findUnique({
+    async findOne(id) {
+        const journal = await this.prisma.journal.findUnique({
             where: { id },
             include: {
                 _count: {
@@ -106,6 +125,7 @@ let JournalsService = JournalsService_1 = class JournalsService {
                 },
             },
         });
+        return this.toCloudFrontUrls(journal);
     }
     async findByShortcode(shortcode) {
         let journal = await this.prisma.journal.findUnique({
@@ -131,7 +151,7 @@ let JournalsService = JournalsService_1 = class JournalsService {
                 });
             }
         }
-        return journal;
+        return this.toCloudFrontUrls(journal);
     }
     findArticles(id) {
         return this.prisma.article.findMany({

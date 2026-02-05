@@ -45,7 +45,8 @@ export default function JournalDetailPage() {
       try {
         setLoading(true);
         const shortcodeResponse = await (journalService as any).getByShortcode(shortcode);
-        const journalData = (shortcodeResponse?.data || shortcodeResponse) as any;
+        const raw = shortcodeResponse?.data ?? shortcodeResponse;
+        const journalData = (raw && typeof (raw as any).data !== 'undefined') ? (raw as any).data : raw;
 
         if (journalData && journalData.id) {
           setJournal({ ...journalData, shortcode });
@@ -533,7 +534,6 @@ export default function JournalDetailPage() {
   }
 
   const getImageUrl = (imagePath: string | undefined | null) => {
-    // Guard against invalid values that would generate /uploads/undefined
     if (
       !imagePath ||
       imagePath === 'undefined' ||
@@ -545,20 +545,13 @@ export default function JournalDetailPage() {
     ) {
       return null;
     }
-    
-    // If it's already a data URI, return as is
-    if (imagePath.startsWith('data:')) {
-      return imagePath;
-    }
-    
-    // If it's already a full URL, return as is
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      return imagePath;
-    }
-    
-    // Otherwise, use getFileUrl to construct the full URL
-    // Ensure the path starts with /uploads/ for proper server routing
-    const normalizedPath = imagePath.startsWith('/uploads/') ? imagePath : `/uploads/${imagePath.replace(/^\/?uploads\//, '')}`;
+    const path = String(imagePath).trim();
+    if (path.startsWith('data:')) return path;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    // S3/CloudFront key (e.g. journals/xxx) – pass as-is so getFileUrl uses CDN
+    if (path.startsWith('journals/')) return getFileUrl(path);
+    // Legacy /uploads/ paths
+    const normalizedPath = path.startsWith('/uploads/') ? path : `/uploads/${path.replace(/^\/?uploads\//, '')}`;
     return getFileUrl(normalizedPath);
   };
 
@@ -1218,45 +1211,23 @@ export default function JournalDetailPage() {
         </div>
       </nav>
 
-      {/* HERO SECTION - Banner Image or Blue background */}
-      <div style={{
-        backgroundColor: '#1E5DA8',
-        padding: '48px 24px',
-        minHeight: '130px',
-        backgroundImage: journal.bannerImage && !bannerLoadFailed ? `url(${getImageUrl(journal.bannerImage)})` : 'none',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        position: 'relative'
-      }}>
-        {/* Invisible img to detect banner load failure so we can show title fallback */}
-        {journal.bannerImage && getImageUrl(journal.bannerImage) && (
-          <img
-            src={getImageUrl(journal.bannerImage) || ''}
-            alt=""
-            aria-hidden
-            style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
-            onError={() => setBannerLoadFailed(true)}
-          />
-        )}
-        <div style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          position: 'relative',
-          zIndex: 2
-        }}>
-          {/* Show title when no banner, or when banner failed to load (prod fix) */}
+      {/* HERO SECTION - Banner as visible img so it always shows when URL is valid */}
+      <div className="journal-detail-banner" style={{ backgroundColor: '#1E5DA8' }}>
+        {journal.bannerImage && (() => {
+          const bannerUrl = getImageUrl(journal.bannerImage);
+          return bannerUrl && !bannerLoadFailed ? (
+            <img
+              src={bannerUrl}
+              alt=""
+              aria-hidden
+              className="journal-detail-banner__img"
+              onError={() => setBannerLoadFailed(true)}
+            />
+          ) : null;
+        })()}
+        <div style={{ maxWidth: '1400px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
           {(!journal.bannerImage || bannerLoadFailed) && (
-          <h1 style={{
-            color: '#FFFFFF',
-            fontSize: '36px',
-            fontWeight: '700',
-            marginBottom: '0',
-            lineHeight: '1.2',
-            textShadow: 'none'
-          }}>
-            {journal.title}
-          </h1>
+            <h1 className="journal-detail-banner__title">{journal.title}</h1>
           )}
         </div>
       </div>

@@ -186,15 +186,14 @@ export default function SubmitManuscriptPage() {
       toast.current?.show({ severity: 'warn', summary: 'Validation Error', detail: 'Abstract must be at least 100 characters', life: 3000 });
       return false;
     }
-    if (authors.some(a => !a.name.trim() || !a.email.trim() || !a.phone.trim())) {
-      toast.current?.show({ severity: 'warn', summary: 'Validation Error', detail: 'All authors must have name, email, and phone number', life: 3000 });
+    if (authors.some(a => !a.name.trim() || !a.email.trim())) {
+      toast.current?.show({ severity: 'warn', summary: 'Validation Error', detail: 'All authors must have name and email', life: 3000 });
       return false;
     }
-    
-    // Validate phone number format (basic validation)
+    // Validate phone number format only if provided (phone is optional)
     const phoneRegex = /^[\d\s\-\+\(\)]+$/;
     if (authors.some(a => a.phone.trim() && !phoneRegex.test(a.phone.trim()))) {
-      toast.current?.show({ severity: 'warn', summary: 'Validation Error', detail: 'Please enter a valid phone number', life: 3000 });
+      toast.current?.show({ severity: 'warn', summary: 'Validation Error', detail: 'Please enter a valid phone number or leave blank', life: 3000 });
       return false;
     }
     if (!form.pdf) {
@@ -481,7 +480,7 @@ export default function SubmitManuscriptPage() {
                       
                       <div className="form-group">
                         <label htmlFor={`author-phone-${index}`} className="form-label">
-                          Phone Number
+                          Phone Number (optional)
                         </label>
                         <InputText
                           id={`author-phone-${index}`}

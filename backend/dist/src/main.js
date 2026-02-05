@@ -35,9 +35,35 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = require("dotenv");
 const path_1 = require("path");
+const fs_1 = require("fs");
 (0, dotenv_1.config)({ path: (0, path_1.join)(process.cwd(), '.env') });
 (0, dotenv_1.config)({ path: (0, path_1.join)(process.cwd(), '..', '.env') });
 (0, dotenv_1.config)({ path: (0, path_1.join)(process.cwd(), 'backend', '.env') });
+const isLocal = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+const S3_KEYS = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION', 'S3_BUCKET_NAME', 'CLOUDFRONT_URL'];
+if (isLocal) {
+    const prodPaths = [
+        (0, path_1.join)(process.cwd(), 'prod.env'),
+        (0, path_1.join)(process.cwd(), 'backend', 'prod.env'),
+        (0, path_1.join)(process.cwd(), '..', 'backend', 'prod.env'),
+    ];
+    for (const p of prodPaths) {
+        if ((0, fs_1.existsSync)(p)) {
+            const content = (0, fs_1.readFileSync)(p, 'utf8');
+            const lines = content.split('\n').filter((l) => l.trim() && !l.trim().startsWith('#'));
+            for (const line of lines) {
+                const eq = line.indexOf('=');
+                if (eq === -1)
+                    continue;
+                const key = line.slice(0, eq).trim();
+                const val = line.slice(eq + 1).trim().replace(/^["']|["']$/g, '').trim();
+                if (S3_KEYS.includes(key) && val)
+                    process.env[key] = val;
+            }
+            break;
+        }
+    }
+}
 const core_1 = require("@nestjs/core");
 const app_module_1 = require("./app.module");
 const app_config_1 = require("./config/app.config");

@@ -239,13 +239,14 @@ export class AdminController {
         throw error;
       }
       
-      // Check for S3 credential errors
-      if (error.name === 'InvalidAccessKeyId' || 
-          error.name === 'SignatureDoesNotMatch' ||
-          error.message?.includes('Access Key') ||
-          error.message?.includes('authorization header is malformed')) {
+      // Check for S3 credential errors (AWS SDK v3 uses error.Code)
+      const code = error.Code ?? error.name;
+      const isCredentialError = code === 'InvalidAccessKeyId' || code === 'SignatureDoesNotMatch' ||
+          error.message?.includes('Access Key') || error.message?.includes('does not exist in our records') ||
+          error.message?.includes('authorization header is malformed');
+      if (isCredentialError) {
         throw new InternalServerErrorException(
-          'S3 credentials are missing or invalid. Please check your .env file and ensure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are set correctly.'
+          'AWS credentials are invalid (e.g. key deleted or wrong). Create a new IAM user access key in AWS Console, then set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in backend/.env (or backend/prod.env for local dev).'
         );
       }
       

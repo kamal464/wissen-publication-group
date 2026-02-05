@@ -35,6 +35,8 @@ fi
 SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o ConnectTimeout=15"
 [ -n "$DEPLOY_KEY" ] && SSH_OPTS="$SSH_OPTS -i $DEPLOY_KEY"
 SSH_CMD="ssh $SSH_OPTS $DEPLOY_HOST"
+SCP_OPTS="-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10"
+[ -n "$DEPLOY_KEY" ] && SCP_OPTS="$SCP_OPTS -i $DEPLOY_KEY"
 # Build -e for rsync (same as SSH_CMD)
 RSYNC_SSH="ssh $SSH_OPTS"
 
@@ -68,11 +70,22 @@ cd ..
 echo -e "${GREEN}✅ Frontend built${NC}"
 echo ""
 
+# Step 2b: On server, discard local git changes so sync always wins (avoids merge conflicts)
+echo -e "${YELLOW}🧹 Ensuring server is ready for sync (discard local changes)...${NC}"
+$SSH_CMD "cd $REMOTE_PATH 2>/dev/null && (git checkout -f . 2>/dev/null; git clean -fd 2>/dev/null) || true"
+echo ""
+
 # Step 3: Sync to EC2 (code + .next + dist; exclude node_modules, .git, and .env so prod credentials are never overwritten)
 # Use --filter P to PROTECT backend/.env and .env on server (don't delete them when using --delete)
-echo -e "${YELLOW}📤 Syncing to server...${NC}"
+echo -e "${YELLOW}📤 Syncing to server (local = source of truth)...${NC}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
+# Always fetch current server .env before sync so we can restore if prod.env is missing (never lose .env)
+SERVER_ENV_BAK="$SCRIPT_DIR/.env.server.bak.$$"
+scp $SCP_OPTS "$DEPLOY_HOST:$REMOTE_PATH/backend/.env" "$SERVER_ENV_BAK" 2>/dev/null || true
+if [ -f "$SERVER_ENV_BAK" ] && [ -s "$SERVER_ENV_BAK" ]; then
+    echo -e "${GREEN}   (Saved server backend/.env for restore if needed)${NC}"
+fi
 if command -v rsync &>/dev/null; then
     rsync -avz --delete \
         -e "$RSYNC_SSH" \
@@ -94,8 +107,6 @@ else
     ARCHIVE_NAME="deploy-$$.tar.gz"
     ARCHIVE="$SCRIPT_DIR/../$ARCHIVE_NAME"
     tar --exclude=node_modules --exclude=.git --exclude=frontend/.next/cache --exclude=backend/.env --exclude=.env -czf "$ARCHIVE" -C "$SCRIPT_DIR" .
-    SCP_OPTS="-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10"
-    [ -n "$DEPLOY_KEY" ] && SCP_OPTS="$SCP_OPTS -i $DEPLOY_KEY"
     # Retry scp up to 3 times (connection often drops on slow/unstable networks)
     SCP_OK=0
     for attempt in 1 2 3; do
@@ -125,24 +136,35 @@ echo -e "${GREEN}✅ Sync done${NC}"
 echo ""
 
 # Step 3b: Push production credentials (Postgres on EC2) – backend/prod.env → server backend/.env
-# Keep backend/prod.env locally with real DATABASE_URL and AWS keys; it is pushed every deploy.
-PROD_ENV="$(dirname "$0")/backend/prod.env"
+# If no prod.env locally, restore server .env from backup we fetched before sync (never lose .env).
+PROD_ENV="$SCRIPT_DIR/backend/prod.env"
 if [ -f "$PROD_ENV" ]; then
     echo -e "${YELLOW}📤 Pushing prod.env to server as backend/.env...${NC}"
-    SCP_OPTS="-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10"
-    [ -n "$DEPLOY_KEY" ] && SCP_OPTS="$SCP_OPTS -i $DEPLOY_KEY"
     scp $SCP_OPTS "$PROD_ENV" "$DEPLOY_HOST:$REMOTE_PATH/backend/.env"
     echo -e "${GREEN}✅ Credentials updated on server${NC}"
 else
-    echo -e "${YELLOW}⚠️ backend/prod.env not found – server keeps existing backend/.env (or create it once on server)${NC}"
-    echo "   To push credentials every deploy: cp backend/prod.env.example backend/prod.env && nano backend/prod.env"
+    if [ -f "$SERVER_ENV_BAK" ] && [ -s "$SERVER_ENV_BAK" ]; then
+        echo -e "${YELLOW}📤 Restoring server backend/.env from pre-sync backup (no local prod.env)...${NC}"
+        scp $SCP_OPTS "$SERVER_ENV_BAK" "$DEPLOY_HOST:$REMOTE_PATH/backend/.env"
+        echo -e "${GREEN}✅ backend/.env restored on server${NC}"
+    else
+        echo -e "${YELLOW}⚠️ backend/prod.env not found and no server backup – set .env on server once or create backend/prod.env${NC}"
+        echo "   To push credentials every deploy: cp backend/prod.env.example backend/prod.env && nano backend/prod.env"
+    fi
 fi
+rm -f "$SERVER_ENV_BAK"
 echo ""
 
 # Step 4: On server – install prod deps and restart PM2
 echo -e "${YELLOW}🔄 Installing deps and restarting on server...${NC}"
-$SSH_CMD "cd $REMOTE_PATH/backend && npm install --omit=dev --no-audit --no-fund && cd $REMOTE_PATH/frontend && npm install --omit=dev --no-audit --no-fund && cd $REMOTE_PATH && pm2 restart all || (pm2 start backend/dist/src/main.js --name wissen-backend; pm2 start 'npm -- start' --name wissen-frontend --cwd frontend; pm2 save)"
-echo -e "${GREEN}✅ Deploy complete${NC}"
+$SSH_CMD "cd $REMOTE_PATH/backend && npm install --omit=dev --no-audit --no-fund && cd $REMOTE_PATH/frontend && npm install --omit=dev --no-audit --no-fund && cd $REMOTE_PATH && pm2 restart all || (pm2 start ecosystem.config.js --update-env; pm2 save)"
+echo -e "${GREEN}✅ Apps restarted${NC}"
+echo ""
+
+# Step 5: Run master config on server (PM2 startup, health monitor, firewall, fail2ban, nginx – no build)
+echo -e "${YELLOW}🛡️ Running server configuration (MASTER_SETUP.sh)...${NC}"
+$SSH_CMD "cd $REMOTE_PATH && bash MASTER_SETUP.sh"
+echo -e "${GREEN}✅ Deploy and config complete${NC}"
 echo ""
 echo "Check: $DEPLOY_HOST (frontend :3000, backend :3001)"
 echo "=========================================="

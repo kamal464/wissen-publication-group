@@ -14,11 +14,18 @@ export const config = {
   },
   cors: {
     // Support both string (comma-separated) and array formats
-    origin: process.env.CORS_ORIGIN 
-      ? (process.env.CORS_ORIGIN.includes(',') 
-          ? process.env.CORS_ORIGIN.split(',').map((o: string) => o.trim())
-          : process.env.CORS_ORIGIN)
-      : ['http://localhost:3000', 'http://localhost:3002'],
+    // In development, always allow localhost so frontend (localhost:3000) can call backend (localhost:3001)
+    origin: (() => {
+      const fromEnv = process.env.CORS_ORIGIN
+        ? (process.env.CORS_ORIGIN.includes(',')
+            ? process.env.CORS_ORIGIN.split(',').map((o: string) => o.trim()).filter(Boolean)
+            : [process.env.CORS_ORIGIN.trim()])
+        : [];
+      const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+      const localOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3002', 'http://127.0.0.1:3002'];
+      const combined = isDev ? [...new Set([...localOrigins, ...fromEnv])] : (fromEnv.length ? fromEnv : localOrigins);
+      return combined.length ? combined : ['http://localhost:3000'];
+    })(),
     credentials: true,
   },
 };

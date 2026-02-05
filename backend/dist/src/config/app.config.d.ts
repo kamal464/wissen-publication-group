@@ -13,7 +13,7 @@ export declare const config: {
         expiresIn: string;
     };
     cors: {
-        origin: string | string[];
+        origin: string[];
         credentials: boolean;
     };
 };

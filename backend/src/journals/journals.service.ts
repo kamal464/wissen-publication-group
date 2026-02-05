@@ -5,8 +5,29 @@ import { CreateJournalDto } from './dto/create-journal.dto';
 @Injectable()
 export class JournalsService {
   private readonly logger = new Logger(JournalsService.name);
+  private readonly cloudfrontUrl = (process.env.CLOUDFRONT_URL || '').replace(/\/$/, '');
+  private readonly s3BucketUrl = `https://${process.env.S3_BUCKET_NAME || 'wissen-publication-group-files'}.s3.amazonaws.com`;
 
   constructor(private prisma: PrismaService) {}
+
+  /**
+   * Replace S3 image URLs with CloudFront URL so images load (S3 may block public/CORS).
+   */
+  private toCloudFrontUrls(obj: any): any {
+    if (!obj) return obj;
+    if (!this.cloudfrontUrl) return obj;
+    const out = { ...obj };
+    const imageFields = ['bannerImage', 'coverImage', 'flyerImage', 'flyerPdf', 'googleIndexingImage', 'editorImage'];
+    for (const field of imageFields) {
+      const v = out[field];
+      if (typeof v === 'string' && v.startsWith(this.s3BucketUrl)) {
+        const key = v.slice(this.s3BucketUrl.length).replace(/^\//, '');
+        const encodedKey = key.split('/').map((s) => encodeURIComponent(s)).join('/');
+        out[field] = `${this.cloudfrontUrl}/${encodedKey}`;
+      }
+    }
+    return out;
+  }
 
   create(createJournalDto: CreateJournalDto) {
     return this.prisma.journal.create({
@@ -30,8 +51,7 @@ export class JournalsService {
 
       // Deduplicate by title - prefer journal with more complete data
       const deduplicated = this.deduplicateJournals(journals);
-      
-      return deduplicated;
+      return deduplicated.map((j) => this.toCloudFrontUrls(j));
     } catch (error) {
       this.logger.error('Error fetching journals:', error);
       throw error;
@@ -100,8 +120,8 @@ export class JournalsService {
     return score;
   }
 
-  findOne(id: number) {
-    return this.prisma.journal.findUnique({
+  async findOne(id: number) {
+    const journal = await this.prisma.journal.findUnique({
       where: { id },
       include: {
         _count: {
@@ -109,6 +129,7 @@ export class JournalsService {
         },
       },
     });
+    return this.toCloudFrontUrls(journal);
   }
 
   async findByShortcode(shortcode: string) {
@@ -140,8 +161,8 @@ export class JournalsService {
         });
       }
     }
-    
-    return journal;
+
+    return this.toCloudFrontUrls(journal);
   }
 
   findArticles(id: number) {

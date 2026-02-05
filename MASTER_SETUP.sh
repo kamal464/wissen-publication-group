@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==========================================
-# MASTER SETUP SCRIPT - Complete Server Setup
-# Run this ONCE to setup everything
+# MASTER SETUP SCRIPT - Server configuration only
+# Run ON the server (no build/deploy; use quick-deploy.sh for that)
 # ==========================================
 
 set -e
@@ -9,12 +9,12 @@ set -e
 echo "=========================================="
 echo "🛡️ MASTER SERVER SETUP"
 echo "=========================================="
-echo "This will setup:"
+echo "This will setup (config only; use quick-deploy.sh for build/deploy):"
 echo "  ✅ PM2 with auto-restart"
 echo "  ✅ Auto-start on reboot"
 echo "  ✅ Health monitoring"
-echo "  ✅ Security hardening"
-echo "  ✅ Complete deployment"
+echo "  ✅ Security hardening (firewall, fail2ban, auto-updates)"
+echo "  ✅ Nginx verification"
 echo "=========================================="
 echo ""
 
@@ -76,178 +76,47 @@ echo ""
 # Step 4: Navigate to project
 cd /var/www/wissen-publication-group
 
-# Step 4a: Free disk space before pull/build (avoids "No space left on device")
-echo -e "${YELLOW}💾 Step 4a: Freeing disk space...${NC}"
-sudo swapoff /swapfile 2>/dev/null || true
-sudo rm -f /swapfile 2>/dev/null || true
-rm -rf frontend/.next backend/dist 2>/dev/null || true
-git checkout -- backend/dist frontend/.next 2>/dev/null || true
-git clean -fd backend/dist frontend/.next 2>/dev/null || true
-npm cache clean --force 2>/dev/null || true
-sudo journalctl --vacuum-size=50M 2>/dev/null || true
+# Step 5: Disk space check (report only; no build-artifact cleanup – use quick-deploy for code)
+echo -e "${YELLOW}💾 Step 5: Checking disk space...${NC}"
 FREE_MB=$(df -m . 2>/dev/null | awk 'NR==2 {print $4}')
 [ -z "$FREE_MB" ] && FREE_MB=0
-echo "Free space after cleanup: ${FREE_MB}MB"
-if [ "$FREE_MB" -lt 500 ]; then
-    echo -e "${RED}❌ Very low disk space (${FREE_MB}MB). Free more space or expand EBS volume, then re-run.${NC}"
-    echo "  Suggestions: sudo apt clean; remove old logs in /var/log; expand volume in AWS console."
+echo "Free space: ${FREE_MB}MB"
+if [ "$FREE_MB" -lt 200 ]; then
+    echo -e "${RED}❌ Very low disk space (${FREE_MB}MB). Free space or expand EBS, then re-run.${NC}"
     exit 1
 fi
-echo -e "${GREEN}✅ Disk space OK${NC}"
+echo -e "${GREEN}✅ Disk OK${NC}"
 echo ""
 
-# Step 5: Pull latest code
-echo -e "${YELLOW}📥 Step 5: Pulling latest code...${NC}"
-git fetch origin
-
-# Reset build artifacts (they will be rebuilt anyway)
-echo -e "${YELLOW}🧹 Cleaning build artifacts...${NC}"
-git checkout -- backend/dist frontend/.next backend/dist frontend/dist 2>/dev/null || true
-git clean -fd backend/dist frontend/.next 2>/dev/null || true
-
-# Pull latest code
-if git pull origin main; then
-    echo -e "${GREEN}✅ Code updated${NC}"
+# Step 6: Ensure PM2 app is running (uses existing dist/.next from quick-deploy; no build here)
+echo -e "${YELLOW}🔄 Step 6: Ensuring PM2 processes (from ecosystem.config.js)...${NC}"
+if [ ! -f ecosystem.config.js ]; then
+    echo -e "${RED}❌ ecosystem.config.js not found. Run quick-deploy.sh first.${NC}"
+    exit 1
+fi
+if ! pm2 list 2>/dev/null | grep -q "wissen-backend.*online"; then
+    echo "Starting apps from ecosystem.config.js..."
+    pm2 start ecosystem.config.js --update-env
 else
-    echo -e "${YELLOW}⚠️ Git pull had conflicts, trying to resolve...${NC}"
-    # If there are still conflicts, reset and pull again
-    git reset --hard origin/main 2>/dev/null || {
-        echo -e "${RED}⚠️ Could not reset to origin/main, continuing with current code...${NC}"
-    }
+    echo "Apps already running; saving PM2 state..."
 fi
-echo ""
-
-# Step 6: Install dependencies (including dev dependencies for building)
-echo -e "${YELLOW}📦 Step 6: Installing dependencies...${NC}"
-cd backend
-npm install --no-audit --no-fund
-# Verify nest CLI is installed
-if [ ! -f "node_modules/.bin/nest" ]; then
-    echo -e "${YELLOW}⚠️ nest CLI not found after install. Reinstalling...${NC}"
-    npm install @nestjs/cli --save-dev --no-audit --no-fund
-    # Verify again
-    if [ ! -f "node_modules/.bin/nest" ]; then
-        echo -e "${RED}❌ Failed to install nest CLI. Trying alternative...${NC}"
-        npm install @nestjs/cli@latest --save-dev --no-audit --no-fund --force
-    fi
-fi
-cd ../frontend
-npm install --no-audit --no-fund
-cd ..
-echo -e "${GREEN}✅ Dependencies installed${NC}"
-echo ""
-
-# Step 7: Build applications
-echo -e "${YELLOW}🔨 Step 7: Building applications...${NC}"
-cd backend
-# Try multiple methods to build
-if [ -f "node_modules/.bin/nest" ]; then
-    echo "Using direct nest binary..."
-    ./node_modules/.bin/nest build || {
-        echo "Direct binary failed, trying npm run build..."
-        npm run build
-    }
-elif command -v npx > /dev/null 2>&1; then
-    echo "Using npx nest build..."
-    npx --yes nest build || {
-        echo "npx failed, trying npm run build..."
-        npm run build
-    }
-else
-    echo "Using npm run build..."
-    npm run build
-fi
-cd ../frontend
-echo "Frontend build (memory-only cache to save disk); may take 15–25 min on first run..."
-BUILD_LOW_DISK=1 NODE_OPTIONS="--max-old-space-size=2560" npm run build
-cd ..
-echo -e "${GREEN}✅ Applications built${NC}"
-echo ""
-
-# Step 8: Stop existing processes
-echo -e "${YELLOW}🛑 Step 8: Stopping existing processes...${NC}"
-pm2 stop all 2>/dev/null || true
-pm2 delete all 2>/dev/null || true
-sleep 2
-echo -e "${GREEN}✅ Processes stopped${NC}"
-echo ""
-
-# Step 9: Start backend with robust config
-echo -e "${YELLOW}🚀 Step 9: Starting backend...${NC}"
-cd backend
-pm2 start dist/src/main.js \
-    --name wissen-backend \
-    --update-env \
-    --max-memory-restart 500M \
-    --restart-delay 3000 \
-    --max-restarts 10 \
-    --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
-    --merge-logs
-cd ..
-sleep 5
-echo -e "${GREEN}✅ Backend started${NC}"
-echo ""
-
-# Step 10: Start frontend with robust config
-echo -e "${YELLOW}🚀 Step 10: Starting frontend...${NC}"
-cd frontend
-pm2 start npm \
-    --name wissen-frontend \
-    --max-memory-restart 1G \
-    --restart-delay 3000 \
-    --max-restarts 10 \
-    --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
-    --merge-logs \
-    -- start
-cd ..
-sleep 15
-echo -e "${GREEN}✅ Frontend started${NC}"
-echo ""
-
-# Step 11: Save PM2 config
-echo -e "${YELLOW}💾 Step 11: Saving PM2 configuration...${NC}"
 pm2 save
-echo -e "${GREEN}✅ PM2 configuration saved${NC}"
+echo -e "${GREEN}✅ PM2 configured${NC}"
 echo ""
 
-# Step 12: Health checks
-echo -e "${YELLOW}🏥 Step 12: Running health checks...${NC}"
-sleep 10
-
+# Step 7: Health checks (warn only; app may not be deployed yet)
+echo -e "${YELLOW}🏥 Step 7: Health checks...${NC}"
 BACKEND_OK=0
-for i in {1..5}; do
-    if curl -s -f http://localhost:3001/health > /dev/null; then
-        echo -e "${GREEN}✅ Backend: HEALTHY${NC}"
-        BACKEND_OK=1
-        break
-    else
-        echo "⏳ Backend: Waiting... ($i/5)"
-        sleep 3
-    fi
-done
-
+curl -s -f http://localhost:3001/health > /dev/null && BACKEND_OK=1 || true
 FRONTEND_OK=0
-for i in {1..5}; do
-    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 || echo "000")
-    if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "304" ]; then
-        echo -e "${GREEN}✅ Frontend: HEALTHY (HTTP $HTTP_CODE)${NC}"
-        FRONTEND_OK=1
-        break
-    else
-        echo "⏳ Frontend: Waiting... ($i/5) (HTTP $HTTP_CODE)"
-        sleep 3
-    fi
-done
-
-if [ $BACKEND_OK -eq 0 ] || [ $FRONTEND_OK -eq 0 ]; then
-    echo -e "${RED}❌ Health checks failed${NC}"
-    pm2 logs --lines 20
-    exit 1
-fi
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null || echo "000")
+[ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "304" ] && FRONTEND_OK=1 || true
+if [ $BACKEND_OK -eq 1 ]; then echo -e "${GREEN}✅ Backend: HEALTHY${NC}"; else echo -e "${YELLOW}⚠️ Backend: not responding (run quick-deploy.sh to deploy)${NC}"; fi
+if [ $FRONTEND_OK -eq 1 ]; then echo -e "${GREEN}✅ Frontend: HEALTHY${NC}"; else echo -e "${YELLOW}⚠️ Frontend: not responding (run quick-deploy.sh to deploy)${NC}"; fi
 echo ""
 
-# Step 13: Setup health monitor cron
-echo -e "${YELLOW}📊 Step 13: Setting up health monitor...${NC}"
+# Step 8: Setup health monitor cron
+echo -e "${YELLOW}📊 Step 8: Setting up health monitor...${NC}"
 cat > /tmp/health-monitor.sh <<'HEALTHEOF'
 #!/bin/bash
 LOG_FILE="/var/log/health-monitor.log"
@@ -291,8 +160,8 @@ sudo chmod +x /var/www/wissen-publication-group/health-monitor.sh
 echo -e "${GREEN}✅ Health monitor configured (runs every 5 minutes)${NC}"
 echo ""
 
-# Step 14: Security - Firewall
-echo -e "${YELLOW}🔥 Step 14: Configuring firewall...${NC}"
+# Step 9: Security - Firewall
+echo -e "${YELLOW}🔥 Step 9: Configuring firewall...${NC}"
 sudo ufw --force enable
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
@@ -302,22 +171,22 @@ sudo ufw allow 443/tcp   # HTTPS
 echo -e "${GREEN}✅ Firewall configured${NC}"
 echo ""
 
-# Step 15: Security - Fail2ban
-echo -e "${YELLOW}🛡️ Step 15: Installing fail2ban...${NC}"
+# Step 10: Security - Fail2ban
+echo -e "${YELLOW}🛡️ Step 10: Installing fail2ban...${NC}"
 sudo apt install -y fail2ban 2>/dev/null || echo "Fail2ban already installed"
 sudo systemctl enable fail2ban
 sudo systemctl start fail2ban
 echo -e "${GREEN}✅ Fail2ban configured${NC}"
 echo ""
 
-# Step 16: Security - Auto-updates
-echo -e "${YELLOW}🔄 Step 16: Setting up automatic security updates...${NC}"
+# Step 11: Security - Auto-updates
+echo -e "${YELLOW}🔄 Step 11: Setting up automatic security updates...${NC}"
 sudo apt install -y unattended-upgrades
 echo -e "${GREEN}✅ Auto-updates configured${NC}"
 echo ""
 
-# Step 17: Test Nginx
-echo -e "${YELLOW}🌐 Step 17: Testing Nginx...${NC}"
+# Step 12: Test Nginx
+echo -e "${YELLOW}🌐 Step 12: Testing Nginx...${NC}"
 sudo nginx -t && sudo systemctl reload nginx
 sleep 2
 
@@ -337,13 +206,13 @@ else
 fi
 echo ""
 
-# Step 18: Final status
-echo -e "${YELLOW}📊 Step 18: Final Status${NC}"
+# Step 13: Final status
+echo -e "${YELLOW}📊 Step 13: Final Status${NC}"
 pm2 list
 echo ""
 
-# Step 19: Verification
-echo -e "${YELLOW}🔍 Step 19: Verification${NC}"
+# Step 14: Verification
+echo -e "${YELLOW}🔍 Step 14: Verification${NC}"
 echo "PM2 Startup:"
 pm2 startup | grep -q "systemd" && echo -e "${GREEN}✅ Configured${NC}" || echo -e "${RED}❌ Not configured${NC}"
 

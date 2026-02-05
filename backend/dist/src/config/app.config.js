@@ -16,11 +16,17 @@ exports.config = {
         expiresIn: '1d',
     },
     cors: {
-        origin: process.env.CORS_ORIGIN
-            ? (process.env.CORS_ORIGIN.includes(',')
-                ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
-                : process.env.CORS_ORIGIN)
-            : ['http://localhost:3000', 'http://localhost:3002'],
+        origin: (() => {
+            const fromEnv = process.env.CORS_ORIGIN
+                ? (process.env.CORS_ORIGIN.includes(',')
+                    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
+                    : [process.env.CORS_ORIGIN.trim()])
+                : [];
+            const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+            const localOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3002', 'http://127.0.0.1:3002'];
+            const combined = isDev ? [...new Set([...localOrigins, ...fromEnv])] : (fromEnv.length ? fromEnv : localOrigins);
+            return combined.length ? combined : ['http://localhost:3000'];
+        })(),
         credentials: true,
     },
 };

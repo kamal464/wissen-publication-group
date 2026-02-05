@@ -1,10 +1,36 @@
 import { config as dotenvConfig } from 'dotenv';
 import { join } from 'path';
+import { readFileSync, existsSync } from 'fs';
 
 // Load .env so DATABASE_URL is set on server (PM2 may run from backend/ or project root)
 dotenvConfig({ path: join(process.cwd(), '.env') });
 dotenvConfig({ path: join(process.cwd(), '..', '.env') });
 dotenvConfig({ path: join(process.cwd(), 'backend', '.env') });
+
+// Local dev: S3 credentials from prod.env OVERRIDE .env so prod keys are always used for uploads
+const isLocal = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+const S3_KEYS = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION', 'S3_BUCKET_NAME', 'CLOUDFRONT_URL'];
+if (isLocal) {
+  const prodPaths = [
+    join(process.cwd(), 'prod.env'),
+    join(process.cwd(), 'backend', 'prod.env'),
+    join(process.cwd(), '..', 'backend', 'prod.env'),
+  ];
+  for (const p of prodPaths) {
+    if (existsSync(p)) {
+      const content = readFileSync(p, 'utf8');
+      const lines = content.split('\n').filter((l) => l.trim() && !l.trim().startsWith('#'));
+      for (const line of lines) {
+        const eq = line.indexOf('=');
+        if (eq === -1) continue;
+        const key = line.slice(0, eq).trim();
+        const val = line.slice(eq + 1).trim().replace(/^["']|["']$/g, '').trim();
+        if (S3_KEYS.includes(key) && val) process.env[key] = val;
+      }
+      break;
+    }
+  }
+}
 
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';

@@ -1,12 +1,13 @@
 #!/bin/bash
 # ==========================================
-# Quick deploy: set env + build locally + deploy to EC2
+# Quick deploy: build locally + sync to EC2 + run master config
 # Run from Git Bash: ./quick-deploy.sh
 #
-# One-time setup so prod .env is never lost when syncing from Git Bash:
-#   cp backend/prod.env.example backend/prod.env
-#   Edit backend/prod.env with real DATABASE_URL and AWS keys (never commit it).
-# Then every run pushes backend/prod.env to server as backend/.env.
+# Flow: Build backend/frontend → discard server local changes → sync (local = source of truth)
+#       → push backend/.env from prod.env → npm install + pm2 restart → MASTER_SETUP.sh (config only)
+# Code on server always comes from this sync; do not run git pull on the server.
+#
+# One-time: cp backend/prod.env.example backend/prod.env and set DATABASE_URL, AWS keys.
 # ==========================================
 
 set -e

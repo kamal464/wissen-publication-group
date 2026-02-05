@@ -11,12 +11,8 @@ import MainContent from '@/components/MainContent';
 const DynamicJournalSlider = dynamic(() => Promise.resolve(JournalSlider), {
   ssr: false,
   loading: () => (
-    <section className="journal-slider journal-slider--loading">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center h-96">
-          <i className="pi pi-spin pi-spinner text-5xl text-blue-600"></i>
-        </div>
-      </div>
+    <section className="journal-slider journal-slider--loading" aria-busy="true" aria-label="Loading journals">
+      <div className="home-skeleton home-skeleton-hero w-full max-w-[100vw] min-h-[200px] sm:min-h-[280px] md:min-h-[360px]" />
     </section>
   ),
 });
