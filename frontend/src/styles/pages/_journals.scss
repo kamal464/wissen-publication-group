@@ -1680,13 +1680,16 @@
   }
 }
 
-// Journal detail page – banner hero (visible img so banner always shows when URL is valid)
+// Journal detail page – banner hero (constrained height, responsive, never too big)
 .journal-detail-banner {
   position: relative;
   overflow: hidden;
-  min-height: 130px;
-  padding: 48px 24px;
+  width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
+  min-height: 130px;
+  max-height: 240px;
+  padding: 32px 24px;
 
   &__img {
     position: absolute;
@@ -1696,32 +1699,37 @@
     object-fit: cover;
     object-position: center;
     display: block;
+    pointer-events: none;
   }
 
   &__title {
     color: #fff;
-    font-size: 36px;
+    font-size: 28px;
     font-weight: 700;
     margin: 0;
     line-height: 1.2;
     text-shadow: none;
+    word-wrap: break-word;
   }
 
   @media (max-width: 1024px) {
-    min-height: 200px;
-    padding: 40px 20px;
-    &__title { font-size: 28px; }
+    min-height: 90px;
+    max-height: 200px;
+    padding: 28px 20px;
+    &__title { font-size: 24px; }
   }
 
   @media (max-width: 768px) {
-    min-height: 160px;
-    padding: 32px 16px;
-    &__title { font-size: 22px; }
+    min-height: 80px;
+    max-height: 180px;
+    padding: 24px 16px;
+    &__title { font-size: 20px; }
   }
 
   @media (max-width: 480px) {
-    min-height: 140px;
-    padding: 24px 12px;
+    min-height: 70px;
+    max-height: 160px;
+    padding: 20px 12px;
     &__title { font-size: 18px; }
   }
 }
