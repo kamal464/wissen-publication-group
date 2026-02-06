@@ -119,38 +119,47 @@ echo ""
 echo -e "${YELLOW}📊 Step 8: Setting up health monitor...${NC}"
 cat > /tmp/health-monitor.sh <<'HEALTHEOF'
 #!/bin/bash
+# Health monitor: restart or start backend/frontend if down. Runs from cron every 5 min.
+export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
 LOG_FILE="/var/log/health-monitor.log"
 BACKEND_URL="http://localhost:3001/health"
 FRONTEND_URL="http://localhost:3000"
+APP_DIR="/var/www/wissen-publication-group"
+PM2="${PM2_CMD:-pm2}"
 
 log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
 
+cd "$APP_DIR" || exit 0
+
 BACKEND_STATUS=$(curl -s -f -o /dev/null -w "%{http_code}" "$BACKEND_URL" 2>/dev/null || echo "000")
 if [ "$BACKEND_STATUS" != "200" ]; then
     log "⚠️ Backend failed. Restarting..."
-    pm2 restart wissen-backend
+    $PM2 restart wissen-backend 2>/dev/null || true
 fi
 
 FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL" 2>/dev/null || echo "000")
 if [ "$FRONTEND_STATUS" != "200" ] && [ "$FRONTEND_STATUS" != "304" ]; then
     log "⚠️ Frontend failed. Restarting..."
-    pm2 restart wissen-frontend
+    $PM2 restart wissen-frontend 2>/dev/null || true
 fi
 
-if ! pm2 list | grep -q "wissen-backend.*online"; then
-    log "⚠️ Backend not in PM2. Starting..."
-    cd /var/www/wissen-publication-group/backend
-    pm2 start dist/src/main.js --name wissen-backend --update-env
-    pm2 save
+if ! $PM2 list 2>/dev/null | grep -q "wissen-backend.*online"; then
+    log "⚠️ Backend not in PM2. Starting from ecosystem.config.js..."
+    $PM2 start ecosystem.config.js --update-env 2>/dev/null || (cd backend && $PM2 start dist/src/main.js --name wissen-backend --update-env)
+    $PM2 save 2>/dev/null || true
 fi
 
-if ! pm2 list | grep -q "wissen-frontend.*online"; then
+if ! $PM2 list 2>/dev/null | grep -q "wissen-frontend.*online"; then
     log "⚠️ Frontend not in PM2. Starting..."
-    cd /var/www/wissen-publication-group/frontend
-    pm2 start npm --name wissen-frontend -- start
-    pm2 save
+    $PM2 start ecosystem.config.js --update-env 2>/dev/null || (cd frontend && $PM2 start npm --name wissen-frontend -- start)
+    $PM2 save 2>/dev/null || true
+fi
+
+# Keep dump.pm2 up to date when both apps are running (so reboot restores correctly)
+if $PM2 list 2>/dev/null | grep -q "wissen-backend.*online" && $PM2 list 2>/dev/null | grep -q "wissen-frontend.*online"; then
+    $PM2 save 2>/dev/null || true
 fi
 HEALTHEOF
 

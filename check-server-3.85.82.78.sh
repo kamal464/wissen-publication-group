@@ -56,6 +56,18 @@ df -h / | tail -1
 echo ""
 echo "=== 10. Node version ==="
 node --version 2>/dev/null || echo "Node not found"
+
+echo ""
+echo "=== 11. MASTER_SETUP items (lines 245-253) ==="
+APP="/var/www/wissen-publication-group"
+grep -q "autorestart.*true" "$APP/ecosystem.config.js" 2>/dev/null && echo "  ✅ Auto-restart on crash (PM2)" || echo "  ❌ Auto-restart: check ecosystem.config.js"
+systemctl is-enabled pm2-ubuntu 2>/dev/null | grep -q "enabled" && echo "  ✅ Auto-start on reboot (pm2-ubuntu)" || echo "  ❌ Auto-start: run pm2 startup && pm2 save"
+[ -x "$APP/health-monitor.sh" ] && crontab -l 2>/dev/null | grep -q "health-monitor" && echo "  ✅ Health monitoring (every 5 min)" || echo "  ❌ Health monitor: script or cron missing" || echo "  ❌ Health monitor: script missing"
+sudo ufw status 2>/dev/null | grep -q "Status: active" && echo "  ✅ Firewall (UFW) active" || echo "  ❌ Firewall not active"
+systemctl is-active fail2ban 2>/dev/null | grep -q "active" && echo "  ✅ Fail2ban active" || echo "  ❌ Fail2ban not active"
+dpkg -l unattended-upgrades 2>/dev/null | grep -q "^ii" && echo "  ✅ Automatic security updates (unattended-upgrades)" || echo "  ❌ unattended-upgrades not installed"
+grep -q "max_memory_restart" "$APP/ecosystem.config.js" 2>/dev/null && echo "  ✅ Memory limit (max_memory_restart)" || echo "  ❌ max_memory_restart not in ecosystem.config.js"
+[ -d "$APP/backend/logs" ] && [ -d "$APP/frontend/logs" ] && echo "  ✅ Logging (backend + frontend log dirs)" || echo "  ⚠️ Log dirs missing (PM2 will create on start)"
 REMOTE
 
 echo ""

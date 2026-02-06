@@ -719,6 +719,19 @@ a[href="/"]:has(img[alt*="Wissen"]):focus-visible {
   box-shadow: none !important;
 }
 
+/* Remove focus on click for menu items and journal cards (home page) */
+.header__nav-link:focus,
+.header__nav-link:focus-visible,
+.header__mobile-link:focus,
+.header__mobile-link:focus-visible,
+.journal-cover-card:focus,
+.journal-cover-card:focus-visible,
+.journal-slide__link:focus,
+.journal-slide__link:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* ========== Home page skeletons ========== */
 @keyframes home-skeleton-shimmer {
   0% { background-position: -200% 0; }

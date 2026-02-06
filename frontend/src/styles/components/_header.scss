@@ -271,6 +271,12 @@
     text-decoration: none;
     transition: color map.get($transitions, fast);
     padding: 0.5rem 0;
+
+    &:focus,
+    &:focus-visible {
+      outline: none;
+      box-shadow: none;
+    }
     
     &:hover {
       color: $primary-blue;
@@ -327,6 +333,12 @@
   border-radius: map.get($border-radius, lg);
   cursor: pointer;
   transition: map.get($transitions, fast);
+
+    &:focus,
+    &:focus-visible {
+      outline: none;
+      box-shadow: none;
+    }
 
     &:hover {
       color: $primary-blue;
@@ -531,6 +543,12 @@
   border-radius: map.get($border-radius, base);
   cursor: pointer;
   transition: color map.get($transitions, fast);
+
+    &:focus,
+    &:focus-visible {
+      outline: none;
+      box-shadow: none;
+    }
     
     &:hover {
       color: $primary-blue;
@@ -574,6 +592,12 @@
   color: neutral(gray-700);
   text-decoration: none;
   transition: map.get($transitions, fast);
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
 
   &:hover {
     background: neutral(gray-100);
