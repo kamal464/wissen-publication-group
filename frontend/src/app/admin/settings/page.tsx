@@ -9,6 +9,7 @@ import { Checkbox } from 'primereact/checkbox';
 import { Divider } from 'primereact/divider';
 import { Toast } from 'primereact/toast';
 import { useRef } from 'react';
+import { adminAPI } from '@/lib/api';
 
 interface SettingsData {
   siteName: string;
@@ -60,6 +61,7 @@ export default function AdminSettings() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [restarting, setRestarting] = useState(false);
   const toast = useRef<Toast>(null);
 
   const timezoneOptions = [
@@ -157,6 +159,29 @@ export default function AdminSettings() {
       }
     }
     setSettings({ ...settings, allowedFileTypes: currentTypes });
+  };
+
+  const handleRestartServices = async () => {
+    if (restarting) return;
+    setRestarting(true);
+    try {
+      const res = await adminAPI.restartServices();
+      const msg = (res.data as { message?: string })?.message || 'Restart initiated.';
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Restart initiated',
+        detail: msg,
+      });
+    } catch (err: any) {
+      const detail = err.response?.data?.message || err.message || 'Failed to restart.';
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Restart failed',
+        detail,
+      });
+    } finally {
+      setRestarting(false);
+    }
   };
 
   return (
@@ -501,6 +526,38 @@ export default function AdminSettings() {
                 </label>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Server restart - main admin only (backend enforces) */}
+        <div className="settings-section">
+          <div className="section-header">
+            <h2 className="section-title">
+              <i className="pi pi-refresh mr-2"></i>
+              Restart server
+            </h2>
+            <p className="section-description">
+              When the site is <strong>slow or stuck</strong>, use the button below. When the site is <strong>completely down</strong>, use the external restart URL (bookmark it) or AWS Session Manager / SSH.
+            </p>
+          </div>
+          <div className="settings-form">
+            <Button
+              label="Restart services (when app is up)"
+              icon="pi pi-refresh"
+              className="p-button-warning"
+              onClick={handleRestartServices}
+              loading={restarting}
+              disabled={restarting}
+            />
+            {process.env.NEXT_PUBLIC_RESTART_WHEN_DOWN_URL && (
+              <div className="mt-4 p-3 bg-slate-100 rounded text-sm">
+                <p className="font-medium text-slate-700 mb-1">When the site is down:</p>
+                <p className="text-slate-600 mb-2">Bookmark this URL (add <code className="bg-slate-200 px-1">?token=YOUR_SECRET</code>). Opening it triggers a restart via AWS Lambda + SSM.</p>
+                <a href={process.env.NEXT_PUBLIC_RESTART_WHEN_DOWN_URL} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-all">
+                  {process.env.NEXT_PUBLIC_RESTART_WHEN_DOWN_URL}
+                </a>
+              </div>
+            )}
           </div>
         </div>
 

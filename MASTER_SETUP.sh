@@ -88,6 +88,20 @@ fi
 echo -e "${GREEN}✅ Disk OK${NC}"
 echo ""
 
+# Step 5b: Ensure swap exists (reduces OOM kills when memory is low)
+echo -e "${YELLOW}💾 Step 5b: Checking swap...${NC}"
+if ! swapon --show 2>/dev/null | grep -q .; then
+    if [ -f /swapfile ]; then
+        sudo swapon /swapfile 2>/dev/null && echo -e "${GREEN}✅ Swap enabled (existing /swapfile)${NC}" || true
+    else
+        echo "Creating 1G swap file..."
+        sudo fallocate -l 1G /swapfile 2>/dev/null && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile && (grep -q /swapfile /etc/fstab 2>/dev/null || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab) && echo -e "${GREEN}✅ Swap created and enabled${NC}" || echo -e "${YELLOW}⚠️ Swap creation skipped (optional)${NC}"
+    fi
+else
+    echo -e "${GREEN}✅ Swap already active${NC}"
+fi
+echo ""
+
 # Step 6: Ensure PM2 app is running (uses existing dist/.next from quick-deploy; no build here)
 echo -e "${YELLOW}🔄 Step 6: Ensuring PM2 processes (from ecosystem.config.js)...${NC}"
 if [ ! -f ecosystem.config.js ]; then
@@ -117,9 +131,10 @@ echo ""
 
 # Step 8: Setup health monitor cron
 echo -e "${YELLOW}📊 Step 8: Setting up health monitor...${NC}"
+sudo touch /var/log/health-monitor.log && sudo chown ubuntu:ubuntu /var/log/health-monitor.log
 cat > /tmp/health-monitor.sh <<'HEALTHEOF'
 #!/bin/bash
-# Health monitor: restart or start backend/frontend if down. Runs from cron every 5 min.
+# Health monitor: restart or start backend/frontend if down. Runs from cron every 3 min.
 export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
 LOG_FILE="/var/log/health-monitor.log"
 BACKEND_URL="http://localhost:3001/health"
@@ -161,12 +176,34 @@ fi
 if $PM2 list 2>/dev/null | grep -q "wissen-backend.*online" && $PM2 list 2>/dev/null | grep -q "wissen-frontend.*online"; then
     $PM2 save 2>/dev/null || true
 fi
+
+# Disk self-heal: if disk > 90% full, run quick cleanup to avoid crash
+USE_PCT=$(df -P / 2>/dev/null | awk 'NR==2 {gsub(/%/,""); print $5}')
+if [ -n "$USE_PCT" ] && [ "$USE_PCT" -ge 90 ]; then
+    log "⚠️ Disk ${USE_PCT}% full. Running quick cleanup..."
+    sudo journalctl --vacuum-time=3d 2>/dev/null || true
+    sudo apt-get clean 2>/dev/null || true
+    $PM2 flush 2>/dev/null || true
+fi
+
 HEALTHEOF
 
 sudo mv /tmp/health-monitor.sh /var/www/wissen-publication-group/health-monitor.sh
 sudo chmod +x /var/www/wissen-publication-group/health-monitor.sh
-(crontab -l 2>/dev/null | grep -v health-monitor; echo "*/5 * * * * /var/www/wissen-publication-group/health-monitor.sh") | crontab -
-echo -e "${GREEN}✅ Health monitor configured (runs every 5 minutes)${NC}"
+(crontab -l 2>/dev/null | grep -v health-monitor; echo "*/3 * * * * /var/www/wissen-publication-group/health-monitor.sh") | crontab -
+echo -e "${GREEN}✅ Health monitor configured (runs every 3 minutes)${NC}"
+echo ""
+
+# Step 8b: Weekly disk cleanup (prevents disk from filling with logs)
+echo -e "${YELLOW}💾 Step 8b: Setting up weekly disk cleanup...${NC}"
+if [ -f /var/www/wissen-publication-group/disk-cleanup.sh ]; then
+    chmod +x /var/www/wissen-publication-group/disk-cleanup.sh
+    sudo touch /var/log/disk-cleanup.log 2>/dev/null && sudo chown ubuntu:ubuntu /var/log/disk-cleanup.log 2>/dev/null || true
+    (crontab -l 2>/dev/null | grep -v disk-cleanup; echo "0 3 * * 0 /var/www/wissen-publication-group/disk-cleanup.sh") | crontab -
+    echo -e "${GREEN}✅ Weekly disk cleanup configured (Sunday 3 AM)${NC}"
+else
+    echo -e "${YELLOW}⚠️ disk-cleanup.sh not found; add it and re-run MASTER_SETUP for automatic cleanup${NC}"
+fi
 echo ""
 
 # Step 9: Security - Firewall
@@ -244,7 +281,7 @@ echo ""
 echo "Your server is now configured with:"
 echo "  ✅ Auto-restart on crash"
 echo "  ✅ Auto-start on reboot"
-echo "  ✅ Health monitoring (every 5 minutes)"
+echo "  ✅ Health monitoring (every 3 minutes)"
 echo "  ✅ Firewall protection"
 echo "  ✅ Fail2ban protection"
 echo "  ✅ Automatic security updates"

@@ -478,7 +478,6 @@ export class AdminService {
     if (journalData.articlesInPress !== undefined) updateData.articlesInPress = journalData.articlesInPress;
     if (journalData.indexing !== undefined) updateData.indexing = journalData.indexing;
     if (journalData.indexingAbstracting !== undefined && !journalData.indexing) updateData.indexing = journalData.indexingAbstracting;
-    if (journalData.content !== undefined) updateData.content = journalData.content;
 
     // Only perform update if there are fields to update
     // This prevents errors when journal-admin pages only update content fields
@@ -506,22 +505,18 @@ export class AdminService {
         if (error?.code === 'P2002' && error?.meta?.target?.includes('shortcode')) {
           retryCount++;
           console.log(`🔄 Shortcode conflict during update (attempt ${retryCount}), generating unique shortcode...`);
+          // Get the shortcode that was attempted
           const attemptedShortcode = updateData.shortcode || journalData.shortcode || 'journal';
+          // Generate a unique shortcode
           const uniqueShortcode = await this.generateUniqueShortcode(attemptedShortcode);
           updateData.shortcode = uniqueShortcode;
           console.log(`✅ Retrying update with unique shortcode: ${uniqueShortcode}`);
+          
           if (retryCount >= maxRetries) {
             throw new InternalServerErrorException('Failed to update journal after multiple retries due to shortcode conflicts');
           }
-        } else if (error?.code === 'P2002' && error?.meta?.target?.includes('issn')) {
-          // Duplicate ISSN: another journal already has this ISSN. Skip updating issn and retry.
-          console.log(`🔄 ISSN conflict during update (journal ${journalId}), keeping existing ISSN`);
-          delete updateData.issn;
-          retryCount++;
-          if (retryCount >= maxRetries) {
-            throw new InternalServerErrorException('Cannot update journal: ISSN is already used by another journal. Use a unique ISSN or leave it blank.');
-          }
         } else {
+          // Some other error, re-throw it
           throw error;
         }
       }
