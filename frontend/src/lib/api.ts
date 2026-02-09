@@ -221,6 +221,9 @@ export const adminAPI = {
   // Global Search
   globalSearch: (query: string) => api.get('/admin/search', { params: { query } }),
 
+  // Restart server services (PM2). Main admin only; rate-limited.
+  restartServices: () => api.post('/admin/restart-services'),
+
   // Journal Image Upload
   uploadJournalImage: (journalId: number, field: string, file: File) => {
     const formData = new FormData();
