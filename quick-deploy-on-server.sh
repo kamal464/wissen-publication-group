@@ -2,9 +2,9 @@
 # ==========================================
 # Quick deploy ON the EC2 instance (AWS)
 # Run this in the browser terminal on the server:
-#   cd /home/ubuntu/universal-publishers   # or your app path
-#   chmod +x quick-deploy-on-server.sh
-#   ./quick-deploy-on-server.sh
+#   cd /var/www/wissen-publication-group
+#   chmod +x quick-deploy-on-server.sh && ./quick-deploy-on-server.sh
+#   # or without chmod:  bash quick-deploy-on-server.sh
 # ==========================================
 
 set -e
@@ -25,12 +25,14 @@ git pull
 
 echo "🔨 Building backend..."
 cd backend
+npm install --no-audit --no-fund
 npm run build
 npm install --omit=dev --no-audit --no-fund
 cd ..
 
 echo "🔨 Building frontend..."
 cd frontend
+npm install --no-audit --no-fund
 npm run build
 npm install --omit=dev --no-audit --no-fund
 cd ..
