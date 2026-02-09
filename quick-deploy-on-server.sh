@@ -15,6 +15,11 @@ echo "=========================================="
 echo "Quick deploy on server: $APP_DIR"
 echo "=========================================="
 
+echo "💾 Freeing disk space (quick cleanup)..."
+sudo journalctl --vacuum-time=3d 2>/dev/null || true
+sudo apt-get clean 2>/dev/null || true
+pm2 flush 2>/dev/null || true
+
 echo "📥 Pulling latest..."
 git pull
 
