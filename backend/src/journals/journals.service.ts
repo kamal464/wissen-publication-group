@@ -12,18 +12,35 @@ export class JournalsService {
 
   /**
    * Replace S3 image URLs with CloudFront URL so images load (S3 may block public/CORS).
+   * Also safely maps any existing CloudFront URLs back to S3 when CLOUDFRONT_URL is empty,
+   * so prod keeps working even if CloudFront is misconfigured.
    */
   private toCloudFrontUrls(obj: any): any {
     if (!obj) return obj;
-    if (!this.cloudfrontUrl) return obj;
     const out = { ...obj };
     const imageFields = ['bannerImage', 'coverImage', 'flyerImage', 'flyerPdf', 'googleIndexingImage', 'editorImage'];
+
+    // When CLOUDFRONT_URL is configured, map S3 → CloudFront for all image fields
+    if (this.cloudfrontUrl) {
+      for (const field of imageFields) {
+        const v = out[field];
+        if (typeof v === 'string' && v.startsWith(this.s3BucketUrl)) {
+          const key = v.slice(this.s3BucketUrl.length).replace(/^\//, '');
+          const encodedKey = key.split('/').map((s) => encodeURIComponent(s)).join('/');
+          out[field] = `${this.cloudfrontUrl}/${encodedKey}`;
+        }
+      }
+      return out;
+    }
+
+    // If CLOUDFRONT_URL is empty but DB already has CloudFront URLs, map CloudFront → S3
+    const cloudfrontPrefix = 'https://d2qm3szai4trao.cloudfront.net/';
     for (const field of imageFields) {
       const v = out[field];
-      if (typeof v === 'string' && v.startsWith(this.s3BucketUrl)) {
-        const key = v.slice(this.s3BucketUrl.length).replace(/^\//, '');
+      if (typeof v === 'string' && v.startsWith(cloudfrontPrefix)) {
+        const key = v.slice(cloudfrontPrefix.length).replace(/^\//, '');
         const encodedKey = key.split('/').map((s) => encodeURIComponent(s)).join('/');
-        out[field] = `${this.cloudfrontUrl}/${encodedKey}`;
+        out[field] = `${this.s3BucketUrl}/${encodedKey}`;
       }
     }
     return out;
