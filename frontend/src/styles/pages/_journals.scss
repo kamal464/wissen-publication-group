@@ -1680,31 +1680,53 @@
   }
 }
 
-// Journal detail page – banner hero (constrained height, responsive, never too big)
+// -----------------------------------------------------------------------------
+// Journal detail page – banner hero (enterprise responsive, fixed height/width)
+// -----------------------------------------------------------------------------
+$journal-banner-min-h: 130px;
+$journal-banner-max-h: 240px;
+$journal-banner-padding-x: 24px;
+$journal-banner-padding-y: 32px;
+$journal-banner-title-size: 28px;
+
 .journal-detail-banner {
   position: relative;
   overflow: hidden;
   width: 100%;
-  max-width: 100%;
+  max-width: 100vw;
   box-sizing: border-box;
-  min-height: 130px;
-  max-height: 240px;
-  padding: 32px 24px;
+  min-height: $journal-banner-min-h;
+  max-height: $journal-banner-max-h;
+  padding: $journal-banner-padding-y $journal-banner-padding-x;
 
   &__img {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
+    min-height: 100%;
     object-fit: cover;
     object-position: center;
     display: block;
     pointer-events: none;
   }
 
+  // Inner wrapper: keeps title/content away from edges on all devices
+  &__inner {
+    position: relative;
+    z-index: 2;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-left: $journal-banner-padding-x;
+    padding-right: $journal-banner-padding-x;
+    box-sizing: border-box;
+  }
+
   &__title {
+    position: relative;
+    z-index: 2;
     color: #fff;
-    font-size: 28px;
+    font-size: $journal-banner-title-size;
     font-weight: 700;
     margin: 0;
     line-height: 1.2;
@@ -1716,20 +1738,45 @@
     min-height: 90px;
     max-height: 200px;
     padding: 28px 20px;
+    &__img { object-fit: contain; }
+    &__inner { padding-left: 20px; padding-right: 20px; }
     &__title { font-size: 24px; }
   }
 
   @media (max-width: 768px) {
-    min-height: 80px;
-    max-height: 180px;
+    min-height: 100px;
+    max-height: 220px;
     padding: 24px 16px;
+    &__img { object-fit: contain; }
+    &__inner { padding-left: 16px; padding-right: 16px; }
     &__title { font-size: 20px; }
   }
 
   @media (max-width: 480px) {
-    min-height: 70px;
-    max-height: 160px;
+    min-height: 63px;
     padding: 20px 12px;
+    &__img { object-fit: contain; }
+    &__inner { padding-left: 12px; padding-right: 12px; }
     &__title { font-size: 18px; }
+  }
+}
+
+// Main content: consistent side spacing so content never loses sides on mobile/tablet/laptop
+.journal-main-content {
+  box-sizing: border-box;
+
+  @media (max-width: 1024px) {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  @media (max-width: 768px) {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+
+  @media (max-width: 480px) {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
   }
 }

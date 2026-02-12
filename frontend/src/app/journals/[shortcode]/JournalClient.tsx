@@ -27,10 +27,11 @@ export default function JournalDetailPage() {
   const [bannerLoadFailed, setBannerLoadFailed] = useState(false);
   const journalRef = useRef<any | null>(null);
 
-  // Reset banner load state when journal changes
+  // Reset banner load state when journal or banner/cover image changes
+  const bannerImageSrc = journal?.bannerImage || journal?.coverImage;
   useEffect(() => {
     setBannerLoadFailed(false);
-  }, [journal?.id, journal?.bannerImage]);
+  }, [journal?.id, bannerImageSrc]);
 
   // Keep ref in sync so tab switch always reads latest journal (avoids stale closure)
   useEffect(() => {
@@ -321,7 +322,7 @@ export default function JournalDetailPage() {
           min-width: 280px !important;
         }
         .journal-main-content {
-          padding: 24px 16px !important;
+          padding: 24px 24px !important;
         }
         
         .journal-content-grid {
@@ -409,7 +410,7 @@ export default function JournalDetailPage() {
       
       @media (max-width: 640px) {
         .journal-main-content {
-          padding: 20px 12px !important;
+          padding: 20px 16px !important;
         }
         
         .journal-content-grid {
@@ -421,7 +422,7 @@ export default function JournalDetailPage() {
         }
         
         .journal-editorial-board-card {
-          padding: 20px 12px !important;
+          padding: 20px 16px !important;
         }
         
         .journal-editorial-board-card .editors-grid {
@@ -1211,13 +1212,14 @@ export default function JournalDetailPage() {
         </div>
       </nav>
 
-      {/* HERO SECTION - Banner as visible img so it always shows when URL is valid */}
-      <div className="journal-detail-banner" style={{ backgroundColor: '#1E5DA8' }}>
-        {journal.bannerImage && (() => {
-          const bannerUrl = getImageUrl(journal.bannerImage);
-          return bannerUrl && !bannerLoadFailed ? (
+      {/* HERO SECTION - Banner: use banner image, fallback to cover image; fits every screen */}
+      <div className="journal-detail-banner">
+        {(journal.bannerImage || journal.coverImage) && (() => {
+          const imagePath = journal.bannerImage || journal.coverImage;
+          const imageUrl = getImageUrl(imagePath);
+          return imageUrl && !bannerLoadFailed ? (
             <img
-              src={bannerUrl}
+              src={imageUrl}
               alt=""
               aria-hidden
               className="journal-detail-banner__img"
@@ -1225,8 +1227,8 @@ export default function JournalDetailPage() {
             />
           ) : null;
         })()}
-        <div style={{ maxWidth: '1400px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
-          {(!journal.bannerImage || bannerLoadFailed) && (
+        <div className="journal-detail-banner__inner">
+          {(!bannerImageSrc || bannerLoadFailed) && (
             <h1 className="journal-detail-banner__title">{journal.title}</h1>
           )}
         </div>
