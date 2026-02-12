@@ -38,8 +38,11 @@
     font-weight: map.get($font-weight, bold);
     border-radius: map.get($border-radius, base);
     letter-spacing: 0.08em;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-block;
   }
-
+ 
   &__ticker {
     position: relative;
     overflow: hidden;

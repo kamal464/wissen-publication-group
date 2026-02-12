@@ -27,11 +27,9 @@ export default function LatestNewsSection() {
     try {
       const response = await adminAPI.getLatestNews(5);
       const newsData = (response.data as NewsItem[]) || [];
-      // Filter to show only pinned news items
-      const pinnedNews = Array.isArray(newsData) 
-        ? newsData.filter(item => item.isPinned === true)
-        : [];
-      setNews(pinnedNews);
+      // Home: show only 3 cards; View All News opens /news for all
+      const list = Array.isArray(newsData) ? newsData : [];
+      setNews(list.slice(0, 3));
     } catch (error: any) {
       // Only log non-network errors (backend offline is expected in development)
       const isNetworkError = error.code === 'ERR_NETWORK' || 
@@ -125,6 +123,8 @@ export default function LatestNewsSection() {
                 {item.link && (
                   <Link
                     href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors mt-auto"
                   >
                     Read More
