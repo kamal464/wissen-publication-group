@@ -66,6 +66,8 @@ tar czf "$BUILD_TAR" \
 
 echo "Uploading artifacts to server..."
 scp -i "$SSH_KEY" "$BUILD_TAR" "$SERVER:/tmp/wissen-build-artifacts.tgz"
+# Copy verify script so it can be run on the server
+[ -f "$APP_DIR/VERIFY_MASTER_SETUP.sh" ] && scp -i "$SSH_KEY" "$APP_DIR/VERIFY_MASTER_SETUP.sh" "$SERVER:$REMOTE_PATH/VERIFY_MASTER_SETUP.sh" 2>/dev/null || true
 
 echo "Deploying on server..."
 ssh -i "$SSH_KEY" "$SERVER" bash << 'REMOTEEOF'
@@ -89,7 +91,8 @@ echo "Installing backend prod deps & running migrations..."
 cd backend
 npm install --omit=dev --no-audit --no-fund
 if command -v npx >/dev/null 2>&1; then
-  npx prisma migrate deploy 2>/dev/null || npx prisma db push --accept-data-loss 2>/dev/null || true
+  echo "Running Prisma migrations..."
+  npx prisma migrate deploy || true
 fi
 cd ..
 
