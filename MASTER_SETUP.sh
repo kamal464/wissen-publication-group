@@ -106,7 +106,7 @@ echo ""
 echo -e "${YELLOW}🔄 Step 6: Ensuring PM2 processes (from ecosystem.config.js)...${NC}"
 if [ ! -f ecosystem.config.js ]; then
     echo -e "${RED}❌ ecosystem.config.js not found. Run quick-deploy.sh first.${NC}"
-    exit 1
+    exit 1  
 fi
 if ! pm2 list 2>/dev/null | grep -q "wissen-backend.*online"; then
     echo "Starting apps from ecosystem.config.js..."

@@ -24,16 +24,26 @@ let JournalsService = JournalsService_1 = class JournalsService {
     toCloudFrontUrls(obj) {
         if (!obj)
             return obj;
-        if (!this.cloudfrontUrl)
-            return obj;
         const out = { ...obj };
         const imageFields = ['bannerImage', 'coverImage', 'flyerImage', 'flyerPdf', 'googleIndexingImage', 'editorImage'];
+        if (this.cloudfrontUrl) {
+            for (const field of imageFields) {
+                const v = out[field];
+                if (typeof v === 'string' && v.startsWith(this.s3BucketUrl)) {
+                    const key = v.slice(this.s3BucketUrl.length).replace(/^\//, '');
+                    const encodedKey = key.split('/').map((s) => encodeURIComponent(s)).join('/');
+                    out[field] = `${this.cloudfrontUrl}/${encodedKey}`;
+                }
+            }
+            return out;
+        }
+        const cloudfrontPrefix = 'https://d2qm3szai4trao.cloudfront.net/';
         for (const field of imageFields) {
             const v = out[field];
-            if (typeof v === 'string' && v.startsWith(this.s3BucketUrl)) {
-                const key = v.slice(this.s3BucketUrl.length).replace(/^\//, '');
+            if (typeof v === 'string' && v.startsWith(cloudfrontPrefix)) {
+                const key = v.slice(cloudfrontPrefix.length).replace(/^\//, '');
                 const encodedKey = key.split('/').map((s) => encodeURIComponent(s)).join('/');
-                out[field] = `${this.cloudfrontUrl}/${encodedKey}`;
+                out[field] = `${this.s3BucketUrl}/${encodedKey}`;
             }
         }
         return out;

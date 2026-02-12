@@ -6,6 +6,7 @@ export declare class JournalsController {
     create(createJournalDto: CreateJournalDto): import("@prisma/client").Prisma.Prisma__JournalClient<{
         id: number;
         title: string;
+        content: string | null;
         createdAt: Date;
         updatedAt: Date;
         issn: string | null;
@@ -90,6 +91,10 @@ export declare class JournalsController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -108,5 +113,6 @@ export declare class JournalsController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     })[]>;
 }

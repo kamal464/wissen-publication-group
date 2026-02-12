@@ -96,6 +96,10 @@ export declare class AdminService {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
+            issueId: number | null;
+            showInInpressCards: boolean;
+            inPressMonth: string | null;
+            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -114,6 +118,7 @@ export declare class AdminService {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
     }>;
     getSearchAnalytics(): Promise<{
@@ -130,6 +135,7 @@ export declare class AdminService {
         journal: {
             id: number;
             title: string;
+            content: string | null;
             createdAt: Date;
             updatedAt: Date;
             issn: string | null;
@@ -210,6 +216,10 @@ export declare class AdminService {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -228,10 +238,12 @@ export declare class AdminService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     createJournal(journalData: any): Promise<{
         id: number;
         title: string;
+        content: string | null;
         createdAt: Date;
         updatedAt: Date;
         issn: string | null;
@@ -287,6 +299,7 @@ export declare class AdminService {
     deleteJournal(journalId: number): Promise<{
         id: number;
         title: string;
+        content: string | null;
         createdAt: Date;
         updatedAt: Date;
         issn: string | null;
@@ -442,6 +455,10 @@ export declare class AdminService {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -460,11 +477,13 @@ export declare class AdminService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     })[]>;
     getSubmission(id: number): Promise<({
         journal: {
             id: number;
             title: string;
+            content: string | null;
             createdAt: Date;
             updatedAt: Date;
             issn: string | null;
@@ -545,6 +564,10 @@ export declare class AdminService {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -563,6 +586,7 @@ export declare class AdminService {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }) | null>;
     getJournalShortcodes(): Promise<{
         id: number;
@@ -647,6 +671,10 @@ export declare class AdminService {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
+            issueId: number | null;
+            showInInpressCards: boolean;
+            inPressMonth: string | null;
+            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -665,10 +693,12 @@ export declare class AdminService {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
         journals: {
             id: number;
             title: string;
+            content: string | null;
             createdAt: Date;
             updatedAt: Date;
             issn: string | null;
@@ -751,6 +781,7 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        displayOrder: number;
     }[]>;
     getBoardMember(id: number): Promise<{
         id: number;
@@ -769,6 +800,7 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        displayOrder: number;
     } | null>;
     createBoardMember(journalId: number, memberData: any): Promise<{
         id: number;
@@ -787,6 +819,7 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        displayOrder: number;
     }>;
     updateBoardMember(id: number, memberData: any): Promise<{
         id: number;
@@ -805,6 +838,7 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        displayOrder: number;
     }>;
     deleteBoardMember(id: number): Promise<{
         id: number;
@@ -823,5 +857,6 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        displayOrder: number;
     }>;
 }

@@ -10,6 +10,7 @@ export declare class ArticlesController {
         journal: {
             id: number;
             title: string;
+            content: string | null;
             createdAt: Date;
             updatedAt: Date;
             issn: string | null;
@@ -90,6 +91,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -108,6 +113,7 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     findAll(journalId?: string, search?: string, status?: string, showInInpressCards?: string, inPressMonth?: string, inPressYear?: string, sortBy?: string, sortOrder?: 'asc' | 'desc', page?: string, limit?: string): Promise<{
         data: ({
@@ -145,6 +151,10 @@ export declare class ArticlesController {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
+            issueId: number | null;
+            showInInpressCards: boolean;
+            inPressMonth: string | null;
+            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -163,6 +173,7 @@ export declare class ArticlesController {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
         meta: {
             total: number;
@@ -207,6 +218,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -225,6 +240,7 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     findRelated(id: number, limit?: string): Promise<({
         journal: {
@@ -260,6 +276,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -278,11 +298,13 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     })[]>;
     update(id: number, updateArticleDto: UpdateArticleDto): Promise<{
         journal: {
             id: number;
             title: string;
+            content: string | null;
             createdAt: Date;
             updatedAt: Date;
             issn: string | null;
@@ -363,6 +385,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -381,6 +407,7 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     submitManuscript(title: string, journalId: string, abstract: string, keywords: string, authorsJson: string, file?: Express.Multer.File): Promise<{
         success: boolean;
@@ -421,6 +448,10 @@ export declare class ArticlesController {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
+            issueId: number | null;
+            showInInpressCards: boolean;
+            inPressMonth: string | null;
+            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -439,6 +470,7 @@ export declare class ArticlesController {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         };
         manuscriptId: number;
     }>;
@@ -446,6 +478,7 @@ export declare class ArticlesController {
         journal: {
             id: number;
             title: string;
+            content: string | null;
             createdAt: Date;
             updatedAt: Date;
             issn: string | null;
@@ -526,6 +559,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -544,11 +581,13 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     uploadImages(id: number, files: Express.Multer.File[]): Promise<{
         journal: {
             id: number;
             title: string;
+            content: string | null;
             createdAt: Date;
             updatedAt: Date;
             issn: string | null;
@@ -629,6 +668,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -647,6 +690,7 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     remove(id: number): Promise<{
         id: number;
@@ -670,6 +714,10 @@ export declare class ArticlesController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -688,6 +736,7 @@ export declare class ArticlesController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     globalSearch(query: string): Promise<{
         articles: ({
@@ -725,6 +774,10 @@ export declare class ArticlesController {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
+            issueId: number | null;
+            showInInpressCards: boolean;
+            inPressMonth: string | null;
+            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -743,6 +796,7 @@ export declare class ArticlesController {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
         journals: {
             id: number;

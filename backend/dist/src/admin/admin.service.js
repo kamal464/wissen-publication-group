@@ -461,8 +461,6 @@ let AdminService = class AdminService {
             updateData.indexing = journalData.indexing;
         if (journalData.indexingAbstracting !== undefined && !journalData.indexing)
             updateData.indexing = journalData.indexingAbstracting;
-        if (journalData.content !== undefined)
-            updateData.content = journalData.content;
         if (Object.keys(updateData).length === 0) {
             return await this.prisma.journal.findUnique({
                 where: { id: journalId }
@@ -489,14 +487,6 @@ let AdminService = class AdminService {
                     console.log(`✅ Retrying update with unique shortcode: ${uniqueShortcode}`);
                     if (retryCount >= maxRetries) {
                         throw new common_1.InternalServerErrorException('Failed to update journal after multiple retries due to shortcode conflicts');
-                    }
-                }
-                else if (error?.code === 'P2002' && error?.meta?.target?.includes('issn')) {
-                    console.log(`🔄 ISSN conflict during update (journal ${journalId}), keeping existing ISSN`);
-                    delete updateData.issn;
-                    retryCount++;
-                    if (retryCount >= maxRetries) {
-                        throw new common_1.InternalServerErrorException('Cannot update journal: ISSN is already used by another journal. Use a unique ISSN or leave it blank.');
                     }
                 }
                 else {

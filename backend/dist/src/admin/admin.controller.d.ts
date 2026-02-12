@@ -86,6 +86,10 @@ export declare class AdminController {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
+            issueId: number | null;
+            showInInpressCards: boolean;
+            inPressMonth: string | null;
+            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -104,6 +108,7 @@ export declare class AdminController {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
     }>;
     getSearchAnalytics(): Promise<{
@@ -120,6 +125,7 @@ export declare class AdminController {
         journal: {
             id: number;
             title: string;
+            content: string | null;
             createdAt: Date;
             updatedAt: Date;
             issn: string | null;
@@ -200,6 +206,10 @@ export declare class AdminController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -218,10 +228,12 @@ export declare class AdminController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }>;
     createJournal(journalData: any): Promise<{
         id: number;
         title: string;
+        content: string | null;
         createdAt: Date;
         updatedAt: Date;
         issn: string | null;
@@ -277,6 +289,7 @@ export declare class AdminController {
     deleteJournal(id: number): Promise<{
         id: number;
         title: string;
+        content: string | null;
         createdAt: Date;
         updatedAt: Date;
         issn: string | null;
@@ -428,6 +441,10 @@ export declare class AdminController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -446,11 +463,13 @@ export declare class AdminController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     })[]>;
     getSubmission(id: number): Promise<({
         journal: {
             id: number;
             title: string;
+            content: string | null;
             createdAt: Date;
             updatedAt: Date;
             issn: string | null;
@@ -531,6 +550,10 @@ export declare class AdminController {
         issueMonth: string | null;
         year: string | null;
         specialIssue: string | null;
+        issueId: number | null;
+        showInInpressCards: boolean;
+        inPressMonth: string | null;
+        inPressYear: string | null;
         firstPageNumber: string | null;
         lastPageNumber: string | null;
         correspondingAuthorDetails: string | null;
@@ -549,6 +572,7 @@ export declare class AdminController {
         heading4Content: string | null;
         heading5Title: string | null;
         heading5Content: string | null;
+        schemaSyncTest: string | null;
     }) | null>;
     getJournalShortcodes(): Promise<{
         id: number;
@@ -649,6 +673,10 @@ export declare class AdminController {
             issueMonth: string | null;
             year: string | null;
             specialIssue: string | null;
+            issueId: number | null;
+            showInInpressCards: boolean;
+            inPressMonth: string | null;
+            inPressYear: string | null;
             firstPageNumber: string | null;
             lastPageNumber: string | null;
             correspondingAuthorDetails: string | null;
@@ -667,10 +695,12 @@ export declare class AdminController {
             heading4Content: string | null;
             heading5Title: string | null;
             heading5Content: string | null;
+            schemaSyncTest: string | null;
         })[];
         journals: {
             id: number;
             title: string;
+            content: string | null;
             createdAt: Date;
             updatedAt: Date;
             issn: string | null;
@@ -759,6 +789,7 @@ export declare class AdminController {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        displayOrder: number;
     }[]>;
     getBoardMember(id: number): Promise<{
         id: number;
@@ -777,6 +808,7 @@ export declare class AdminController {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        displayOrder: number;
     } | null>;
     createBoardMember(memberData: any): Promise<{
         id: number;
@@ -795,6 +827,7 @@ export declare class AdminController {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        displayOrder: number;
     }>;
     updateBoardMember(id: number, memberData: any): Promise<{
         id: number;
@@ -813,6 +846,7 @@ export declare class AdminController {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        displayOrder: number;
     }>;
     deleteBoardMember(id: number): Promise<{
         id: number;
@@ -831,6 +865,7 @@ export declare class AdminController {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        displayOrder: number;
     }>;
     uploadBoardMemberPhoto(id: number, file?: Express.Multer.File): Promise<{
         success: boolean;
@@ -852,6 +887,7 @@ export declare class AdminController {
             biography: string | null;
             imageUrl: string | null;
             profileUrl: string | null;
+            displayOrder: number;
         };
     }>;
 }

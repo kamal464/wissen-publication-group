@@ -1,40 +1,68 @@
 #!/bin/bash
 # ==========================================
-# Quick deploy: build locally + sync to EC2 + run master config
-# Run from Git Bash: ./quick-deploy.sh
-#
-# Flow: Build backend/frontend → discard server local changes → sync (local = source of truth)
-#       → push backend/.env from prod.env → npm install + pm2 restart → MASTER_SETUP.sh (config only)
-# Code on server always comes from this sync; do not run git pull on the server.
-#
-# One-time: cp backend/prod.env.example backend/prod.env and set DATABASE_URL, AWS keys.
+# Quick deploy – build and restart (use for build/deploy)
+# Run ON the server:  cd /var/www/wissen-publication-group && ./quick-deploy.sh
+# Or from local with SSH:  DEPLOY_HOST=ubuntu@YOUR_EC2_IP ./quick-deploy.sh
 # ==========================================
 
 set -e
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
 
-# Your EC2 instance and key (edit if needed)
-INSTANCE_ID="${DEPLOY_INSTANCE_ID:-i-06e4b30bc2a85d127}"
-REGION="${DEPLOY_REGION:-us-east-1}"
-KEY="${DEPLOY_KEY:-$HOME/.ssh/wissen-secure-key-2.pem}"
-REMOTE_PATH="${REMOTE_PATH:-/var/www/wissen-publication-group}"
-
-# Resolve EC2 IP if DEPLOY_HOST not set
-if [ -z "$DEPLOY_HOST" ]; then
-    if command -v aws &>/dev/null; then
-        IP=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --region "$REGION" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text 2>/dev/null || true)
-        if [ -n "$IP" ] && [ "$IP" != "None" ]; then
-            export DEPLOY_HOST="ubuntu@$IP"
-        fi
-    fi
+# If DEPLOY_HOST is set, run this script on the remote server via SSH
+if [ -n "$DEPLOY_HOST" ]; then
+  echo "=========================================="
+  echo "Deploying via SSH to $DEPLOY_HOST"
+  echo "=========================================="
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  # Use the same path on remote if possible, or default
+  REMOTE_PATH="${DEPLOY_PATH:-/var/www/wissen-publication-group}"
+  ssh "$DEPLOY_HOST" "cd $REMOTE_PATH && git pull && bash -s" < "$0"
+  exit $?
 fi
 
-export DEPLOY_HOST="${DEPLOY_HOST:?Set DEPLOY_HOST or install AWS CLI and ensure instance $INSTANCE_ID is running}"
-export DEPLOY_KEY="$KEY"
-export REMOTE_PATH="$REMOTE_PATH"
+APP_DIR="${1:-$(cd "$(dirname "$0")" && pwd)}"
+cd "$APP_DIR"
 
-echo "Deploying to $DEPLOY_HOST (key: $DEPLOY_KEY)"
-echo ""
+echo "=========================================="
+echo "Quick deploy: $APP_DIR"
+echo "=========================================="
 
-exec ./deploy-to-aws.sh
+# Optional quick disk cleanup on server (no-ops on Windows or without sudo)
+if command -v sudo &>/dev/null; then
+  echo "Freeing disk space (quick cleanup)..."
+  sudo journalctl --vacuum-time=3d 2>/dev/null || true
+  sudo apt-get clean 2>/dev/null || true
+fi
+command -v pm2 &>/dev/null && pm2 flush 2>/dev/null || true
+
+echo "Pulling latest..."
+git pull
+
+echo "Building backend..."
+cd backend
+npm install --no-audit --no-fund
+npm run build
+npm install --omit=dev --no-audit --no-fund 2>/dev/null || true
+cd ..
+
+echo "Building frontend..."
+cd frontend
+npm install --no-audit --no-fund
+npm run build
+npm install --omit=dev --no-audit --no-fund 2>/dev/null || true
+cd ..
+
+echo "Restarting PM2..."
+cd "$APP_DIR"
+if command -v pm2 &>/dev/null; then
+  pm2 restart all 2>/dev/null || (pm2 start ecosystem.config.js --update-env && pm2 save)
+  echo "Deploy complete"
+  pm2 status
+else
+  echo "Deploy complete (build only). PM2 not found on this machine."
+  echo ""
+  echo "To deploy and restart on the server, run one of:"
+  echo "  ssh ubuntu@YOUR_EC2_IP 'cd /var/www/wissen-publication-group && git pull && ./quick-deploy.sh'"
+  echo "  DEPLOY_HOST=ubuntu@YOUR_EC2_IP ./quick-deploy.sh"
+  echo "(Replace YOUR_EC2_IP with your server IP, e.g. 54.165.116.208)"
+fi
+echo "=========================================="
