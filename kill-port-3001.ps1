@@ -11,10 +11,10 @@ foreach ($line in $lines) {
     [void]$pids.Add([int]$Matches[1])
   }
 }
-foreach ($pid in $pids) {
-  if ($pid -gt 0) {
-    Write-Host "Killing PID $pid (was using port $port)..."
-    taskkill /PID $pid /F 2>$null
+foreach ($processId in $pids) {
+  if ($processId -gt 0) {
+    Write-Host "Killing PID $processId (was using port $port)..."
+    taskkill /PID $processId /F 2>$null
   }
 }
 Write-Host "Port $port should be free. Try starting the backend again."

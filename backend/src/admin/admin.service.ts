@@ -1119,7 +1119,7 @@ export class AdminService {
     };
   }
 
-  // Board Members
+  // Board Members (ordered by sortOrder for drag-and-drop display order)
   async getBoardMembers(journalId?: number) {
     const where: any = { isActive: true };
     if (journalId) {
@@ -1128,8 +1128,8 @@ export class AdminService {
     return await this.prisma.boardMember.findMany({
       where,
       orderBy: [
-        { memberType: 'asc' },
-        { name: 'asc' }
+        { sortOrder: 'asc' } as any,
+        { id: 'asc' }
       ]
     });
   }
@@ -1139,6 +1139,12 @@ export class AdminService {
   }
 
   async createBoardMember(journalId: number, memberData: any) {
+    const maxOrder = await this.prisma.boardMember
+      .aggregate({
+        where: { journalId },
+        _max: { sortOrder: true } as any
+      })
+      .then((r) => ((r._max as any)?.sortOrder ?? -1) + 1);
     return await this.prisma.boardMember.create({
       data: {
         name: memberData.name || memberData.editorName,
@@ -1153,8 +1159,9 @@ export class AdminService {
         imageUrl: memberData.imageUrl || memberData.editorPhoto,
         profileUrl: memberData.profileUrl,
         journalId: journalId,
-        isActive: true
-      }
+        isActive: true,
+        sortOrder: maxOrder
+      } as any
     });
   }
 
@@ -1176,6 +1183,7 @@ export class AdminService {
     if (memberData.editorPhoto !== undefined) updateData.imageUrl = memberData.editorPhoto;
     if (memberData.profileUrl !== undefined) updateData.profileUrl = memberData.profileUrl;
     if (memberData.isActive !== undefined) updateData.isActive = memberData.isActive;
+    if (memberData.sortOrder !== undefined) (updateData as any).sortOrder = memberData.sortOrder;
 
     return await this.prisma.boardMember.update({
       where: { id },
@@ -1185,5 +1193,35 @@ export class AdminService {
 
   async deleteBoardMember(id: number) {
     return await this.prisma.boardMember.delete({ where: { id } });
+  }
+
+  async reorderBoardMembers(journalId: number, orderedIds: number[]) {
+    if (!orderedIds?.length) return this.getBoardMembers(journalId);
+    const ids = orderedIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0);
+    if (ids.length !== orderedIds.length) {
+      throw new BadRequestException('orderedIds must be an array of positive integers');
+    }
+    try {
+      // Use raw SQL so reorder works even before prisma generate (only migration must be run)
+      await this.prisma.$transaction(
+        ids.map((id, index) =>
+          this.prisma.$executeRawUnsafe(
+            'UPDATE "BoardMember" SET "sortOrder" = $1 WHERE id = $2 AND "journalId" = $3',
+            index,
+            id,
+            journalId
+          )
+        )
+      );
+      return this.getBoardMembers(journalId);
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('sortOrder') || msg.includes('column')) {
+        throw new BadRequestException(
+          'Database missing sortOrder column. Run: npx prisma db execute --file prisma/add-board-member-sortOrder.sql --schema prisma/schema.prisma'
+        );
+      }
+      throw err;
+    }
   }
 }

@@ -515,11 +515,14 @@ let AdminService = class AdminService {
         return updated;
     }
     async deleteJournal(journalId) {
-        await this.prisma.article.deleteMany({
-            where: { journalId }
+        await this.prisma.boardMember.deleteMany({ where: { journalId } });
+        await this.prisma.article.deleteMany({ where: { journalId } });
+        await this.prisma.journalShortcode.updateMany({
+            where: { journalId },
+            data: { journalId: null },
         });
         return await this.prisma.journal.delete({
-            where: { id: journalId }
+            where: { id: journalId },
         });
     }
     calculateAverageReviewTime(articles) {
@@ -1010,8 +1013,8 @@ let AdminService = class AdminService {
         return await this.prisma.boardMember.findMany({
             where,
             orderBy: [
-                { memberType: 'asc' },
-                { name: 'asc' }
+                { sortOrder: 'asc' },
+                { id: 'asc' }
             ]
         });
     }
@@ -1019,6 +1022,12 @@ let AdminService = class AdminService {
         return await this.prisma.boardMember.findUnique({ where: { id } });
     }
     async createBoardMember(journalId, memberData) {
+        const maxOrder = await this.prisma.boardMember
+            .aggregate({
+            where: { journalId },
+            _max: { sortOrder: true }
+        })
+            .then((r) => (r._max?.sortOrder ?? -1) + 1);
         return await this.prisma.boardMember.create({
             data: {
                 name: memberData.name || memberData.editorName,
@@ -1033,7 +1042,8 @@ let AdminService = class AdminService {
                 imageUrl: memberData.imageUrl || memberData.editorPhoto,
                 profileUrl: memberData.profileUrl,
                 journalId: journalId,
-                isActive: true
+                isActive: true,
+                sortOrder: maxOrder
             }
         });
     }
@@ -1071,6 +1081,8 @@ let AdminService = class AdminService {
             updateData.profileUrl = memberData.profileUrl;
         if (memberData.isActive !== undefined)
             updateData.isActive = memberData.isActive;
+        if (memberData.sortOrder !== undefined)
+            updateData.sortOrder = memberData.sortOrder;
         return await this.prisma.boardMember.update({
             where: { id },
             data: updateData
@@ -1078,6 +1090,25 @@ let AdminService = class AdminService {
     }
     async deleteBoardMember(id) {
         return await this.prisma.boardMember.delete({ where: { id } });
+    }
+    async reorderBoardMembers(journalId, orderedIds) {
+        if (!orderedIds?.length)
+            return this.getBoardMembers(journalId);
+        const ids = orderedIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0);
+        if (ids.length !== orderedIds.length) {
+            throw new common_1.BadRequestException('orderedIds must be an array of positive integers');
+        }
+        try {
+            await this.prisma.$transaction(ids.map((id, index) => this.prisma.$executeRawUnsafe('UPDATE "BoardMember" SET "sortOrder" = $1 WHERE id = $2 AND "journalId" = $3', index, id, journalId)));
+            return this.getBoardMembers(journalId);
+        }
+        catch (err) {
+            const msg = err?.message || '';
+            if (msg.includes('sortOrder') || msg.includes('column')) {
+                throw new common_1.BadRequestException('Database missing sortOrder column. Run: npx prisma db execute --file prisma/add-board-member-sortOrder.sql --schema prisma/schema.prisma');
+            }
+            throw err;
+        }
     }
 };
 exports.AdminService = AdminService;

@@ -283,6 +283,14 @@ export class AdminController {
     return this.adminService.createBoardMember(memberData.journalId, memberData);
   }
 
+  @Post('board-members/reorder')
+  reorderBoardMembers(@Body() body: { journalId: number; orderedIds: number[] }) {
+    if (!body?.journalId || !Array.isArray(body.orderedIds)) {
+      throw new BadRequestException('journalId and orderedIds array are required');
+    }
+    return this.adminService.reorderBoardMembers(Number(body.journalId), body.orderedIds);
+  }
+
   @Put('board-members/:id')
   updateBoardMember(@Param('id', ParseIntPipe) id: number, @Body() memberData: any) {
     return this.adminService.updateBoardMember(id, memberData);

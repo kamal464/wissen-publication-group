@@ -196,6 +196,12 @@ let AdminController = class AdminController {
         }
         return this.adminService.createBoardMember(memberData.journalId, memberData);
     }
+    reorderBoardMembers(body) {
+        if (!body?.journalId || !Array.isArray(body.orderedIds)) {
+            throw new common_1.BadRequestException('journalId and orderedIds array are required');
+        }
+        return this.adminService.reorderBoardMembers(Number(body.journalId), body.orderedIds);
+    }
     updateBoardMember(id, memberData) {
         return this.adminService.updateBoardMember(id, memberData);
     }
@@ -428,6 +434,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "createBoardMember", null);
+__decorate([
+    (0, common_1.Post)('board-members/reorder'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "reorderBoardMembers", null);
 __decorate([
     (0, common_1.Put)('board-members/:id'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),

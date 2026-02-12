@@ -30,6 +30,7 @@ interface BoardMember {
   profileUrl?: string;
   tags?: string;
   isActive?: boolean;
+  sortOrder?: number;
 }
 
 export default function EditorialBoardPage() {
@@ -44,7 +45,25 @@ export default function EditorialBoardPage() {
   const [journalId, setJournalId] = useState<number | null>(null);
   const [journalTitle, setJournalTitle] = useState<string>('');
   const [uploading, setUploading] = useState(false);
+  const [reordering, setReordering] = useState(false);
   const toast = useRef<Toast>(null);
+
+  const handleRowReorder = async (e: { value: BoardMember[] }) => {
+    const reordered = e.value;
+    setMembers(reordered);
+    if (!journalId) return;
+    try {
+      setReordering(true);
+      await adminAPI.reorderBoardMembers(journalId, reordered.map((m) => m.id));
+      toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Order saved. View editorial board will show this order.' });
+    } catch (err: any) {
+      const msg = err.response?.data?.message ?? err.response?.data?.error ?? err.message ?? 'Failed to save order';
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: typeof msg === 'string' ? msg : 'Failed to save order' });
+      await loadJournalAndMembers();
+    } finally {
+      setReordering(false);
+    }
+  };
 
   const memberTypes = [
     { label: 'Select Member Type', value: null },
@@ -420,10 +439,21 @@ export default function EditorialBoardPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow">
-        <DataTable value={members} loading={loading} paginator rows={10} emptyMessage="No board members found">
+        <p className="text-sm text-slate-500 px-4 pt-2">Drag rows to reorder. The same order is shown on the journal’s View Editorial Board.</p>
+        <DataTable
+          value={members}
+          loading={loading}
+          paginator
+          rows={10}
+          dataKey="id"
+          reorderableRows
+          onRowReorder={handleRowReorder}
+          emptyMessage="No board members found"
+        >
+          <Column rowReorder style={{ width: '3rem' }} />
           <Column header="Photo" body={photoBodyTemplate} style={{ width: '100px' }} />
-          <Column field="name" header="Name" sortable />
-          <Column field="memberType" header="Member Type" sortable />
+          <Column field="name" header="Name" />
+          <Column field="memberType" header="Member Type" />
           <Column field="editorType" header="Editor Type" />
           <Column field="position" header="Position" />
           <Column

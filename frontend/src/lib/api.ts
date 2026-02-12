@@ -247,6 +247,8 @@ export const adminAPI = {
   getBoardMember: (id: number) => api.get(`/admin/board-members/${id}`),
   createBoardMember: (data: any) => api.post('/admin/board-members', data),
   updateBoardMember: (id: number, data: any) => api.put(`/admin/board-members/${id}`, data),
+  reorderBoardMembers: (journalId: number, orderedIds: number[]) =>
+    api.post('/admin/board-members/reorder', { journalId, orderedIds }),
   deleteBoardMember: (id: number) => api.delete(`/admin/board-members/${id}`),
   uploadBoardMemberPhoto: (id: number, file: File) => {
     const formData = new FormData();

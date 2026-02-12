@@ -842,6 +842,7 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        sortOrder: number;
     }[]>;
     getBoardMember(id: number): Promise<{
         id: number;
@@ -860,6 +861,7 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        sortOrder: number;
     } | null>;
     createBoardMember(journalId: number, memberData: any): Promise<{
         id: number;
@@ -878,6 +880,7 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        sortOrder: number;
     }>;
     updateBoardMember(id: number, memberData: any): Promise<{
         id: number;
@@ -896,6 +899,7 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        sortOrder: number;
     }>;
     deleteBoardMember(id: number): Promise<{
         id: number;
@@ -914,5 +918,25 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
+        sortOrder: number;
     }>;
+    reorderBoardMembers(journalId: number, orderedIds: number[]): Promise<{
+        id: number;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        description: string | null;
+        email: string | null;
+        journalId: number | null;
+        affiliation: string | null;
+        isActive: boolean;
+        position: string;
+        memberType: string | null;
+        editorType: string | null;
+        bio: string | null;
+        biography: string | null;
+        imageUrl: string | null;
+        profileUrl: string | null;
+        sortOrder: number;
+    }[]>;
 }
