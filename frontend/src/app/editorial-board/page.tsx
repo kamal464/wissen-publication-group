@@ -109,8 +109,13 @@ const EDITORIAL_BOARD: Editor[] = [
   }
 ];
 
+const isUniversalPublishersEmail = (email: string) =>
+  /universalpublishers|universal\s*publishers/i.test(email || '');
+
 export default function EditorialBoardPage() {
-  const renderEditorCard = (editor: Editor) => (
+  const renderEditorCard = (editor: Editor) => {
+    const showEmail = !isUniversalPublishersEmail(editor.email);
+    return (
     <Card key={editor.email} className="editor-card">
       <div className="editor-content">
         <div className="editor-avatar">
@@ -131,10 +136,12 @@ export default function EditorialBoardPage() {
             <i className="pi pi-building"></i>
             <span>{editor.affiliation}</span>
           </div>
+          {showEmail && (
           <div className="editor-email">
             <i className="pi pi-envelope"></i>
             <a href={`mailto:${editor.email}`}>{editor.email}</a>
           </div>
+          )}
           <div className="editor-expertise">
             <i className="pi pi-tags"></i>
             <div className="expertise-tags">
@@ -147,6 +154,7 @@ export default function EditorialBoardPage() {
       </div>
     </Card>
   );
+  };
 
   return (
     <>

@@ -1010,13 +1010,22 @@ let AdminService = class AdminService {
         if (journalId) {
             where.journalId = journalId;
         }
-        return await this.prisma.boardMember.findMany({
-            where,
-            orderBy: [
-                { sortOrder: 'asc' },
-                { id: 'asc' }
-            ]
-        });
+        try {
+            return await this.prisma.boardMember.findMany({
+                where,
+                orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+            });
+        }
+        catch (err) {
+            const msg = err?.message || '';
+            if (msg.includes('sortOrder') || msg.includes('Unknown argument')) {
+                return await this.prisma.boardMember.findMany({
+                    where,
+                    orderBy: [{ id: 'asc' }],
+                });
+            }
+            throw err;
+        }
     }
     async getBoardMember(id) {
         return await this.prisma.boardMember.findUnique({ where: { id } });

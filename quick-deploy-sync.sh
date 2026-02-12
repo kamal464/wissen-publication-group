@@ -9,6 +9,10 @@
 #   SERVER     = ubuntu@3.85.82.78
 #   SSH_KEY    = path to your PEM (default: ~/.ssh/wissen-secure-key-2.pem)
 #   REMOTE_PATH = /var/www/wissen-publication-group
+#
+# If prod shows "Database missing sortOrder" or invalid journal.update(isVisibleOnSite):
+#   On server: cd $REMOTE_PATH/backend && source ../.env 2>/dev/null; bash scripts/fix-prod-missing-columns.sh
+#   Then: pm2 restart all
 # ==========================================
 
 set -e
@@ -38,18 +42,36 @@ npm install --omit=dev --no-audit --no-fund 2>/dev/null || true
 cd ..
 
 echo "Building frontend (local)..."
+echo "  (If you have 'npm run dev' running in another terminal, stop it with Ctrl+C first.)"
 cd frontend
 frontend_ok=1
-for _ in 1 2; do
-  if npm install --no-audit --no-fund; then frontend_ok=0; break; fi
-  echo "Install failed (file may be locked). Stop 'npm run dev' if running, then retrying in 3s..."
-  sleep 3
-done
-if [ "$frontend_ok" -ne 0 ]; then
-  echo "ERROR: Stop the dev server (Ctrl+C) and run again."
-  exit 1
+if [ -n "$SKIP_FRONTEND_INSTALL" ]; then
+  echo "  Skipping npm install (SKIP_FRONTEND_INSTALL is set)."
+else
+  for try in 1 2 3; do
+    if npm install --no-audit --no-fund; then frontend_ok=0; break; fi
+    echo "  Install failed (file locked?). Stop 'npm run dev' if running, retrying in 5s... (try $try/3)"
+    sleep 5
+  done
+  if [ "$frontend_ok" -ne 0 ]; then
+    echo ""
+    echo "Frontend install failed (file locked). Trying build with existing node_modules..."
+    if ! npm run build 2>/dev/null; then
+      echo ""
+      echo "ERROR: Build also failed. Stop 'npm run dev' (Ctrl+C), then run this deploy again."
+      echo "  Or run: SKIP_FRONTEND_INSTALL=1 SSH_KEY=... bash quick-deploy-sync.sh"
+      exit 1
+    fi
+    echo "  Build with existing node_modules succeeded. Continuing deploy..."
+    cd "$APP_DIR"
+    # Skip the npm run build below (already done)
+    frontend_build_done=1
+  fi
 fi
-npm run build
+if [ -z "$frontend_build_done" ]; then
+  npm run build
+fi
+[ -n "$frontend_build_done" ] && cd "$APP_DIR/frontend"
 npm install --omit=dev --no-audit --no-fund 2>/dev/null || true
 cd ..
 
@@ -60,6 +82,7 @@ rm -f "$BUILD_TAR"
 tar czf "$BUILD_TAR" \
   --exclude='frontend/.next/cache' \
   backend/dist \
+  backend/prisma \
   backend/package.json backend/package-lock.json \
   frontend/.next frontend/public \
   frontend/package.json frontend/package-lock.json
@@ -92,7 +115,9 @@ cd backend
 npm install --omit=dev --no-audit --no-fund
 if command -v npx >/dev/null 2>&1; then
   echo "Running Prisma migrations..."
-  npx prisma migrate deploy || true
+  npx prisma migrate deploy
+  echo "Regenerating Prisma client..."
+  npx prisma generate
 fi
 cd ..
 
