@@ -89,7 +89,7 @@ export default function LatestNewsSection() {
           <h2 className="text-4xl font-bold text-gray-800 mb-4 mt-2">
             Latest News & Announcements
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600  text-center">
             Stay informed about the latest developments, publications, and opportunities in academic research.
           </p>
         </div>
@@ -138,7 +138,7 @@ export default function LatestNewsSection() {
 
         <div className="text-center mt-8">
           <Link
-            href="/admin/latest-news"
+            href="/news"
             className="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors"
           >
             View All News

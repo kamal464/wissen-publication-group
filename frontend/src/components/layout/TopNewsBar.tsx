@@ -7,6 +7,7 @@ import { adminAPI } from '@/lib/api';
 interface NewsItem {
   id: number;
   title: string;
+  content?: string;
   link?: string;
   isPinned?: boolean;
 }
@@ -60,16 +61,21 @@ export default function TopNewsBar() {
           <span className="top-bar__badge" suppressHydrationWarning>LATEST NEWS</span>
           <div className="top-bar__ticker">
             <div className="top-bar__ticker-track">
-              {[...newsItems, ...newsItems].map((item, index) => (
-                <Link
-                  key={`${item.id}-${index}`}
-                  href={item.link || '#'}
-                  className="top-bar__ticker-item"
-                  suppressHydrationWarning
-                >
-                  <span suppressHydrationWarning>{item.title}</span>
-                </Link>
-              ))}
+              {[...newsItems, ...newsItems].map((item, index) => {
+                const rawContent = (item.content || '').replace(/<[^>]*>/g, '').trim();
+                const contentSnippet = rawContent.length > 80 ? rawContent.slice(0, 80) + '…' : rawContent;
+                const displayText = contentSnippet ? `${item.title} — ${contentSnippet}` : item.title;
+                return (
+                  <Link
+                    key={`${item.id}-${index}`}
+                    href={item.link || '#'}
+                    className="top-bar__ticker-item"
+                    suppressHydrationWarning
+                  >
+                    <span suppressHydrationWarning>{displayText}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>

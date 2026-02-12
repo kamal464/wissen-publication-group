@@ -71,7 +71,7 @@ export default function MainContent() {
       <JournalCovers />
 
       {/* Latest News Section */}
-      {/* <LatestNewsSection /> */}
+      <LatestNewsSection />
 
       {/* For Authors Section */}
       <section className="py-8 bg-white">
