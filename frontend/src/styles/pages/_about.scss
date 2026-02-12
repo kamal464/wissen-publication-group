@@ -374,6 +374,63 @@
     }
   }
 
+  // Follow Us / Social
+  .about-social-section {
+    padding: 1rem 0;
+
+    .about-social-card {
+      background: white;
+      color: #374151;
+      border-radius: 20px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      border: none;
+
+      h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+
+      .about-social-lead {
+        font-size: 1rem;
+        color: #666;
+        margin-bottom: 1.5rem;
+      }
+
+      .about-social-links {
+        display: flex;
+        justify-content: center;
+        gap: 1.25rem;
+        flex-wrap: wrap;
+
+        a {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: #f3f4f6;
+          color: #1e40af;
+          text-decoration: none;
+          transition: background 0.2s, color 0.2s, transform 0.2s;
+
+          &:hover {
+            background: #1e40af;
+            color: white;
+            transform: scale(1.1);
+          }
+
+          i {
+            font-size: 1.5rem;
+          }
+        }
+      }
+    }
+  }
+
   // CTA Section
   .cta-section {
     padding: 1rem 0;

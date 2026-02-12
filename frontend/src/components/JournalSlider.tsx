@@ -2,25 +2,30 @@
 
 import { useState, useEffect } from 'react';
 import { Carousel } from 'primereact/carousel';
+import { adminAPI } from '@/lib/api';
+import { getFileUrl } from '@/lib/apiConfig';
 import Link from 'next/link';
 
 interface Journal {
   id: number;
   title: string;
-  coverImage: string;
+  coverImage?: string;
+  bannerImage?: string;
+  flyerImage?: string;
+  shortcode?: string;
+  description?: string;
 }
 
-// Always show these 4 static images from public folder
-const STATIC_SLIDER_IMAGES: Journal[] = [
-  { id: 1, title: 'Slide 1', coverImage: '/images/sliders/slider 1.jpg.jpeg' },
-  { id: 2, title: 'Slide 2', coverImage: '/images/sliders/slider 2.jpg.jpeg' },
-  { id: 3, title: 'Slide 3', coverImage: '/images/sliders/slider 3.jpg.jpeg' },
-  { id: 4, title: 'Slide 4', coverImage: '/images/sliders/slider 4.jpg.jpeg' },
-];
+const MOBILE_BREAKPOINT = 768;
+const MOBILE_SLIDER_HEIGHT = 180;
 
 export default function JournalSlider() {
-  const [journals] = useState<Journal[]>(STATIC_SLIDER_IMAGES);
-  const [loading, setLoading] = useState(false);
+  const [journals, setJournals] = useState<Journal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT
+  );
+  const [mobileIndex, setMobileIndex] = useState(0);
 
   // Generate SVG-based placeholder images
   const generatePlaceholderImage = (title: string, index: number): string => {
@@ -31,17 +36,17 @@ export default function JournalSlider() {
       { bg: '#2563eb', text: '#ffffff' },
       { bg: '#1e40af', text: '#ffffff' },
     ];
-    
+
     const scheme = colorSchemes[index % colorSchemes.length];
     const shortTitle = title.length > 30 ? title.substring(0, 30) + '...' : title;
-    
+
     const escapedTitle = shortTitle
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
-    
+
     const svg = `<svg width="1680" height="500" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="grad${index}" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -52,17 +57,36 @@ export default function JournalSlider() {
       <rect width="1680" height="500" fill="url(#grad${index})"/>
       <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="${scheme.text}" text-anchor="middle" dominant-baseline="middle">${escapedTitle}</text>
     </svg>`;
-    
+
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   };
 
   useEffect(() => {
-    if (journals.length === 0) return;
+    loadJournals();
+  }, []);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile || journals.length <= 1) return;
+    const t = setInterval(() => setMobileIndex((i) => (i + 1) % journals.length), 4000);
+    return () => clearInterval(t);
+  }, [isMobile, journals.length]);
+
+  useEffect(() => {
+    if (journals.length === 0 || isMobile) return;
+
+    const isMobileView = window.innerWidth <= 768;
 
     const updateSliderWidth = () => {
       const viewportWidth = window.innerWidth;
       const calculatedHeight = Math.min((viewportWidth * 430) / 1520, 430);
-      
+
       const elements = {
         slider: document.querySelector('.journal-slider') as HTMLElement,
         carouselWrapper: document.querySelector('.journal-slider__carousel-wrapper') as HTMLElement,
@@ -110,7 +134,14 @@ export default function JournalSlider() {
       });
     };
 
-    setTimeout(updateSliderWidth, 100);
+    // Run after paint (rAF) then multiple times so PrimeReact has rendered (fixes mobile disappear)
+    const rafId = requestAnimationFrame(() => {
+      updateSliderWidth();
+    });
+    const t1 = setTimeout(updateSliderWidth, 150);
+    const t2 = setTimeout(updateSliderWidth, 400);
+    const t3 = setTimeout(updateSliderWidth, 800);
+    const t4 = isMobileView ? setTimeout(updateSliderWidth, 1600) : null;
     window.addEventListener('resize', updateSliderWidth);
 
     let lastWidth = window.innerWidth;
@@ -130,47 +161,96 @@ export default function JournalSlider() {
     window.addEventListener('wheel', wheelHandler, { passive: true });
 
     return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      if (t4) clearTimeout(t4);
       window.removeEventListener('resize', updateSliderWidth);
       window.removeEventListener('wheel', wheelHandler);
       clearInterval(zoomCheck);
     };
-  }, [journals]);
+  }, [journals, isMobile]);
+
+  const loadJournals = async () => {
+    // Set static data immediately so slider shows on first paint (avoids flash/gone on mobile)
+    const staticList = getStaticJournals();
+    setJournals(staticList);
+    setLoading(false);
+    try {
+      await adminAPI.getJournals();
+      // Optionally use API response here; for now keep static slider images
+    } catch (error: any) {
+      const isNetworkError = error.code === 'ERR_NETWORK' ||
+                            error.code === 'ECONNREFUSED' ||
+                            !error.response ||
+                            error.message === 'Network Error';
+      if (!isNetworkError) {
+        console.error('Error loading journals:', error);
+      }
+    }
+  };
+
+  const getStaticJournals = (): Journal[] => {
+    return [
+      { id: 1, title: 'Slide 1', coverImage: '/images/sliders/slider 1.jpg.jpeg', description: '', shortcode: '' },
+      { id: 4, title: 'Slide 4', coverImage: '/images/sliders/slider 4.jpg.jpeg', description: '', shortcode: '' },
+      { id: 2, title: 'Slide 2', coverImage: '/images/sliders/slider 2.jpg.jpeg', description: '', shortcode: '' },
+      { id: 3, title: 'Slide 3', coverImage: '/images/sliders/slider 3.jpg.jpeg', description: '', shortcode: '' },
+    ];
+  };
+
+  const getImageUrl = (journal: Journal) => {
+    const imagePath = journal.flyerImage || journal.coverImage;
+
+    if (!imagePath) {
+      return null;
+    }
+
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+
+    if (imagePath.startsWith('/')) {
+      const pathParts = imagePath.split('/').filter(part => part.length > 0);
+      const encodedParts = pathParts.map(part => encodeURIComponent(part));
+      const encodedPath = '/' + encodedParts.join('/');
+      return encodedPath;
+    }
+
+    return getFileUrl(imagePath);
+  };
 
   const ImageWithRetry = ({ src, alt, journal }: { src: string; alt: string; journal: Journal }) => {
     const [imageSrc, setImageSrc] = useState(src);
     const [retryCount, setRetryCount] = useState(0);
     const [hasError, setHasError] = useState(false);
-    const maxRetries = 3; // Increased retries for ERR_CONTENT_LENGTH_MISMATCH
+    const maxRetries = 3;
 
     const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
       const target = e.target as HTMLImageElement;
       const imgError = e.nativeEvent as any;
-      
-      // Check if it's a Content-Length mismatch error
+
       const isContentLengthError = imgError?.message?.includes('ERR_CONTENT_LENGTH_MISMATCH') ||
                                    imgError?.message?.includes('Failed to load resource');
-      
+
       if (retryCount < maxRetries) {
-        // Retry with cache busting - use base src without previous retry params
-        const baseSrc = src.split('?')[0]; // Remove any existing query params
-        // For Content-Length errors, wait longer and try different strategies
-        const retryDelay = isContentLengthError 
-          ? (retryCount + 1) * 2000  // 2s, 4s, 6s delays for Content-Length errors
-          : (retryCount + 1) * 1000; // 1s, 2s, 3s delays for other errors
-        
+        const baseSrc = src.split('?')[0];
+        const retryDelay = isContentLengthError
+          ? (retryCount + 1) * 2000
+          : (retryCount + 1) * 1000;
+
         setTimeout(() => {
-          // Try different cache-busting strategies
-          const cacheBuster = retryCount === 0 
+          const cacheBuster = retryCount === 0
             ? `?_retry=${retryCount + 1}&_t=${Date.now()}`
             : retryCount === 1
             ? `?nocache=${Date.now()}&_retry=${retryCount + 1}`
             : `?v=${Date.now()}&_r=${retryCount + 1}`;
-          
+
           setImageSrc(`${baseSrc}${cacheBuster}`);
           setRetryCount(prev => prev + 1);
         }, retryDelay);
       } else {
-        // Max retries reached, show placeholder
         setHasError(true);
         target.style.display = 'none';
         const placeholder = target.nextElementSibling as HTMLElement;
@@ -215,13 +295,16 @@ export default function JournalSlider() {
   };
 
   const journalTemplate = (journal: Journal) => {
-    const journalUrl = '#';
+    const imageUrl = getImageUrl(journal);
+    const journalUrl = journal.shortcode ? `/journals/${journal.shortcode}` : '#';
 
     return (
       <div className="journal-slide">
         <Link href={journalUrl} className="journal-slide__link">
           <div className="journal-slide__image-container">
-            <ImageWithRetry src={journal.coverImage} alt={journal.title} journal={journal} />
+            {imageUrl && (
+              <ImageWithRetry src={imageUrl} alt={journal.title} journal={journal} />
+            )}
           </div>
         </Link>
       </div>
@@ -237,6 +320,129 @@ export default function JournalSlider() {
   }
 
   if (journals.length === 0) return null;
+
+  if (isMobile) {
+    return (
+      <section className="journal-slider journal-slider--mobile" aria-label="Slideshow">
+        <div className="journal-slider__mobile-viewport" style={{ height: MOBILE_SLIDER_HEIGHT }}>
+          <div
+            className="journal-slider__mobile-track"
+            style={{ transform: `translate3d(-${mobileIndex * 100}%, 0, 0)` }}
+          >
+            {journals.map((journal) => {
+              const imageUrl = getImageUrl(journal);
+              const journalUrl = journal.shortcode ? `/journals/${journal.shortcode}` : '#';
+              return (
+                <div key={journal.id} className="journal-slider__mobile-slide">
+                  <Link href={journalUrl} className="journal-slider__mobile-slide-link">
+                    <div className="journal-slider__mobile-slide-inner">
+                      {imageUrl && (
+                        <ImageWithRetry src={imageUrl} alt={journal.title} journal={journal} />
+                      )}
+                    </div>
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+          <div className="journal-slider__mobile-dots" role="tablist" aria-label="Slide indicators">
+            {journals.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                role="tab"
+                aria-selected={i === mobileIndex}
+                aria-label={`Go to slide ${i + 1}`}
+                className={`journal-slider__mobile-dot ${i === mobileIndex ? 'journal-slider__mobile-dot--active' : ''}`}
+                onClick={() => setMobileIndex(i)}
+              />
+            ))}
+          </div>
+        </div>
+        <style jsx>{`
+          .journal-slider--mobile {
+            width: 100vw;
+            max-width: 100vw;
+            margin-left: calc(50% - 50vw);
+            margin-right: calc(50% - 50vw);
+            overflow: hidden;
+            background: #f3f4f6;
+            box-sizing: border-box;
+          }
+          .journal-slider__mobile-viewport {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+          }
+          .journal-slider__mobile-track {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.35s ease-out;
+          }
+          .journal-slider__mobile-slide {
+            flex: 0 0 100%;
+            width: 100%;
+            min-width: 100%;
+            height: 100%;
+          }
+          .journal-slider__mobile-slide-link {
+            display: block;
+            width: 100%;
+            height: 100%;
+            text-decoration: none;
+          }
+          .journal-slider__mobile-slide-inner {
+            width: 100%;
+            height: 100%;
+            min-height: 180px;
+            position: relative;
+            background: #f3f4f6;
+          }
+          .journal-slider__mobile-slide-inner :global(.journal-slide__image),
+          .journal-slider__mobile-slide-inner :global(img) {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+            display: block;
+          }
+          .journal-slider__mobile-slide-inner :global(.journal-slide__placeholder) {
+            position: absolute;
+            inset: 0;
+          }
+          .journal-slider__mobile-dots {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            z-index: 5;
+          }
+          .journal-slider__mobile-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: none;
+            padding: 0;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: background 0.2s;
+          }
+          .journal-slider__mobile-dot:hover {
+            background: rgba(255,255,255,0.8);
+          }
+          .journal-slider__mobile-dot--active {
+            background: #2563eb;
+            width: 24px;
+            border-radius: 4px;
+          }
+        `}</style>
+      </section>
+    );
+  }
 
   return (
     <section className="journal-slider">
@@ -319,10 +525,10 @@ export default function JournalSlider() {
         }
 
         .journal-slide__image {
-          width: 100vw !important;
-          max-width: 100vw !important;
+          width: 100% !important;
+          max-width: 100% !important;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
           object-position: center;
           transition: transform 0.5s ease;
           display: block !important;
@@ -353,7 +559,6 @@ export default function JournalSlider() {
           padding: 2rem;
         }
 
-        /* Carousel Styles */
         :global(.custom-carousel),
         :global(.p-carousel) {
           padding: 0 !important;
@@ -387,7 +592,6 @@ export default function JournalSlider() {
           opacity: 1 !important;
         }
 
-        /* Position indicators at the bottom of the image container */
         :global(.custom-carousel-indicators),
         :global(.p-carousel-indicators) {
           position: absolute !important;
@@ -403,14 +607,12 @@ export default function JournalSlider() {
           justify-content: center !important;
           align-items: center !important;
         }
-        
-        /* Ensure carousel container is positioned relative for absolute positioning */
+
         :global(.p-carousel),
         :global(.custom-carousel) {
           position: relative !important;
         }
-        
-        /* Remove any default PrimeReact padding/margin from carousel that creates gap */
+
         :global(.p-carousel .p-carousel-content),
         :global(.p-carousel-container),
         :global(.p-carousel-items-container) {
@@ -477,6 +679,15 @@ export default function JournalSlider() {
         }
 
         @media (max-width: 768px) {
+          .journal-slider__carousel-wrapper,
+          :global(.p-carousel),
+          :global(.p-carousel .p-carousel-content),
+          :global(.p-carousel-items-container) {
+            min-height: 140px !important;
+          }
+          .journal-slide__image-container {
+            min-height: 140px !important;
+          }
           :global(.p-carousel-prev),
           :global(.p-carousel-next),
           :global(.custom-carousel-prev),
@@ -500,7 +711,7 @@ export default function JournalSlider() {
             bottom: 0 !important;
             padding: 0.5rem 0 !important;
           }
-          
+
           :global(.p-carousel .p-carousel-content),
           :global(.p-carousel-container),
           :global(.p-carousel-items-container) {
@@ -510,7 +721,6 @@ export default function JournalSlider() {
           }
         }
 
-        /* Container breakout */
         :global(main .journal-slider),
         :global(.container .journal-slider),
         :global([class*="container"] .journal-slider),

@@ -343,16 +343,16 @@ export default function ContactPage() {
                 <h3>Follow Us</h3>
                 <Divider />
                 <div className="social-links">
-                  <a href="#" className="social-link twitter">
+                  <a href="https://x.com/wissen93634" target="_blank" rel="noopener noreferrer" className="social-link twitter" aria-label="X (Twitter)">
                     <i className="pi pi-twitter"></i>
                   </a>
-                  <a href="#" className="social-link facebook">
+                  <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="social-link facebook" aria-label="Facebook">
                     <i className="pi pi-facebook"></i>
                   </a>
-                  <a href="#" className="social-link linkedin">
+                  <a href="https://www.linkedin.com/in/wissen-publication-group-9432b33aa/" target="_blank" rel="noopener noreferrer" className="social-link linkedin" aria-label="LinkedIn">
                     <i className="pi pi-linkedin"></i>
                   </a>
-                  <a href="#" className="social-link github">
+                  <a href="#" className="social-link github" aria-label="GitHub">
                     <i className="pi pi-github"></i>
                   </a>
                 </div>

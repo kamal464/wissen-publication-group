@@ -1119,19 +1119,27 @@ export class AdminService {
     };
   }
 
-  // Board Members (ordered by sortOrder for drag-and-drop display order)
+  // Board Members (order by sortOrder when column exists, else by id for prod compatibility)
   async getBoardMembers(journalId?: number) {
     const where: any = { isActive: true };
     if (journalId) {
       where.journalId = journalId;
     }
-    return await this.prisma.boardMember.findMany({
-      where,
-      orderBy: [
-        { sortOrder: 'asc' } as any,
-        { id: 'asc' }
-      ]
-    });
+    try {
+      return await this.prisma.boardMember.findMany({
+        where,
+        orderBy: [{ sortOrder: 'asc' } as any, { id: 'asc' }],
+      });
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('sortOrder') || msg.includes('Unknown argument')) {
+        return await this.prisma.boardMember.findMany({
+          where,
+          orderBy: [{ id: 'asc' }],
+        });
+      }
+      throw err;
+    }
   }
 
   async getBoardMember(id: number) {

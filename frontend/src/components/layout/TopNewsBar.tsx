@@ -90,15 +90,15 @@ export default function TopNewsBar() {
             </button>
           </div> */}
           <div className="top-bar__social" aria-label="Social media links">
-            <Link href="https://www.facebook.com" aria-label="Facebook" target="_blank" rel="noreferrer">
+            <a href="https://www.facebook.com" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
               <i className="pi pi-facebook" />
-            </Link>
-            <Link href="https://x.com" aria-label="X" target="_blank" rel="noreferrer">
+            </a>
+            <a href="https://x.com/wissen93634" aria-label="X (Twitter)" target="_blank" rel="noopener noreferrer">
               <i className="pi pi-twitter" />
-            </Link>
-            <Link href="https://www.linkedin.com" aria-label="LinkedIn" target="_blank" rel="noreferrer">
+            </a>
+            <a href="https://www.linkedin.com/in/wissen-publication-group-9432b33aa/" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer">
               <i className="pi pi-linkedin" />
-            </Link>
+            </a>
           </div>
         </div>
       </div>

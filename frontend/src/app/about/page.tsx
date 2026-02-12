@@ -426,6 +426,25 @@ export default function AboutPage() {
             </div>
           </section>
 
+          {/* Follow Us / Social */}
+          <section className="about-social-section">
+            <Card className="about-social-card">
+              <h2>Follow Us</h2>
+              <p className="about-social-lead">Connect with Wissen Publication Group</p>
+              <div className="about-social-links">
+                <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                  <i className="pi pi-facebook"></i>
+                </a>
+                <a href="https://x.com/wissen93634" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
+                  <i className="pi pi-twitter"></i>
+                </a>
+                <a href="https://www.linkedin.com/in/wissen-publication-group-9432b33aa/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                  <i className="pi pi-linkedin"></i>
+                </a>
+              </div>
+            </Card>
+          </section>
+
           {/* Contact CTA */}
           <section className="cta-section">
             <Card className="cta-card">
