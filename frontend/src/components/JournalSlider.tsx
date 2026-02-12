@@ -140,14 +140,30 @@ export default function JournalSlider() {
 
   const loadJournals = async () => {
     try {
-      const response = await adminAPI.getJournals();
-      setJournals(getStaticJournals());
+      const response = await adminAPI.getHomeJournals();
+      const data = (response.data as any[]) || [];
+      if (Array.isArray(data) && data.length > 0) {
+        setJournals(
+          data.map((j: any, index: number) => ({
+            id: j.id,
+            title: j.title || `Journal ${index + 1}`,
+            coverImage: j.coverImage,
+            bannerImage: j.bannerImage,
+            flyerImage: j.flyerImage,
+            shortcode: j.shortcode,
+            description: j.description,
+          })),
+        );
+      } else {
+        setJournals(getStaticJournals());
+      }
     } catch (error: any) {
-      const isNetworkError = error.code === 'ERR_NETWORK' || 
-                            error.code === 'ECONNREFUSED' || 
-                            !error.response ||
-                            error.message === 'Network Error';
-      
+      const isNetworkError =
+        error.code === 'ERR_NETWORK' ||
+        error.code === 'ECONNREFUSED' ||
+        !error.response ||
+        error.message === 'Network Error';
+
       if (!isNetworkError) {
         console.error('Error loading journals:', error);
       }

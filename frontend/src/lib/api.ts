@@ -146,9 +146,13 @@ export const adminAPI = {
   
   // Journals
   getJournals: () => {
-    // Add cache-busting to ensure fresh data
     const cacheBuster = Date.now();
     return api.get(`/journals?_t=${cacheBuster}`);
+  },
+  /** Home page: only journals linked to active users or journal shortcodes */
+  getHomeJournals: () => {
+    const cacheBuster = Date.now();
+    return api.get(`/journals?forHome=true&_t=${cacheBuster}`);
   },
   getJournal: (id: number | string) => {
     // Add cache-busting to ensure fresh data

@@ -53,6 +53,37 @@ let JournalsService = JournalsService_1 = class JournalsService {
             data: createJournalDto,
         });
     }
+    async findAllForHome() {
+        try {
+            const [shortcodesFromUsers, shortcodeEntries, allJournals] = await Promise.all([
+                this.prisma.user.findMany({
+                    where: { isActive: true, journalShort: { not: null } },
+                    select: { journalShort: true },
+                }),
+                this.prisma.journalShortcode.findMany({
+                    where: { journalId: { not: null } },
+                    select: { journalId: true, shortcode: true },
+                }),
+                this.prisma.journal.findMany({
+                    include: { _count: { select: { articles: true } } },
+                    orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+                }),
+            ]);
+            const userShortcodes = new Set(shortcodesFromUsers
+                .map((u) => (u.journalShort || '').trim().toLowerCase())
+                .filter(Boolean));
+            const shortcodeJournalIds = new Set(shortcodeEntries.map((e) => e.journalId).filter(Boolean));
+            shortcodeEntries.forEach((e) => userShortcodes.add((e.shortcode || '').trim().toLowerCase()));
+            const allowed = allJournals.filter((j) => shortcodeJournalIds.has(j.id) ||
+                (j.shortcode && userShortcodes.has((j.shortcode || '').trim().toLowerCase())));
+            const deduplicated = this.deduplicateJournals(allowed);
+            return deduplicated.map((j) => this.toCloudFrontUrls(j));
+        }
+        catch (error) {
+            this.logger.error('Error fetching journals for home:', error);
+            throw error;
+        }
+    }
     async findAll() {
         try {
             const journals = await this.prisma.journal.findMany({

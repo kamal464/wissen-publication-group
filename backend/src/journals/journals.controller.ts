@@ -12,8 +12,11 @@ export class JournalsController {
   }
 
   @Get()
-  async findAll() {
+  async findAll(@Query('forHome') forHome?: string) {
     try {
+      if (forHome === 'true' || forHome === '1') {
+        return await this.journalsService.findAllForHome();
+      }
       return await this.journalsService.findAll();
     } catch (error) {
       console.error('Error in JournalsController.findAll:', error);

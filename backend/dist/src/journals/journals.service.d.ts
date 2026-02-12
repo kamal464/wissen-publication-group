@@ -62,6 +62,7 @@ export declare class JournalsService {
         journalDescription: string | null;
         pubmedArticles: string | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    findAllForHome(): Promise<any[]>;
     findAll(): Promise<any[]>;
     private deduplicateJournals;
     private getJournalCompletenessScore;

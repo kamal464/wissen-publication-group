@@ -24,8 +24,11 @@ let JournalsController = class JournalsController {
     create(createJournalDto) {
         return this.journalsService.create(createJournalDto);
     }
-    async findAll() {
+    async findAll(forHome) {
         try {
+            if (forHome === 'true' || forHome === '1') {
+                return await this.journalsService.findAllForHome();
+            }
             return await this.journalsService.findAll();
         }
         catch (error) {
@@ -59,8 +62,9 @@ __decorate([
 ], JournalsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Query)('forHome')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], JournalsController.prototype, "findAll", null);
 __decorate([

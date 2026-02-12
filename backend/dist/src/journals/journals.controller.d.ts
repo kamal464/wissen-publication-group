@@ -58,7 +58,7 @@ export declare class JournalsController {
         journalDescription: string | null;
         pubmedArticles: string | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
-    findAll(): Promise<any[]>;
+    findAll(forHome?: string): Promise<any[]>;
     findByShortcode(shortcode: string): Promise<any>;
     findOne(id: string): Promise<any>;
     findArticles(id: string): import("@prisma/client").Prisma.PrismaPromise<({

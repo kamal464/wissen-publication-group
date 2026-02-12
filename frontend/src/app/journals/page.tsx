@@ -8,7 +8,6 @@ import { Button } from 'primereact/button';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setError, setJournals, setLoading } from '@/store/slices/journalsSlice';
 import { Journal } from '@/types';
-import { journalService } from '@/services/api';
 import { adminAPI } from '@/lib/api';
 
 const SUBJECT_CLASS_MAP: Record<string, string> = {
@@ -255,35 +254,32 @@ export default function JournalsPage() {
       // Add cache-busting timestamp to ensure fresh data
       const cacheBuster = `_t=${Date.now()}`;
       
-      // Fetch both journals and shortcodes in parallel
+      // Use same filtered list as home page (only journals with active users / journal shortcodes)
       const [journalsRes, shortcodesRes, usersRes] = await Promise.all([
-        journalService.getAll(),
+        adminAPI.getHomeJournals(),
         adminAPI.getJournalShortcodes(),
         adminAPI.getUsers()
       ]);
-      
+
       const normalized = extractJournals(journalsRes.data ?? journalsRes);
-      
-      // STEP 1: Deduplicate normalized journals first (by ID, then shortcode, then title)
       const deduplicatedNormalized = deduplicateJournals(normalized);
-      
-      const shortcodes = (shortcodesRes.data || []) as Array<{ 
-        shortcode: string; 
-        journalName: string; 
+
+      const shortcodes = (shortcodesRes.data || []) as Array<{
+        shortcode: string;
+        journalName: string;
         journalId?: number | null;
         id?: number;
       }>;
-      const users = (usersRes.data || []) as Array<{ 
+      const users = (usersRes.data || []) as Array<{
         journalShort: string | null;
         category: string | null;
       }>;
-      
-      // Get allocated shortcodes
+
       const allocated = new Set<string>();
       const shortcodeMap = new Map<string, string>();
       const shortcodeToJournalId = new Map<string, number>();
       const shortcodeToCategory = new Map<string, string>();
-      
+
       shortcodes.forEach(sc => {
         const user = users.find(u => u.journalShort === sc.shortcode);
         if (user) {
@@ -292,46 +288,19 @@ export default function JournalsPage() {
           if (sc.journalId) {
             shortcodeToJournalId.set(sc.shortcode, sc.journalId);
           }
-          // Store user's category for fallback
           if (user.category) {
             shortcodeToCategory.set(sc.shortcode, user.category);
           }
         }
       });
-      
+
       setAllocatedShortcodes(allocated);
       setShortcodeToJournalName(shortcodeMap);
       setShortcodeToJournalId(shortcodeToJournalId);
       setShortcodeToUserCategory(shortcodeToCategory);
-      
-      // Create virtual journal objects for shortcodes that don't have Journal records yet
-      const virtualJournals: Journal[] = [];
-      allocated.forEach(shortcode => {
-        const journalName = shortcodeMap.get(shortcode) || '';
-        const journalId = shortcodeToJournalId.get(shortcode);
-        
-        // Check if a Journal record already exists for this shortcode (use deduplicated array)
-        const existingJournal = deduplicatedNormalized.find(j => 
-          j.shortcode === shortcode || 
-          (journalId && j.id === journalId) ||
-          j.title?.toLowerCase().trim() === journalName.toLowerCase().trim()
-        );
-        
-        // If no Journal record exists, create a virtual one
-        if (!existingJournal) {
-          virtualJournals.push({
-            id: -1, // Temporary ID for virtual journals
-            title: journalName,
-            description: 'Journal details will be available after journal admin completes setup.',
-            shortcode: shortcode,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
-        }
-      });
-      
-      // Combine real and virtual journals, then deduplicate again
-      let allJournals = deduplicateJournals([...deduplicatedNormalized, ...virtualJournals]);
+
+      // Use only the home-filtered journals (no virtual journals) so list matches home page
+      const allJournals = deduplicatedNormalized;
       
       // Fetch full journal details for all journals with valid IDs to get all content fields
       // Use journal ID (most reliable) or try shortcode as fallback
@@ -405,50 +374,16 @@ export default function JournalsPage() {
   // Removed auto-refresh on focus/visibility change to prevent unwanted refreshes
   // If you need to refresh data, use the manual "Refresh" button instead
 
+  // Items come from getHomeJournals() so already filtered; just dedupe and sort
   const displayedJournals = useMemo(() => {
     if (!items.length) return [];
-    
-    // STEP 3: Deduplicate items first (final safety net)
     const deduplicatedItems = deduplicateJournals(items);
-    
-    // Only show journals with allocated users (have shortcode and user)
-    let filtered = deduplicatedItems.filter((journal) => {
-      // Method 1: Check if journal has a shortcode field that matches allocated shortcode
-      const journalShortcode = journal.shortcode || '';
-      if (allocatedShortcodes.has(journalShortcode)) {
-        return true;
-      }
-      
-      // Method 2: Check if journal ID matches any allocated shortcode's journalId
-      for (const [shortcode, journalId] of shortcodeToJournalId.entries()) {
-        if (allocatedShortcodes.has(shortcode) && journal.id === journalId) {
-          return true;
-        }
-      }
-      
-      // Method 3: Check if journal name matches any allocated shortcode's journal name
-      for (const [shortcode, journalName] of shortcodeToJournalName.entries()) {
-        if (allocatedShortcodes.has(shortcode) && 
-            journal.title?.toLowerCase().trim() === journalName.toLowerCase().trim()) {
-          return true;
-        }
-      }
-      
-      return false;
-    });
-    
-    // STEP 4: Deduplicate filtered results (in case filtering created duplicates)
-    const deduplicatedFiltered = deduplicateJournals(filtered);
-    
-    // Sort by title alphabetically
-    const sorted = [...deduplicatedFiltered].sort((a, b) => {
+    return [...deduplicatedItems].sort((a, b) => {
       const aTitle = a.title?.toLowerCase() || '';
       const bTitle = b.title?.toLowerCase() || '';
       return aTitle.localeCompare(bTitle);
     });
-
-    return sorted;
-  }, [items, allocatedShortcodes, shortcodeToJournalName, shortcodeToJournalId]);
+  }, [items]);
 
   const handleRefresh = useCallback(() => {
     fetchJournals();

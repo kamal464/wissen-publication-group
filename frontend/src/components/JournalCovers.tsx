@@ -94,30 +94,24 @@ export default function JournalCovers() {
 
   const loadJournals = async () => {
     try {
-      const response = await adminAPI.getJournals();
+      const response = await adminAPI.getHomeJournals();
       const allJournals = (response.data as any[]) || [];
       
       // Take first 4 journals for home page (rest on View All Journals)
-      const journalsWithImages = allJournals.slice(0, 4).map((j: any, index: number) => {
+      // Show only journals from API (no padding with static) so count matches users/shortcodes
+      const journalsWithImages = allJournals.map((j: any, index: number) => {
         const existingImage = j.coverImage || j.bannerImage || j.flyerImage;
-        const coverImage = (existingImage && (existingImage.startsWith('http://') || existingImage.startsWith('https://'))) 
-          ? existingImage 
+        const coverImage = (existingImage && (existingImage.startsWith('http://') || existingImage.startsWith('https://')))
+          ? existingImage
           : generatePlaceholderImage(j.title || `Journal ${index + 1}`, index);
-        
+
         return {
           ...j,
           coverImage: coverImage
         };
       });
-      
-      // Ensure we have at least 4 journals
-      if (journalsWithImages.length < 4) {
-        const staticJournals = getStaticJournals();
-        const needed = 4 - journalsWithImages.length;
-        journalsWithImages.push(...staticJournals.slice(0, needed));
-      }
-      
-      setJournals(journalsWithImages.slice(0, 4));
+
+      setJournals(journalsWithImages);
     } catch (error: any) {
       // Only log non-network errors (backend offline is expected in development)
       const isNetworkError = error.code === 'ERR_NETWORK' || 
@@ -128,8 +122,7 @@ export default function JournalCovers() {
       if (!isNetworkError) {
         console.error('Error loading journals:', error);
       }
-      // Use static journals if API fails (show 4 on home, rest on View Journals)
-      setJournals(getStaticJournals().slice(0, 4));
+      setJournals([]);
     } finally {
       setLoading(false);
     }
