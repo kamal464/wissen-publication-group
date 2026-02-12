@@ -478,6 +478,7 @@ export class AdminService {
     if (journalData.articlesInPress !== undefined) updateData.articlesInPress = journalData.articlesInPress;
     if (journalData.indexing !== undefined) updateData.indexing = journalData.indexing;
     if (journalData.indexingAbstracting !== undefined && !journalData.indexing) updateData.indexing = journalData.indexingAbstracting;
+    if (journalData.isVisibleOnSite !== undefined) updateData.isVisibleOnSite = !!journalData.isVisibleOnSite;
 
     // Only perform update if there are fields to update
     // This prevents errors when journal-admin pages only update content fields
@@ -544,14 +545,15 @@ export class AdminService {
   }
 
   async deleteJournal(journalId: number) {
-    // First delete all articles in this journal
-    await this.prisma.article.deleteMany({
-      where: { journalId }
+    // Delete all related records so the journal can be removed completely
+    await this.prisma.boardMember.deleteMany({ where: { journalId } });
+    await this.prisma.article.deleteMany({ where: { journalId } });
+    await this.prisma.journalShortcode.updateMany({
+      where: { journalId },
+      data: { journalId: null },
     });
-
-    // Then delete the journal
     return await this.prisma.journal.delete({
-      where: { id: journalId }
+      where: { id: journalId },
     });
   }
 
@@ -916,6 +918,18 @@ export class AdminService {
     } catch (error: any) {
       throw new BadRequestException('Failed to delete user');
     }
+  }
+
+  async toggleJournalVisibility(journalId: number) {
+    const journal = await this.prisma.journal.findUnique({ where: { id: journalId } });
+    if (!journal) {
+      throw new BadRequestException('Journal not found');
+    }
+    const current = (journal as { isVisibleOnSite?: boolean }).isVisibleOnSite !== false;
+    return this.prisma.journal.update({
+      where: { id: journalId },
+      data: { isVisibleOnSite: !current } as any,
+    });
   }
 
   async toggleUserStatus(id: number) {

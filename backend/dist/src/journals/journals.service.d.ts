@@ -61,6 +61,7 @@ export declare class JournalsService {
         articleFormats: string | null;
         journalDescription: string | null;
         pubmedArticles: string | null;
+        isVisibleOnSite: boolean;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     findAllForHome(): Promise<any[]>;
     findAll(): Promise<any[]>;

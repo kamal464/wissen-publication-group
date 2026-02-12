@@ -87,8 +87,9 @@ export class JournalsService {
 
       const allowed = allJournals.filter(
         (j) =>
-          shortcodeJournalIds.has(j.id) ||
-          (j.shortcode && userShortcodes.has((j.shortcode || '').trim().toLowerCase())),
+          ((j as { isVisibleOnSite?: boolean }).isVisibleOnSite !== false) &&
+          (shortcodeJournalIds.has(j.id) ||
+            (j.shortcode && userShortcodes.has((j.shortcode || '').trim().toLowerCase()))),
       );
       const deduplicated = this.deduplicateJournals(allowed);
       return deduplicated.map((j) => this.toCloudFrontUrls(j));

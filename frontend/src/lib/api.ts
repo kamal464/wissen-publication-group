@@ -166,6 +166,7 @@ export const adminAPI = {
   },
   createJournal: (data: any) => api.post('/admin/journals', data),
   updateJournal: (id: number, data: any) => api.put(`/admin/journals/${id}`, data),
+  toggleJournalVisibility: (id: number) => api.put(`/admin/journals/${id}/toggle-visibility`),
   deleteJournal: (id: number) => api.delete(`/admin/journals/${id}`),
   
   // Articles

@@ -57,6 +57,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       href: '/admin/users'
     },
     {
+      id: 'journals',
+      label: 'Journals',
+      icon: 'pi pi-book',
+      href: '/admin/journals'
+    },
+    {
       id: 'submissions',
       label: 'Online Submissions',
       icon: 'pi pi-file-edit',

@@ -461,6 +461,8 @@ let AdminService = class AdminService {
             updateData.indexing = journalData.indexing;
         if (journalData.indexingAbstracting !== undefined && !journalData.indexing)
             updateData.indexing = journalData.indexingAbstracting;
+        if (journalData.isVisibleOnSite !== undefined)
+            updateData.isVisibleOnSite = !!journalData.isVisibleOnSite;
         if (Object.keys(updateData).length === 0) {
             return await this.prisma.journal.findUnique({
                 where: { id: journalId }
@@ -828,6 +830,17 @@ let AdminService = class AdminService {
         catch (error) {
             throw new common_1.BadRequestException('Failed to delete user');
         }
+    }
+    async toggleJournalVisibility(journalId) {
+        const journal = await this.prisma.journal.findUnique({ where: { id: journalId } });
+        if (!journal) {
+            throw new common_1.BadRequestException('Journal not found');
+        }
+        const current = journal.isVisibleOnSite !== false;
+        return this.prisma.journal.update({
+            where: { id: journalId },
+            data: { isVisibleOnSite: !current },
+        });
     }
     async toggleUserStatus(id) {
         try {

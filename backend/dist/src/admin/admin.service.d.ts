@@ -186,6 +186,7 @@ export declare class AdminService {
             articleFormats: string | null;
             journalDescription: string | null;
             pubmedArticles: string | null;
+            isVisibleOnSite: boolean;
         };
         authors: {
             id: number;
@@ -294,6 +295,7 @@ export declare class AdminService {
         articleFormats: string | null;
         journalDescription: string | null;
         pubmedArticles: string | null;
+        isVisibleOnSite: boolean;
     }>;
     updateJournal(journalId: number, journalData: any): Promise<any>;
     deleteJournal(journalId: number): Promise<{
@@ -350,6 +352,7 @@ export declare class AdminService {
         articleFormats: string | null;
         journalDescription: string | null;
         pubmedArticles: string | null;
+        isVisibleOnSite: boolean;
     }>;
     private calculateAverageReviewTime;
     private groupByMonth;
@@ -409,6 +412,62 @@ export declare class AdminService {
         journalShort: string | null;
         journalName: string | null;
         isActive: boolean;
+    }>;
+    toggleJournalVisibility(journalId: number): Promise<{
+        id: number;
+        title: string;
+        content: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        issn: string | null;
+        shortcode: string | null;
+        description: string;
+        coverImage: string | null;
+        publisher: string | null;
+        accessType: string | null;
+        subjectArea: string | null;
+        category: string | null;
+        discipline: string | null;
+        impactFactor: string | null;
+        aimsScope: string | null;
+        guidelines: string | null;
+        editorialBoard: string | null;
+        homePageContent: string | null;
+        currentIssueContent: string | null;
+        archiveContent: string | null;
+        articlesInPress: string | null;
+        metaTitle: string | null;
+        metaDescription: string | null;
+        metaKeywords: string | null;
+        doi: string | null;
+        indexing: string | null;
+        bannerImage: string | null;
+        flyerImage: string | null;
+        flyerPdf: string | null;
+        googleIndexingImage: string | null;
+        journalImpactFactor: string | null;
+        articleProcessingCharge: string | null;
+        icv: string | null;
+        pubmedId: string | null;
+        indexingAbstracting: string | null;
+        email: string | null;
+        classification: string | null;
+        citationsValue: string | null;
+        acceptanceRate: string | null;
+        conferenceUrl: string | null;
+        editorName: string | null;
+        editorAffiliation: string | null;
+        editorImage: string | null;
+        impactFactorValue: string | null;
+        citationsPercentage: string | null;
+        acceptancePercentage: string | null;
+        googleAnalyticsTitle: string | null;
+        googleAnalyticsValue: string | null;
+        googleAnalyticsUrl: string | null;
+        articleFormats: string | null;
+        journalDescription: string | null;
+        pubmedArticles: string | null;
+        isVisibleOnSite: boolean;
     }>;
     toggleUserStatus(id: number): Promise<{
         id: number;
@@ -534,6 +593,7 @@ export declare class AdminService {
             articleFormats: string | null;
             journalDescription: string | null;
             pubmedArticles: string | null;
+            isVisibleOnSite: boolean;
         };
         authors: {
             id: number;
@@ -749,6 +809,7 @@ export declare class AdminService {
             articleFormats: string | null;
             journalDescription: string | null;
             pubmedArticles: string | null;
+            isVisibleOnSite: boolean;
         }[];
         webPages: {
             id: number;
@@ -781,7 +842,6 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
-        displayOrder: number;
     }[]>;
     getBoardMember(id: number): Promise<{
         id: number;
@@ -800,7 +860,6 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
-        displayOrder: number;
     } | null>;
     createBoardMember(journalId: number, memberData: any): Promise<{
         id: number;
@@ -819,7 +878,6 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
-        displayOrder: number;
     }>;
     updateBoardMember(id: number, memberData: any): Promise<{
         id: number;
@@ -838,7 +896,6 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
-        displayOrder: number;
     }>;
     deleteBoardMember(id: number): Promise<{
         id: number;
@@ -857,6 +914,5 @@ export declare class AdminService {
         biography: string | null;
         imageUrl: string | null;
         profileUrl: string | null;
-        displayOrder: number;
     }>;
 }

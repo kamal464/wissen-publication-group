@@ -61,6 +61,7 @@ export declare class ArticlesController {
             articleFormats: string | null;
             journalDescription: string | null;
             pubmedArticles: string | null;
+            isVisibleOnSite: boolean;
         };
         authors: {
             id: number;
@@ -355,6 +356,7 @@ export declare class ArticlesController {
             articleFormats: string | null;
             journalDescription: string | null;
             pubmedArticles: string | null;
+            isVisibleOnSite: boolean;
         };
         authors: {
             id: number;
@@ -529,6 +531,7 @@ export declare class ArticlesController {
             articleFormats: string | null;
             journalDescription: string | null;
             pubmedArticles: string | null;
+            isVisibleOnSite: boolean;
         };
         authors: {
             id: number;
@@ -638,6 +641,7 @@ export declare class ArticlesController {
             articleFormats: string | null;
             journalDescription: string | null;
             pubmedArticles: string | null;
+            isVisibleOnSite: boolean;
         };
         authors: {
             id: number;

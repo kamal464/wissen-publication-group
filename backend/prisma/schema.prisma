@@ -70,6 +70,7 @@ model Journal {
   journalDescription String? @db.Text
   pubmedArticles String? @db.Text
   
+  isVisibleOnSite Boolean  @default(true) // When false, journal is hidden from home and public list (admin only)
   articles       Article[]
   boardMembers   BoardMember[]
   createdAt   DateTime  @default(now())

@@ -48,6 +48,9 @@ let AdminController = class AdminController {
     updateJournal(id, journalData) {
         return this.adminService.updateJournal(id, journalData);
     }
+    toggleJournalVisibility(id) {
+        return this.adminService.toggleJournalVisibility(id);
+    }
     deleteJournal(id) {
         return this.adminService.deleteJournal(id);
     }
@@ -269,6 +272,13 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "updateJournal", null);
+__decorate([
+    (0, common_1.Put)('journals/:id/toggle-visibility'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "toggleJournalVisibility", null);
 __decorate([
     (0, common_1.Delete)('journals/:id'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),

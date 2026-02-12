@@ -58,6 +58,11 @@ export class AdminController {
     return this.adminService.updateJournal(id, journalData);
   }
 
+  @Put('journals/:id/toggle-visibility')
+  toggleJournalVisibility(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.toggleJournalVisibility(id);
+  }
+
   @Delete('journals/:id')
   deleteJournal(@Param('id', ParseIntPipe) id: number) {
     return this.adminService.deleteJournal(id);

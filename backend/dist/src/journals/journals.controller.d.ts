@@ -57,6 +57,7 @@ export declare class JournalsController {
         articleFormats: string | null;
         journalDescription: string | null;
         pubmedArticles: string | null;
+        isVisibleOnSite: boolean;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     findAll(forHome?: string): Promise<any[]>;
     findByShortcode(shortcode: string): Promise<any>;

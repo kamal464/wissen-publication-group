@@ -11,6 +11,7 @@ import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { useRef } from 'react';
 import { TabView, TabPanel } from 'primereact/tabview';
 import { FileUpload } from 'primereact/fileupload';
@@ -38,6 +39,7 @@ interface Journal {
   currentIssueContent: string;
   archiveContent: string;
   articlesInPress: string;
+  isVisibleOnSite?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -138,6 +140,7 @@ export default function JournalManagement() {
       currentIssueContent: '',
       archiveContent: '',
       articlesInPress: '',
+      isVisibleOnSite: true,
       createdAt: '',
       updatedAt: ''
     });
@@ -343,24 +346,65 @@ export default function JournalManagement() {
     }
   };
 
-  const handleDeleteJournal = async (journalId: number) => {
-    if (confirm('Are you sure you want to delete this journal?')) {
-      try {
-        await adminAPI.deleteJournal(journalId);
-        setJournals(journals.filter(j => j.id !== journalId));
-        toast.current?.show({ 
-          severity: 'success', 
-          summary: 'Success', 
-          detail: 'Journal deleted successfully' 
-        });
-      } catch (error) {
-        console.error('Error deleting journal:', error);
-        toast.current?.show({ 
-          severity: 'error', 
-          summary: 'Error', 
-          detail: 'Failed to delete journal' 
-        });
-      }
+  const handleDeleteJournal = (journal: Journal) => {
+    const journalId = Number(journal.id);
+    if (!Number.isInteger(journalId) || journalId < 1) {
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Invalid journal ID. Cannot delete.',
+      });
+      return;
+    }
+    confirmDialog({
+      message: `Are you sure you want to delete "${journal.title}"? This will permanently remove the journal and all its articles and board members from the database.`,
+      header: 'Delete Journal',
+      icon: 'pi pi-exclamation-triangle',
+      acceptClassName: 'p-button-danger',
+      accept: async () => {
+        try {
+          await adminAPI.deleteJournal(journalId);
+          setJournals((prev) => prev.filter((j) => Number(j.id) !== journalId));
+          toast.current?.show({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Journal deleted successfully from the database.',
+          });
+        } catch (error: any) {
+          console.error('Error deleting journal:', error);
+          const errorMessage =
+            error.response?.data?.message ||
+            error.message ||
+            'Failed to delete journal';
+          toast.current?.show({
+            severity: 'error',
+            summary: 'Error',
+            detail: errorMessage,
+          });
+        }
+      },
+      reject: () => {},
+    });
+  };
+
+  const handleToggleVisibility = async (journal: Journal) => {
+    try {
+      const res = await adminAPI.toggleJournalVisibility(journal.id);
+      const updated = res.data as Journal;
+      setJournals(journals.map(j => (j.id === journal.id ? { ...j, isVisibleOnSite: updated?.isVisibleOnSite ?? !(j.isVisibleOnSite !== false) } : j)));
+      const nowVisible = updated?.isVisibleOnSite !== false;
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Success',
+        detail: nowVisible ? 'Journal is now visible on the site' : 'Journal is now hidden from the site',
+      });
+    } catch (error: any) {
+      console.error('Error toggling visibility:', error);
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Error',
+        detail: error.response?.data?.message || 'Failed to toggle visibility',
+      });
     }
   };
 
@@ -387,6 +431,7 @@ export default function JournalManagement() {
   return (
     <div className="journal-management">
       <Toast ref={toast} />
+      <ConfirmDialog />
 
       {/* Statistics Cards */}
       <div className="stats-grid mb-6">
@@ -411,15 +456,7 @@ export default function JournalManagement() {
             Journals Management
           </div>
           <div className="header-subtitle">
-            Manage academic journals and their content
-          </div>
-          <div className="header-actions">
-            <Button
-              label="+ Add New Journal"
-              icon="pi pi-plus"
-              className="btn btn-primary btn-sm"
-              onClick={handleCreateJournal}
-            />
+            Manage academic journals and their content (Show / Hide on site)
           </div>
         </div>
         <div className="grid-content">
@@ -438,27 +475,38 @@ export default function JournalManagement() {
           <Column field="impactFactor" header="Impact Factor" />
           <Column field="createdAt" header="Created" />
           <Column
+            header="Show / Hide"
+            body={(rowData) => {
+              const visible = rowData.isVisibleOnSite !== false;
+              return (
+                <span className="flex align-items-center gap-1">
+                  <Tag
+                    value={visible ? 'Visible' : 'Hidden'}
+                    severity={visible ? 'success' : 'secondary'}
+                  />
+                  <button
+                    type="button"
+                    className="action-btn"
+                    title={visible ? 'Hide from site' : 'Show on site'}
+                    onClick={() => handleToggleVisibility(rowData)}
+                    style={{ marginLeft: '4px' }}
+                  >
+                    <i
+                      className={visible ? 'pi pi-eye-slash' : 'pi pi-eye'}
+                    ></i>
+                  </button>
+                </span>
+              );
+            }}
+          />
+          <Column
             header="Actions"
             body={(rowData) => (
               <div className="action-buttons">
                 <button
-                  className="action-btn btn-view"
-                  data-tooltip="View Details"
-                  onClick={() => handleViewJournal(rowData)}
-                >
-                  <i className="pi pi-eye"></i>
-                </button>
-                <button
-                  className="action-btn btn-edit"
-                  data-tooltip="Edit Journal"
-                  onClick={() => handleEditJournal(rowData)}
-                >
-                  <i className="pi pi-pencil"></i>
-                </button>
-                <button
                   className="action-btn btn-delete"
                   data-tooltip="Delete Journal"
-                  onClick={() => handleDeleteJournal(rowData.id)}
+                  onClick={() => handleDeleteJournal(rowData)}
                 >
                   <i className="pi pi-trash"></i>
                 </button>
@@ -908,16 +956,6 @@ export default function JournalManagement() {
               >
                 <i className="pi pi-times mr-2"></i>
                 Close
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  setShowDetailsDialog(false);
-                  handleEditJournal(selectedJournal);
-                }}
-              >
-                <i className="pi pi-pencil mr-2"></i>
-                Edit Journal
               </button>
             </div>
           </div>

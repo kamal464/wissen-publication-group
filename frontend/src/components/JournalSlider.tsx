@@ -2,23 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { Carousel } from 'primereact/carousel';
-import { adminAPI } from '@/lib/api';
-import { getFileUrl } from '@/lib/apiConfig';
 import Link from 'next/link';
 
 interface Journal {
   id: number;
   title: string;
-  coverImage?: string;
-  bannerImage?: string;
-  flyerImage?: string;
-  shortcode?: string;
-  description?: string;
+  coverImage: string;
 }
 
+// Always show these 4 static images from public folder
+const STATIC_SLIDER_IMAGES: Journal[] = [
+  { id: 1, title: 'Slide 1', coverImage: '/images/sliders/slider 1.jpg.jpeg' },
+  { id: 2, title: 'Slide 2', coverImage: '/images/sliders/slider 2.jpg.jpeg' },
+  { id: 3, title: 'Slide 3', coverImage: '/images/sliders/slider 3.jpg.jpeg' },
+  { id: 4, title: 'Slide 4', coverImage: '/images/sliders/slider 4.jpg.jpeg' },
+];
+
 export default function JournalSlider() {
-  const [journals, setJournals] = useState<Journal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [journals] = useState<Journal[]>(STATIC_SLIDER_IMAGES);
+  const [loading, setLoading] = useState(false);
 
   // Generate SVG-based placeholder images
   const generatePlaceholderImage = (title: string, index: number): string => {
@@ -53,10 +55,6 @@ export default function JournalSlider() {
     
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   };
-
-  useEffect(() => {
-    loadJournals();
-  }, []);
 
   useEffect(() => {
     if (journals.length === 0) return;
@@ -138,76 +136,6 @@ export default function JournalSlider() {
     };
   }, [journals]);
 
-  const loadJournals = async () => {
-    try {
-      const response = await adminAPI.getHomeJournals();
-      const data = (response.data as any[]) || [];
-      if (Array.isArray(data) && data.length > 0) {
-        setJournals(
-          data.map((j: any, index: number) => ({
-            id: j.id,
-            title: j.title || `Journal ${index + 1}`,
-            coverImage: j.coverImage,
-            bannerImage: j.bannerImage,
-            flyerImage: j.flyerImage,
-            shortcode: j.shortcode,
-            description: j.description,
-          })),
-        );
-      } else {
-        setJournals(getStaticJournals());
-      }
-    } catch (error: any) {
-      const isNetworkError =
-        error.code === 'ERR_NETWORK' ||
-        error.code === 'ECONNREFUSED' ||
-        !error.response ||
-        error.message === 'Network Error';
-
-      if (!isNetworkError) {
-        console.error('Error loading journals:', error);
-      }
-      setJournals(getStaticJournals());
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getStaticJournals = (): Journal[] => {
-    return [
-      { id: 1, title: 'Slide 1', coverImage: '/images/sliders/slider 1.jpg.jpeg', description: '', shortcode: '' },
-      { id: 4, title: 'Slide 4', coverImage: '/images/sliders/slider 4.jpg.jpeg', description: '', shortcode: '' },
-      { id: 2, title: 'Slide 2', coverImage: '/images/sliders/slider 2.jpg.jpeg', description: '', shortcode: '' },
-      { id: 3, title: 'Slide 3', coverImage: '/images/sliders/slider 3.jpg.jpeg', description: '', shortcode: '' },
-    ];
-  };
-
-  const getImageUrl = (journal: Journal) => {
-    // For slider: use flyerImage first, but allow coverImage for static slider images
-    // Static slider journals use coverImage, so we need to support that
-    const imagePath = journal.flyerImage || journal.coverImage;
-    
-    if (!imagePath) {
-      return null;
-    }
-    
-    // If it's already a full URL, return as is
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      return imagePath;
-    }
-    
-    // If it starts with /, encode path segments (for static slider images)
-    if (imagePath.startsWith('/')) {
-      const pathParts = imagePath.split('/').filter(part => part.length > 0);
-      const encodedParts = pathParts.map(part => encodeURIComponent(part));
-      const encodedPath = '/' + encodedParts.join('/');
-      return encodedPath;
-    }
-    
-    // Otherwise, get file URL from API (for flyerImage from database)
-    return getFileUrl(imagePath);
-  };
-
   const ImageWithRetry = ({ src, alt, journal }: { src: string; alt: string; journal: Journal }) => {
     const [imageSrc, setImageSrc] = useState(src);
     const [retryCount, setRetryCount] = useState(0);
@@ -287,16 +215,13 @@ export default function JournalSlider() {
   };
 
   const journalTemplate = (journal: Journal) => {
-    const imageUrl = getImageUrl(journal);
-    const journalUrl = journal.shortcode ? `/journals/${journal.shortcode}` : '#';
+    const journalUrl = '#';
 
     return (
       <div className="journal-slide">
         <Link href={journalUrl} className="journal-slide__link">
           <div className="journal-slide__image-container">
-            {imageUrl && (
-              <ImageWithRetry src={imageUrl} alt={journal.title} journal={journal} />
-            )}
+            <ImageWithRetry src={journal.coverImage} alt={journal.title} journal={journal} />
           </div>
         </Link>
       </div>
