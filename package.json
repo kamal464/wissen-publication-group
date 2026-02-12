@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "deploy": "node scripts/run-deploy.js",
+    "deploy-sync": "bash quick-deploy-sync.sh"
+  },
   "devDependencies": {
     "puppeteer": "^24.24.1"
   }
