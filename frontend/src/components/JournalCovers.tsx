@@ -97,8 +97,7 @@ export default function JournalCovers() {
       const response = await adminAPI.getHomeJournals();
       const allJournals = (response.data as any[]) || [];
       
-      // Take first 4 journals for home page (rest on View All Journals)
-      // Show only journals from API (no padding with static) so count matches users/shortcodes
+      // Home page: show only first 4 cards; rest are on View Journals (/journals)
       const journalsWithImages = allJournals.map((j: any, index: number) => {
         const existingImage = j.coverImage || j.bannerImage || j.flyerImage;
         const coverImage = (existingImage && (existingImage.startsWith('http://') || existingImage.startsWith('https://')))
@@ -111,7 +110,7 @@ export default function JournalCovers() {
         };
       });
 
-      setJournals(journalsWithImages);
+      setJournals(journalsWithImages.slice(0, 4));
     } catch (error: any) {
       // Only log non-network errors (backend offline is expected in development)
       const isNetworkError = error.code === 'ERR_NETWORK' || 

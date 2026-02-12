@@ -1,8 +1,17 @@
 #!/bin/bash
 # ==========================================
 # Quick deploy – build and restart (use for build/deploy)
+#
+# Git Bash (Windows): from repo root run:
+#   bash quick-deploy.sh
+# If you see EBUSY/locked: stop the frontend dev server (Ctrl+C in terminal running npm run dev), then run again.
+# If you see "bad interpreter" or odd errors, fix line endings first:
+#   sed -i 's/\r$//' quick-deploy.sh
+# then: bash quick-deploy.sh
+#
 # Run ON the server:  cd /var/www/wissen-publication-group && ./quick-deploy.sh
-# Or from local with SSH:  DEPLOY_HOST=ubuntu@YOUR_EC2_IP ./quick-deploy.sh
+# From local (Git Bash or WSL) deploy to server via SSH:
+#   SSH_KEY=~/.ssh/wissen-secure-key-2.pem DEPLOY_HOST=ubuntu@3.85.82.78 bash quick-deploy.sh
 # ==========================================
 
 set -e
@@ -15,7 +24,12 @@ if [ -n "$DEPLOY_HOST" ]; then
   SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
   # Use the same path on remote if possible, or default
   REMOTE_PATH="${DEPLOY_PATH:-/var/www/wissen-publication-group}"
-  ssh "$DEPLOY_HOST" "cd $REMOTE_PATH && git pull && bash -s" < "$0"
+  if [ -n "$SSH_KEY" ]; then
+    echo "Using SSH key: $SSH_KEY"
+    ssh -i "$SSH_KEY" "$DEPLOY_HOST" "cd $REMOTE_PATH && git pull && bash -s" < "$0"
+  else
+    ssh "$DEPLOY_HOST" "cd $REMOTE_PATH && git pull && bash -s" < "$0"
+  fi
   exit $?
 fi
 
@@ -46,7 +60,17 @@ cd ..
 
 echo "Building frontend..."
 cd frontend
-npm install --no-audit --no-fund
+# Retry npm install if EBUSY (file locked by dev server / IDE)
+frontend_ok=1
+for _ in 1 2; do
+  if npm install --no-audit --no-fund; then frontend_ok=0; break; fi
+  echo "Install failed (file may be locked). Stop 'npm run dev' if running, then retrying in 3s..."
+  sleep 3
+done
+if [ "$frontend_ok" -ne 0 ]; then
+  echo "ERROR: Stop the dev server (Ctrl+C) and run: bash quick-deploy.sh"
+  exit 1
+fi
 npm run build
 npm install --omit=dev --no-audit --no-fund 2>/dev/null || true
 cd ..
@@ -61,8 +85,7 @@ else
   echo "Deploy complete (build only). PM2 not found on this machine."
   echo ""
   echo "To deploy and restart on the server, run one of:"
-  echo "  ssh ubuntu@YOUR_EC2_IP 'cd /var/www/wissen-publication-group && git pull && ./quick-deploy.sh'"
-  echo "  DEPLOY_HOST=ubuntu@YOUR_EC2_IP ./quick-deploy.sh"
-  echo "(Replace YOUR_EC2_IP with your server IP, e.g. 54.165.116.208)"
+  echo "  ssh ubuntu@3.85.82.78 'cd /var/www/wissen-publication-group && git pull && ./quick-deploy.sh'"
+  echo "  DEPLOY_HOST=ubuntu@3.85.82.78 bash quick-deploy.sh"
 fi
 echo "=========================================="
