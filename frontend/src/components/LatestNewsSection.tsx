@@ -80,7 +80,7 @@ export default function LatestNewsSection() {
   };
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="latest-news-section py-16 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">Latest Updates</span>
@@ -96,10 +96,10 @@ export default function LatestNewsSection() {
           {news.map((item) => (
             <Card
               key={item.id}
-              className="news-card h-full hover:shadow-lg transition-shadow duration-300"
+              className="news-card h-full"
             >
               <div className="flex flex-col h-full">
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-3 flex-shrink-0">
                   <div className="flex items-center gap-2">
                     {item.isPinned && (
                       <i className="pi pi-thumbtack text-blue-600" title="Pinned"></i>
@@ -110,27 +110,13 @@ export default function LatestNewsSection() {
                   </div>
                 </div>
                 
-                <h3 className="text-xl font-bold text-gray-800 mb-3 line-clamp-2">
+                <h3 className="text-xl font-bold text-gray-800 mb-3 flex-shrink-0">
                   {item.title}
                 </h3>
                 
-                <p className="text-gray-600 mb-4 flex-grow line-clamp-3">
-                  {item.content.length > 150
-                    ? item.content.substring(0, 150) + '...'
-                    : item.content}
-                </p>
-                
-                {item.link && (
-                  <Link
-                    href={item.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors mt-auto"
-                  >
-                    Read More
-                    <i className="pi pi-arrow-right ml-2"></i>
-                  </Link>
-                )}
+                <div className="news-card__content text-gray-600 mb-4">
+                  {item.content}
+                </div>
               </div>
             </Card>
           ))}
@@ -148,27 +134,34 @@ export default function LatestNewsSection() {
       </div>
 
       <style jsx>{`
+        .latest-news-section {
+          overflow: visible !important;
+        }
+        .latest-news-section .container {
+          overflow: visible !important;
+        }
         .news-card {
           border-radius: 0.5rem;
-          transition: transform 0.3s ease;
+          cursor: default;
+          pointer-events: auto;
+          overflow: visible !important;
+          max-height: none !important;
         }
-
-        .news-card:hover {
-          transform: translateY(-4px);
+        .news-card :global(.p-card-body),
+        .news-card :global(.p-card-content) {
+          overflow: visible !important;
+          text-overflow: clip !important;
+          max-height: none !important;
         }
-
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-
-        .line-clamp-3 {
-          display: -webkit-box;
-          -webkit-line-clamp: 3;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
+        .news-card__content {
+          word-wrap: break-word;
+          white-space: pre-wrap;
+          overflow: visible !important;
+          text-overflow: clip !important;
+          display: block !important;
+          -webkit-line-clamp: unset !important;
+          line-clamp: unset !important;
+          max-height: none !important;
         }
       `}</style>
     </section>

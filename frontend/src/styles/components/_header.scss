@@ -61,11 +61,8 @@
     text-decoration: none;
     white-space: nowrap;
     font-size: get-font-size(xs);
-    transition: color map.get($transitions, fast);
-
-    &:hover {
-      color: neutral(gray-200);
-    }
+    pointer-events: none;
+    cursor: default;
   }
 
   &__actions {

@@ -324,11 +324,8 @@ export default function JournalCovers() {
           font-weight: 600;
           color: #1e293b;
           line-height: 1.35;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
         }
 
         @media (min-width: 768px) {

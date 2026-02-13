@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { adminAPI } from '@/lib/api';
 
 interface NewsItem {
@@ -63,17 +62,15 @@ export default function TopNewsBar() {
             <div className="top-bar__ticker-track">
               {[...newsItems, ...newsItems].map((item, index) => {
                 const rawContent = (item.content || '').replace(/<[^>]*>/g, '').trim();
-                const contentSnippet = rawContent.length > 80 ? rawContent.slice(0, 80) + '…' : rawContent;
-                const displayText = contentSnippet ? `${item.title} — ${contentSnippet}` : item.title;
+                const displayText = rawContent ? `${item.title} — ${rawContent}` : item.title;
                 return (
-                  <Link
+                  <span
                     key={`${item.id}-${index}`}
-                    href={item.link || '#'}
                     className="top-bar__ticker-item"
                     suppressHydrationWarning
                   >
-                    <span suppressHydrationWarning>{displayText}</span>
-                  </Link>
+                    {displayText}
+                  </span>
                 );
               })}
             </div>
