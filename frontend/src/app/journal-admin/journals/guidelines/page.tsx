@@ -171,11 +171,15 @@ export default function GuidelinesPage() {
       </div>
 
       {!isEditing ? (
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: content || '<p class="text-gray-400 italic">No content available. Click Edit to add content.</p>' }} />
+        <div className="bg-white rounded-lg shadow p-6 journal-admin-home-view" style={{ maxWidth: '100%', overflowX: 'auto' }}>
+          <div
+            className="prose max-w-none journal-admin-content-body"
+            style={{ wordBreak: 'break-word', overflowWrap: 'break-word', maxWidth: '100%', minWidth: 0 }}
+            dangerouslySetInnerHTML={{ __html: content || '<p class="text-gray-400 italic">No content available. Click Edit to add content.</p>' }}
+          />
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6" style={{ maxWidth: '100%' }}>
           <div className="mb-4">
             <label className="block mb-2 text-sm font-medium text-gray-700">Guidelines Content</label>
             <Editor

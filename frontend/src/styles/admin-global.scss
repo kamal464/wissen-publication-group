@@ -13,10 +13,12 @@
   transition: $property $duration $timing;
 }
 
-// Enterprise Admin Layout
+// Enterprise Admin Layout - contain horizontal overflow so whole page doesn't scroll
 .admin-layout {
   display: flex;
   min-height: 100vh;
+  max-width: 100vw;
+  overflow-x: hidden;
   background-color: #f8fafc;
   font-family: 'Times New Roman', Times, serif;
 
@@ -331,6 +333,8 @@
 
   .admin-main {
     flex: 1;
+    min-width: 0;
+    max-width: 100%;
     margin-left: 280px;
     background-color: #f8fafc;
     min-height: 100vh;
@@ -565,7 +569,30 @@
       padding: 2rem;
       min-height: calc(100vh - 72px);
       background-color: #f8fafc;
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: auto;
     }
+  }
+}
+
+// Prevent whole-page horizontal scroll: wrap long content in journal admin pages
+.admin-content {
+  .prose,
+  .journal-admin-content-body {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+  }
+  .journal-admin-home-view .prose table,
+  .journal-admin-home-view .prose pre,
+  .journal-admin-home-view .prose img {
+    max-width: 100%;
+  }
+  .journal-admin-home-view .prose pre,
+  .journal-admin-home-view .prose code {
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 }
 

@@ -1340,7 +1340,7 @@ export default function JournalDetailPage() {
 
             {/* Aims and Scope */}
             {!contentLoading && activeSection === 'aims-scope' && (
-              <div className="journal-content-card" style={{
+              <div className="journal-content-card journal-content-card--aims-guidelines" style={{
                 backgroundColor: '#FFFFFF',
                 borderRadius: '8px',
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
@@ -2264,7 +2264,7 @@ export default function JournalDetailPage() {
 
             {/* Guidelines */}
             {!contentLoading && activeSection === 'guidelines' && (
-              <div className="journal-content-card" style={{
+              <div className="journal-content-card journal-content-card--aims-guidelines" style={{
                 backgroundColor: '#FFFFFF',
                 borderRadius: '8px',
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',

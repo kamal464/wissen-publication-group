@@ -506,6 +506,36 @@
       font-weight: map.get($font-weight, semibold);
       color: neutral(gray-900);
     }
+
+    // Aims & Scope / Guidelines: prevent horizontal scroll (constrain, do not hide)
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+
+    table {
+      max-width: 100%;
+      table-layout: fixed;
+      width: 100%;
+    }
+    td, th {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    pre, code {
+      max-width: 100%;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+    iframe, video {
+      max-width: 100%;
+    }
   }
 
   &__view-full {
