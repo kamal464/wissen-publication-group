@@ -1607,6 +1607,17 @@
   box-sizing: border-box !important;
 }
 
+// Quill editor alignment in view (home, aims & scope, guidelines, editorial board, journal cards list)
+.journal-left-column,
+.journal-content-card__body,
+.journal-introduction-card,
+.journal-editorial-board-card,
+.journal-card__content-text {
+  .ql-align-center { text-align: center !important; }
+  .ql-align-right { text-align: right !important; }
+  .ql-align-justify { text-align: justify !important; }
+}
+
 // Journal content cards (Aims & Scope, Guidelines, In Press)
 .journal-content-card {
   width: 100% !important;
