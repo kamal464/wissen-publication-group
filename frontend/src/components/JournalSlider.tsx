@@ -324,7 +324,7 @@ export default function JournalSlider() {
   if (isMobile) {
     return (
       <section className="journal-slider journal-slider--mobile" aria-label="Slideshow">
-        <div className="journal-slider__mobile-viewport" style={{ height: MOBILE_SLIDER_HEIGHT }}>
+        <div className="journal-slider__mobile-viewport">
           <div
             className="journal-slider__mobile-track"
             style={{ transform: `translate3d(-${mobileIndex * 100}%, 0, 0)` }}
@@ -395,9 +395,7 @@ export default function JournalSlider() {
           .journal-slider__mobile-slide-inner {
             width: 100%;
             height: 100%;
-            min-height: 180px;
             position: relative;
-            background: #f3f4f6;
           }
           .journal-slider__mobile-slide-inner :global(.journal-slide__image),
           .journal-slider__mobile-slide-inner :global(img) {
