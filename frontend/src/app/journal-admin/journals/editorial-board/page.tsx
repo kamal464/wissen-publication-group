@@ -443,8 +443,6 @@ export default function EditorialBoardPage() {
         <DataTable
           value={members}
           loading={loading}
-          paginator
-          rows={10}
           dataKey="id"
           reorderableRows
           onRowReorder={handleRowReorder}
